@@ -36,6 +36,7 @@ public class ProductImageController {
     }
 
     @PostMapping("/api/v1/products/{productId}/images")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Add image to product", description = "Add a new image to product or variant and evict product cache")
     public ResponseEntity<ApiResponse<ProductImageResponse>> addImage(
             @PathVariable Long productId,
@@ -54,6 +55,7 @@ public class ProductImageController {
     }
 
     @PatchMapping("/api/v1/images/{id}/main")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Set as main image", description = "Set an image as the primary cover photo, demoting any existing main image")
     public ResponseEntity<ApiResponse<ProductImageResponse>> setMainImage(@PathVariable Long id) {
         ProductImageResponse updated = productImageService.setMainImage(id);
@@ -61,6 +63,7 @@ public class ProductImageController {
     }
 
     @PutMapping("/api/v1/images/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Update image details", description = "Update image URL, sort order, or alt text")
     public ResponseEntity<ApiResponse<ProductImageResponse>> updateImage(
             @PathVariable Long id,
@@ -71,6 +74,7 @@ public class ProductImageController {
     }
 
     @DeleteMapping("/api/v1/images/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_DELETE')")
     @Operation(summary = "Delete an image", description = "Delete an image from the gallery and evict product cache")
     public ResponseEntity<ApiResponse<Void>> deleteImage(@PathVariable Long id) {
         productImageService.deleteImage(id);
@@ -78,6 +82,7 @@ public class ProductImageController {
     }
 
     @PutMapping("/api/v1/products/{productId}/images/reorder")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Reorder product images", description = "Update sort order of images for drag & drop gallery sorting")
     public ResponseEntity<ApiResponse<Void>> reorderImages(
             @PathVariable Long productId,

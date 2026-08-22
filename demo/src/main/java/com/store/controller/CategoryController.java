@@ -94,6 +94,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
     @Operation(summary = "Create a new category", description = "Create a new category and evict cache")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest request) {
         CategoryResponse createdCategory = categoryService.createCategory(request);
@@ -102,6 +103,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
     @Operation(summary = "Update an existing category", description = "Update category details, validate hierarchy, and evict cache")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Integer id,
@@ -112,6 +114,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
     @Operation(summary = "Delete a category", description = "Delete category by ID (children will have parent_id set to null)")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Integer id) {
         categoryService.deleteCategory(id);

@@ -53,6 +53,7 @@ public class ProductController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_CREATE')")
     @Operation(summary = "Create a new product", description = "Create a new product, validate relations, and evict product caches")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody ProductRequest request) {
         ProductResponse createdProduct = productService.createProduct(request);
@@ -61,6 +62,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Update an existing product", description = "Update product details and evict product caches")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable Long id,
@@ -71,6 +73,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_DELETE')")
     @Operation(summary = "Delete a product", description = "Delete product by ID and evict product caches")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);

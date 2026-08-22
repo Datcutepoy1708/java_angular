@@ -36,6 +36,7 @@ public class ProductVariantController {
     }
 
     @PostMapping("/api/v1/products/{productId}/variants")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_CREATE')")
     @Operation(summary = "Create a variant for a product", description = "Add a new variant under a specific product and evict product cache")
     public ResponseEntity<ApiResponse<ProductVariantResponse>> createVariant(
             @PathVariable Long productId,
@@ -61,6 +62,7 @@ public class ProductVariantController {
     }
 
     @PutMapping("/api/v1/variants/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Update a variant", description = "Update variant details and evict product cache")
     public ResponseEntity<ApiResponse<ProductVariantResponse>> updateVariant(
             @PathVariable Long id,
@@ -71,6 +73,7 @@ public class ProductVariantController {
     }
 
     @DeleteMapping("/api/v1/variants/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_DELETE')")
     @Operation(summary = "Delete a variant", description = "Delete a variant and evict product cache")
     public ResponseEntity<ApiResponse<Void>> deleteVariant(@PathVariable Long id) {
         productVariantService.deleteVariant(id);

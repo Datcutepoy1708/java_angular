@@ -65,6 +65,7 @@ public class BrandController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('BRAND_MANAGE')")
     @Operation(summary = "Create a new brand", description = "Create a new brand and evict cache")
     public ResponseEntity<ApiResponse<BrandResponse>> createBrand(@Valid @RequestBody BrandRequest request) {
         BrandResponse createdBrand = brandService.createBrand(request);
@@ -73,6 +74,7 @@ public class BrandController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('BRAND_MANAGE')")
     @Operation(summary = "Update an existing brand", description = "Update brand details and evict cache")
     public ResponseEntity<ApiResponse<BrandResponse>> updateBrand(
             @PathVariable Integer id,
@@ -83,6 +85,7 @@ public class BrandController {
     }
 
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('BRAND_MANAGE')")
     @Operation(summary = "Delete a brand", description = "Delete a brand by ID and evict cache")
     public ResponseEntity<ApiResponse<Void>> deleteBrand(@PathVariable Integer id) {
         brandService.deleteBrand(id);
