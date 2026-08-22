@@ -1,0 +1,46 @@
+<div class="auth-split">
+  <!-- Left Column: Promo & Mascot Banner -->
+  <aside class="auth-split__promo" aria-label="Giới thiệu quyền lợi hội viên Complexus">
+    <div class="promo__content">
+      <div class="promo__header">
+        <span class="promo__logo">Complexus</span>
+        <span class="promo__badge">Tham gia ngay</span>
+      </div>
+
+      <h1 class="promo__heading">Complexus Member</h1>
+
+      <!-- Enlarged Benefits Card with clean spacing -->
+      <div class="promo__benefits-card">
+        <ul class="benefits-list">
+          <li>Bảo hành mở rộng thêm 6 tháng</li>
+          <li>Thu cũ đổi mới, trợ giá đến 2.000.000đ</li>
+          <li>Miễn phí giao hàng đơn từ 500.000đ</li>
+          <li>Ưu tiên đặt trước linh kiện mới về</li>
+        </ul>
+      </div>
+
+      <!-- Bottom Row: CTA Button + Mascot (No overlapping on text) -->
+      <div class="promo__bottom-section">
+        <button type="button" class="promo__cta" aria-label="Xem chi tiết các ưu đãi hội viên">
+          Xem tất cả ưu đãi
+        </button>
+
+        <div class="promo__mascot-container">
+          <img
+            ngSrc="assets/images/complexus-capybara-mascot.png"
+            class="promo__mascot"
+            width="240"
+            height="240"
+            alt="Complexus Capybara Mascot"
+            priority
+          />
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Column: Swappable Form View (Login / Register) -->
+  <main class="auth-split__form" id="main-content">
+    <router-outlet />
+  </main>
+</div>

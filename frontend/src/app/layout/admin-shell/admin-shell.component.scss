@@ -1,0 +1,16 @@
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--surface-alt);
+}
+
+.admin-content-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 24px;
+}

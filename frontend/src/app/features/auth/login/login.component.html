@@ -1,0 +1,162 @@
+<div class="auth-card">
+  <!-- Tab Navigation -->
+  <nav class="auth-tabs" role="tablist" aria-label="Lựa chọn phương thức xác thực">
+    <a
+      routerLink="/auth/login"
+      class="tab-link active"
+      role="tab"
+      aria-selected="true"
+    >
+      Đăng nhập
+    </a>
+    <a
+      routerLink="/auth/register"
+      class="tab-link"
+      role="tab"
+      aria-selected="false"
+    >
+      Đăng ký
+    </a>
+  </nav>
+
+  <!-- Title & Subtitle -->
+  <div class="auth-header">
+    <h2 class="auth-title">Chào mừng trở lại</h2>
+    <p class="auth-subtitle">Đăng nhập để tiếp tục mua sắm linh kiện máy tính</p>
+  </div>
+
+  <!-- Server Error Alert -->
+  @if (errorMessage()) {
+    <div class="alert-error" role="alert">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Login Form -->
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email" class="form-label">Email</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('email')">
+        <svg class="input-icon left" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <path d="M2.5 5.833A1.667 1.667 0 014.167 4.167h11.666A1.667 1.667 0 0117.5 5.833v8.334a1.667 1.667 0 01-1.667 1.666H4.167A1.667 1.667 0 012.5 14.167V5.833z" />
+          <path d="M17.5 5.833l-7.5 5-7.5-5" />
+        </svg>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="email@example.com"
+          autocomplete="email"
+          [attr.aria-invalid]="isFieldInvalid('email')"
+          [attr.aria-describedby]="isFieldInvalid('email') ? 'email-error' : null"
+        />
+      </div>
+      @if (isFieldInvalid('email')) {
+        <p id="email-error" class="field-error" role="alert">
+          @if (loginForm.get('email')?.hasError('required')) {
+            Email không được để trống.
+          } @else if (loginForm.get('email')?.hasError('email')) {
+            Email không đúng định dạng.
+          }
+        </p>
+      }
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-group">
+      <label for="password" class="form-label">Mật khẩu</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('password')">
+        <svg class="input-icon left" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <rect x="3.333" y="9.167" width="13.333" height="8.333" rx="1.667" />
+          <path d="M5.833 9.167V6.25a4.167 4.167 0 018.334 0v2.917" />
+        </svg>
+        <input
+          id="password"
+          [type]="showPassword() ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          [attr.aria-invalid]="isFieldInvalid('password')"
+          [attr.aria-describedby]="isFieldInvalid('password') ? 'password-error' : null"
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="togglePassword()"
+          [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+        >
+          @if (showPassword()) {
+            <!-- Eye slash icon -->
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M2.5 2.5l15 15M8.93 8.93a2.5 2.5 0 003.54 3.54M7.05 4.5A9.97 9.97 0 0110 4.17c4.17 0 7.5 3.33 8.33 5.83a10.45 10.45 0 01-3.08 4.38M4.75 6.42A10.45 10.45 0 001.67 10c.83 2.5 4.16 5.83 8.33 5.83 1.4 0 2.7-.38 3.84-1.04" />
+            </svg>
+          } @else {
+            <!-- Eye icon -->
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M1.667 10C2.5 7.5 5.833 4.167 10 4.167S17.5 7.5 18.333 10c-.833 2.5-4.166 5.833-8.333 5.833S2.5 12.5 1.667 10z" />
+              <circle cx="10" cy="10" r="2.5" />
+            </svg>
+          }
+        </button>
+      </div>
+      @if (isFieldInvalid('password')) {
+        <p id="password-error" class="field-error" role="alert">
+          @if (loginForm.get('password')?.hasError('required')) {
+            Mật khẩu không được để trống.
+          } @else if (loginForm.get('password')?.hasError('minlength')) {
+            Mật khẩu phải chứa ít nhất 6 ký tự.
+          }
+        </p>
+      }
+    </div>
+
+    <!-- Forgot Password Link -->
+    <div class="form-actions">
+      <a href="javascript:void(0)" class="link-forgot" title="Chức năng đang phát triển">Quên mật khẩu?</a>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn-submit" [disabled]="isLoading()">
+      @if (isLoading()) {
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Đang đăng nhập...</span>
+      } @else {
+        <span>Đăng nhập</span>
+      }
+    </button>
+  </form>
+
+  <!-- Social Divider -->
+  <div class="auth-divider">
+    <span>hoặc tiếp tục với</span>
+  </div>
+
+  <!-- Social Login Buttons (Monochrome / Clean SVG) -->
+  <div class="social-login-group">
+    <button type="button" class="btn-social" disabled title="Tính năng đăng nhập Google sắp ra mắt">
+      <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+      </svg>
+      <span>Đăng nhập với Google</span>
+    </button>
+
+    <button type="button" class="btn-social" disabled title="Tính năng đăng nhập Facebook sắp ra mắt">
+      <svg class="social-icon" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+      </svg>
+      <span>Đăng nhập với Facebook</span>
+    </button>
+  </div>
+
+  <!-- Footer Info -->
+  <footer class="auth-footer">
+    <p>Chính sách bảo mật • Điều khoản sử dụng</p>
+  </footer>
+</div>

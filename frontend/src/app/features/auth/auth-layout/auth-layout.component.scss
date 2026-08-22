@@ -1,0 +1,166 @@
+.auth-split {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.auth-split__promo {
+  flex: 1.15;
+  padding: 48px 64px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.promo__content {
+  max-width: 540px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.promo__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.promo__logo {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.promo__badge {
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.promo__heading {
+  font-size: 38px;
+  font-weight: 800;
+  margin: 0 0 24px;
+  color: var(--on-surface);
+  letter-spacing: -0.5px;
+}
+
+/* Enlarged Benefits Card */
+.promo__benefits-card {
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 32px 36px;
+  box-shadow: 0 14px 30px -5px var(--primary-glow);
+  width: 100%;
+}
+
+.benefits-list {
+  list-style: disc;
+  padding-left: 24px;
+  margin: 0;
+}
+
+.benefits-list li {
+  margin-bottom: 14px;
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.benefits-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Bottom Section: CTA Button + Mascot side by side without overlap */
+.promo__bottom-section {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.promo__cta {
+  padding: 12px 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--on-surface);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.promo__cta:hover {
+  background: var(--surface-alt);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.promo__mascot-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.promo__mascot {
+  width: 230px;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.1));
+}
+
+.auth-split__form {
+  flex: 0.85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  padding: 48px 32px;
+  min-height: 100vh;
+}
+
+@media (max-width: 960px) {
+  .auth-split {
+    flex-direction: column;
+  }
+
+  .auth-split__promo {
+    padding: 40px 24px 48px;
+    min-height: auto;
+  }
+
+  .auth-split__form {
+    padding: 32px 16px;
+    min-height: auto;
+  }
+
+  .promo__bottom-section {
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .promo__cta {
+    margin-bottom: 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .promo__mascot {
+    width: 190px;
+  }
+}

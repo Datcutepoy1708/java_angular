@@ -198,6 +198,9 @@ Use `@RestControllerAdvice` (`GlobalExceptionHandler`) to catch exceptions and r
 - Circular dependencies between services are a design smell — refactor (extract shared logic into a third service) instead of using `@Lazy` to paper over it.
 
 ## 7. Frontend conventions (Angular)
+No SSR. Angular CLI defaults to scaffolding SSR (main.server.ts, server.ts, app.config.server.ts, app.routes.server.ts). This project does not use it during development — delete those files and the SSR-related entries in angular.json ("ssr" block) and package.json ("serve:ssr:*" scripts) right after ng new. Revisit adding SSR back via ng add @angular/ssr only when SEO on the public storefront becomes a real concern near launch, not before.
+Component file naming keeps the .component suffix, overriding the newer Angular CLI default that drops it (app.ts/app.html instead of app.component.ts/app.component.html). Always generate/name component files as xyz.component.ts, xyz.component.html, xyz.component.scss — this matches every component example already established in this codebase and keeps component files visually distinct from services/guards/models at a glance. Rename the CLI-generated root app.ts/app.html/app.css to app.component.ts/app.component.html/app.component.scss (updating the selector/bootstrap reference accordingly) to stay consistent.
+Keep app.spec.ts (unit test scaffold), .editorconfig, angular.json, tsconfig*.json — these are normal, not clutter.
 
 ### 7.1 Architecture
 - Use **standalone components** (Angular 18+), lazy-loaded per feature route (`shop`, `admin`, `auth`).
@@ -229,7 +232,58 @@ Use `@RestControllerAdvice` (`GlobalExceptionHandler`) to catch exceptions and r
   ```
 - Never instantiate a service manually with `new SomeService()` — always let Angular's injector provide it, so interceptors, testing overrides, and singleton behavior work correctly.
 - Never inject `HttpClient` directly into a component — always go through a domain service (`BrandService`, `ProductService`...) so API logic stays testable and reusable, per section 7.2.
+### 7.5 Admin vs Client separation
 
+The storefront (public-facing shop) and the admin panel are two distinct experiences sharing one Angular app. Keep them cleanly separated at every layer — routing, layout shell, and feature folders — so neither leaks into the other and each can be worked on independently.
+
+Folder structure (expand on the features/ skeleton already defined in section 4):
+
+src/app/
+├── core/                    # cross-cutting: guards, interceptors, models, services
+├── layout/
+│   ├── public-shell/        # header + footer wrapper for storefront pages
+│   │   └── public-shell.component.ts/html/scss
+│   └── admin-shell/         # sidebar + top header wrapper for admin pages
+│       └── admin-shell.component.ts/html/scss
+├── features/
+│   ├── auth/                # login, register, admin-login — shared entry point, no shell
+│   ├── shop/                 # storefront only: home, category, product-detail, cart, checkout
+│   │   ├── home/
+│   │   ├── product-listing/
+│   │   ├── product-detail/
+│   │   ├── cart/
+│   │   └── checkout/
+│   └── admin/                 # admin only: dashboard, product-manage, order-manage, etc.
+│       ├── dashboard/
+│       ├── brand-manage/
+│       ├── category-manage/
+│       ├── product-manage/
+│       ├── order-manage/
+│       └── statistics/
+
+Routing rule — one shell per route tree, lazy-loaded, path-prefixed:
+
+typescript
+// app.routes.ts
+export const routes: Routes = [
+  { path: '', component: PublicShellComponent, children: [
+      { path: '', loadComponent: () => import('./features/shop/home/home.component')... },
+      { path: 'products/:categorySlug', loadComponent: () => ... },
+      { path: 'cart', loadComponent: () => ... },
+    ]
+  },
+  { path: 'admin', component: AdminShellComponent, canActivate: [authGuard, roleGuard], children: [
+      { path: 'dashboard', loadComponent: () => ... },
+      { path: 'products', loadComponent: () => ... },
+    ]
+  },
+  { path: 'login', loadComponent: () => import('./features/auth/login/login.component')... },
+  { path: 'admin/login', loadComponent: () => import('./features/auth/admin-login/admin-login.component')... },
+];
+Every route under /admin/** carries authGuard + roleGuard (checking for ROLE_ADMIN/ROLE_STAFF) at the parent route level — do not re-add the guard on every child route individually; the parent's canActivate already protects all children.
+features/shop/** never imports anything from features/admin/** and vice versa. If a component is genuinely needed by both (e.g. a product card), it belongs in shared/, not duplicated or cross-imported.
+Services in core/services/ (e.g. product.service.ts) are shared by both — the split is about UI/routes/layout, not about duplicating API-calling logic. Admin and Client both call the same ProductService, just from different components with different permissions enforced server-side.
+Two shells (public-shell, admin-shell) must not share a layout component even if visually similar — keep them as separate components since their structure (header+footer vs sidebar+topbar) diverges enough that forcing a shared shell adds more conditional complexity than it saves.
 ## 8. Database conventions
 
 - `database/database_ban_may_tinh.sql` is the source of truth for schema.
@@ -252,11 +306,14 @@ Use `@RestControllerAdvice` (`GlobalExceptionHandler`) to catch exceptions and r
 - Whenever Redis caching is added to a CRUD endpoint, write a test verifying that an update/delete actually evicts the cache (stale reads are a common bug class here).
 
 ## 11. Git & commit conventions
-
-- Branches: `main` (production), `develop` (staging), `feature/<name>`, `fix/<name>`.
-- Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`.
-  - Example: `feat(product): add Redis caching for product detail endpoint`
-- PRs must describe: purpose, affected DB tables (if any), how it was tested, and whether cache eviction was verified.
+Branches: main (production), develop (staging), feature/<name>, fix/<name>.
+Conventional Commits: feat:, fix:, refactor:, chore:, docs:.
+Example: feat(product): add Redis caching for product detail endpoint
+PRs must describe: purpose, affected DB tables (if any), how it was tested, and whether cache eviction was verified.
+No decorative icon/emoji badges or trust badges. Do not add small colorful icon+text chip elements like "🚀 50K+ Products" or "🚚 Free Shipping" — these decorative trust-badge patterns (common in AI-generated hero sections) are visual clutter and must be removed or replaced with plain text if the content is worth keeping (e.g. plain text "50,000+ products in stock" with no icon/emoji in front of it).
+If a Stitch mockup includes these badges, treat it as reference for layout only — strip the icon/emoji and either drop the badge entirely or keep it as plain text, when implementing the real Angular component.
+This also applies to commit messages, PR descriptions, code comments, and log messages — no decorative emoji there either (e.g. feat(product): ✨ add search 🔍 → feat(product): add search).
+Functional UI icons are still allowed where they materially aid usability — e.g. a cart icon with item-count badge in the header (no room for text label there), a password show/hide toggle icon, a search magnifying-glass inside a search input. Keep these minimal, monochrome, and consistent with the design system — not colorful emoji-style. If in doubt whether an icon is "functional" or "decorative," ask before adding it.
 
 ## 12. Continuous Integration (GitHub Actions)
 

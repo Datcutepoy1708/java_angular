@@ -1,0 +1,281 @@
+<div class="auth-card">
+  <!-- Tab Navigation -->
+  <nav class="auth-tabs" role="tablist" aria-label="Lựa chọn phương thức xác thực">
+    <a
+      routerLink="/auth/login"
+      class="tab-link"
+      role="tab"
+      aria-selected="false"
+    >
+      Đăng nhập
+    </a>
+    <a
+      routerLink="/auth/register"
+      class="tab-link active"
+      role="tab"
+      aria-selected="true"
+    >
+      Đăng ký
+    </a>
+  </nav>
+
+  <!-- Title & Subtitle -->
+  <div class="auth-header">
+    <h2 class="auth-title">Create your account</h2>
+    <p class="auth-subtitle">Join Complexus to start shopping for PC components</p>
+  </div>
+
+  <!-- Server Error Alert -->
+  @if (errorMessage()) {
+    <div class="alert-error" role="alert">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Success Alert -->
+  @if (successMessage()) {
+    <div class="alert-success" role="alert">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  <!-- Register Form -->
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+    <!-- Full Name Field -->
+    <div class="form-group">
+      <label for="fullName" class="form-label">Full Name</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('fullName')">
+        <input
+          id="fullName"
+          type="text"
+          formControlName="fullName"
+          placeholder="John Doe"
+          autocomplete="name"
+          [attr.aria-invalid]="isFieldInvalid('fullName')"
+          [attr.aria-describedby]="isFieldInvalid('fullName') ? 'name-error' : null"
+        />
+      </div>
+      @if (isFieldInvalid('fullName')) {
+        <p id="name-error" class="field-error" role="alert">
+          @if (registerForm.get('fullName')?.hasError('required')) {
+            Họ và tên không được để trống.
+          } @else if (registerForm.get('fullName')?.hasError('minlength')) {
+            Họ và tên phải có ít nhất 2 ký tự.
+          }
+        </p>
+      }
+    </div>
+
+    <!-- Email Address Field -->
+    <div class="form-group">
+      <label for="reg-email" class="form-label">Email Address</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('email')">
+        <input
+          id="reg-email"
+          type="email"
+          formControlName="email"
+          placeholder="john@example.com"
+          autocomplete="email"
+          [attr.aria-invalid]="isFieldInvalid('email')"
+          [attr.aria-describedby]="isFieldInvalid('email') ? 'reg-email-error' : null"
+        />
+      </div>
+      @if (isFieldInvalid('email')) {
+        <p id="reg-email-error" class="field-error" role="alert">
+          @if (registerForm.get('email')?.hasError('required')) {
+            Email không được để trống.
+          } @else if (registerForm.get('email')?.hasError('email')) {
+            Email không đúng định dạng.
+          }
+        </p>
+      }
+    </div>
+
+    <!-- Phone Number Field (Optional) -->
+    <div class="form-group">
+      <label for="phone" class="form-label">Phone Number (Optional)</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('phone')">
+        <input
+          id="phone"
+          type="tel"
+          formControlName="phone"
+          placeholder="+1 (555) 000-0000"
+          autocomplete="tel"
+          [attr.aria-invalid]="isFieldInvalid('phone')"
+          [attr.aria-describedby]="isFieldInvalid('phone') ? 'phone-error' : null"
+        />
+      </div>
+      @if (isFieldInvalid('phone')) {
+        <p id="phone-error" class="field-error" role="alert">
+          Số điện thoại không đúng định dạng.
+        </p>
+      }
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-group">
+      <label for="reg-password" class="form-label">Password</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('password')">
+        <input
+          id="reg-password"
+          [type]="showPassword() ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          [attr.aria-invalid]="isFieldInvalid('password')"
+          [attr.aria-describedby]="isFieldInvalid('password') ? 'reg-password-error' : null"
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="togglePassword()"
+          [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+        >
+          @if (showPassword()) {
+            <!-- Eye slash icon -->
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M2.5 2.5l15 15M8.93 8.93a2.5 2.5 0 003.54 3.54M7.05 4.5A9.97 9.97 0 0110 4.17c4.17 0 7.5 3.33 8.33 5.83a10.45 10.45 0 01-3.08 4.38M4.75 6.42A10.45 10.45 0 001.67 10c.83 2.5 4.16 5.83 8.33 5.83 1.4 0 2.7-.38 3.84-1.04" />
+            </svg>
+          } @else {
+            <!-- Eye icon -->
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M1.667 10C2.5 7.5 5.833 4.167 10 4.167S17.5 7.5 18.333 10c-.833 2.5-4.166 5.833-8.333 5.833S2.5 12.5 1.667 10z" />
+              <circle cx="10" cy="10" r="2.5" />
+            </svg>
+          }
+        </button>
+      </div>
+
+      <!-- 4-segment Strength Bar -->
+      <div class="strength-container" aria-live="polite">
+        <div class="strength-bar">
+          <div
+            class="strength-segment"
+            [class.active]="passwordStrength() >= 1"
+            [class.str-weak]="passwordStrength() === 1"
+            [class.str-fair]="passwordStrength() === 2"
+            [class.str-good]="passwordStrength() === 3"
+            [class.str-strong]="passwordStrength() === 4"
+          ></div>
+          <div
+            class="strength-segment"
+            [class.active]="passwordStrength() >= 2"
+            [class.str-fair]="passwordStrength() === 2"
+            [class.str-good]="passwordStrength() === 3"
+            [class.str-strong]="passwordStrength() === 4"
+          ></div>
+          <div
+            class="strength-segment"
+            [class.active]="passwordStrength() >= 3"
+            [class.str-good]="passwordStrength() === 3"
+            [class.str-strong]="passwordStrength() === 4"
+          ></div>
+          <div
+            class="strength-segment"
+            [class.active]="passwordStrength() >= 4"
+            [class.str-strong]="passwordStrength() === 4"
+          ></div>
+        </div>
+        <div class="strength-info">
+          <span class="strength-hint">Password must be at least 8 characters</span>
+          @if (strengthLabel()) {
+            <span
+              class="strength-label"
+              [class.str-weak]="passwordStrength() === 1"
+              [class.str-fair]="passwordStrength() === 2"
+              [class.str-good]="passwordStrength() === 3"
+              [class.str-strong]="passwordStrength() === 4"
+            >
+              {{ strengthLabel() }}
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (isFieldInvalid('password')) {
+        <p id="reg-password-error" class="field-error" role="alert">
+          Mật khẩu phải chứa ít nhất 8 ký tự.
+        </p>
+      }
+    </div>
+
+    <!-- Confirm Password Field -->
+    <div class="form-group">
+      <label for="confirmPassword" class="form-label">Confirm Password</label>
+      <div class="input-container" [class.input-error]="isFieldInvalid('confirmPassword') || isPasswordMismatch()">
+        <input
+          id="confirmPassword"
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          formControlName="confirmPassword"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          [attr.aria-invalid]="isFieldInvalid('confirmPassword') || isPasswordMismatch()"
+          [attr.aria-describedby]="isPasswordMismatch() ? 'mismatch-error' : null"
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="toggleConfirmPassword()"
+          [attr.aria-label]="showConfirmPassword() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+        >
+          @if (showConfirmPassword()) {
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M2.5 2.5l15 15M8.93 8.93a2.5 2.5 0 003.54 3.54M7.05 4.5A9.97 9.97 0 0110 4.17c4.17 0 7.5 3.33 8.33 5.83a10.45 10.45 0 01-3.08 4.38M4.75 6.42A10.45 10.45 0 001.67 10c.83 2.5 4.16 5.83 8.33 5.83 1.4 0 2.7-.38 3.84-1.04" />
+            </svg>
+          } @else {
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path d="M1.667 10C2.5 7.5 5.833 4.167 10 4.167S17.5 7.5 18.333 10c-.833 2.5-4.166 5.833-8.333 5.833S2.5 12.5 1.667 10z" />
+              <circle cx="10" cy="10" r="2.5" />
+            </svg>
+          }
+        </button>
+      </div>
+      @if (isPasswordMismatch()) {
+        <p id="mismatch-error" class="field-error" role="alert">
+          Mật khẩu xác nhận không khớp.
+        </p>
+      }
+    </div>
+
+    <!-- Terms & Policy Checkbox -->
+    <div class="checkbox-group">
+      <label class="checkbox-container" for="agreeTerms">
+        <input
+          type="checkbox"
+          id="agreeTerms"
+          formControlName="agreeTerms"
+          [attr.aria-invalid]="isFieldInvalid('agreeTerms')"
+        />
+        <span class="checkbox-text">
+          I agree to the <a href="javascript:void(0)">Terms of Service</a> and <a href="javascript:void(0)">Privacy Policy</a>
+        </span>
+      </label>
+      @if (isFieldInvalid('agreeTerms')) {
+        <p class="field-error" role="alert">
+          Bạn cần đồng ý với Điều khoản và Chính sách để tiếp tục.
+        </p>
+      }
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn-submit" [disabled]="isLoading()">
+      @if (isLoading()) {
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Đang tạo tài khoản...</span>
+      } @else {
+        <span>Create Account</span>
+      }
+    </button>
+  </form>
+
+  <!-- Footer Link to Login -->
+  <footer class="auth-footer-link">
+    <p>Already have an account? <a routerLink="/auth/login">Log in</a></p>
+  </footer>
+</div>

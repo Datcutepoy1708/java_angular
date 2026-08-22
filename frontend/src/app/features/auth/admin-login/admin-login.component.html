@@ -1,0 +1,112 @@
+<div class="admin-auth-page">
+  <div class="admin-portal-badge" role="banner">
+    <span>ADMIN PORTAL</span>
+  </div>
+
+  <div class="admin-auth-card">
+    <div class="admin-header">
+      <h1 class="brand-logo">Complexus</h1>
+      <h2 class="card-title">Admin Sign In</h2>
+      <p class="card-subtitle">Restricted access — authorized personnel only.</p>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert-error" role="alert">
+        <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+        </svg>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="admin-form" novalidate>
+      <!-- Email Address Field -->
+      <div class="form-group">
+        <label for="admin-email" class="form-label">Email Address</label>
+        <div class="input-container" [class.input-error]="isFieldInvalid('email')">
+          <svg class="input-icon left" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path d="M2.5 5.833A1.667 1.667 0 014.167 4.167h11.666A1.667 1.667 0 0117.5 5.833v8.334a1.667 1.667 0 01-1.667 1.666H4.167A1.667 1.667 0 012.5 14.167V5.833z" />
+            <path d="M17.5 5.833l-7.5 5-7.5-5" />
+          </svg>
+          <input
+            id="admin-email"
+            type="email"
+            formControlName="email"
+            placeholder="admin@complexus.com"
+            autocomplete="email"
+            [attr.aria-invalid]="isFieldInvalid('email')"
+            [attr.aria-describedby]="isFieldInvalid('email') ? 'admin-email-error' : null"
+          />
+        </div>
+        @if (isFieldInvalid('email')) {
+          <p id="admin-email-error" class="field-error" role="alert">
+            @if (loginForm.get('email')?.hasError('required')) {
+              Email quản trị không được để trống.
+            } @else if (loginForm.get('email')?.hasError('email')) {
+              Email không đúng định dạng.
+            }
+          </p>
+        }
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="admin-password" class="form-label">Password</label>
+        <div class="input-container" [class.input-error]="isFieldInvalid('password')">
+          <svg class="input-icon left" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <rect x="3.333" y="9.167" width="13.333" height="8.333" rx="1.667" />
+            <path d="M5.833 9.167V6.25a4.167 4.167 0 018.334 0v2.917" />
+          </svg>
+          <input
+            id="admin-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [attr.aria-invalid]="isFieldInvalid('password')"
+            [attr.aria-describedby]="isFieldInvalid('password') ? 'admin-password-error' : null"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+          >
+            @if (showPassword()) {
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <path d="M2.5 2.5l15 15M8.93 8.93a2.5 2.5 0 003.54 3.54M7.05 4.5A9.97 9.97 0 0110 4.17c4.17 0 7.5 3.33 8.33 5.83a10.45 10.45 0 01-3.08 4.38M4.75 6.42A10.45 10.45 0 001.67 10c.83 2.5 4.16 5.83 8.33 5.83 1.4 0 2.7-.38 3.84-1.04" />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <path d="M1.667 10C2.5 7.5 5.833 4.167 10 4.167S17.5 7.5 18.333 10c-.833 2.5-4.166 5.833-8.333 5.833S2.5 12.5 1.667 10z" />
+                <circle cx="10" cy="10" r="2.5" />
+              </svg>
+            }
+          </button>
+        </div>
+        @if (isFieldInvalid('password')) {
+          <p id="admin-password-error" class="field-error" role="alert">
+            Mật khẩu không được để trống (tối thiểu 6 ký tự).
+          </p>
+        }
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-submit btn-admin" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Authenticating...</span>
+        } @else {
+          <span>Sign In</span>
+          <svg class="btn-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 10h12M12 5l5 5-5 5" />
+          </svg>
+        }
+      </button>
+    </form>
+  </div>
+
+  <footer class="admin-footer">
+    <p>© 2026 Complexus Admin Panel</p>
+  </footer>
+</div>

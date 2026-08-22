@@ -94,7 +94,32 @@ public class DataSeeder implements CommandLineRunner {
         Role staffRole = roleRepository.findByRoleName("ROLE_STAFF").orElse(null);
         Role customerRole = roleRepository.findByRoleName("ROLE_CUSTOMER").orElse(null);
 
-        // 1. Default Admin
+        // 1. Admin test account: admin@gmail.com / password
+        User adminGmail = userRepository.findByEmail("admin@gmail.com").orElse(null);
+        if (adminGmail == null) {
+            log.info("Seeding Admin account: admin@gmail.com / password");
+            adminGmail = User.builder()
+                    .fullName("Admin Tester")
+                    .email("admin@gmail.com")
+                    .phone("0988888888")
+                    .passwordHash(passwordEncoder.encode("password"))
+                    .status(UserStatus.ACTIVE)
+                    .emailVerified(true)
+                    .roles(adminRole != null ? new HashSet<>(Set.of(adminRole)) : new HashSet<>())
+                    .build();
+            userRepository.save(adminGmail);
+        } else {
+            adminGmail.setPasswordHash(passwordEncoder.encode("password"));
+            if (adminRole != null && (adminGmail.getRoles() == null || !adminGmail.getRoles().contains(adminRole))) {
+                if (adminGmail.getRoles() == null) {
+                    adminGmail.setRoles(new HashSet<>());
+                }
+                adminGmail.getRoles().add(adminRole);
+            }
+            userRepository.save(adminGmail);
+        }
+
+        // 2. Default Administrator
         if (!userRepository.existsByEmail("admin@store.com")) {
             log.info("Seeding default Administrator account: admin@store.com");
             User admin = User.builder()
@@ -109,7 +134,7 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(admin);
         }
 
-        // 2. Default Staff
+        // 3. Default Staff
         if (!userRepository.existsByEmail("staff@store.com")) {
             log.info("Seeding default Staff account: staff@store.com");
             User staff = User.builder()
@@ -124,7 +149,7 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(staff);
         }
 
-        // 3. Default Customer
+        // 4. Default Customer
         if (!userRepository.existsByEmail("customer@store.com")) {
             log.info("Seeding default Customer account: customer@store.com");
             User customer = User.builder()
