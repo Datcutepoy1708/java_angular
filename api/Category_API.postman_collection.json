@@ -1,0 +1,320 @@
+{
+	"info": {
+		"_postman_id": "9a123bc4-5678-4def-90ab-cdef12345678",
+		"name": "Category CRUD API - Computer Store",
+		"description": "Postman collection for testing Category CRUD APIs with Parent-Child Hierarchy and Redis Caching",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Get Category Tree (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/tree",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"tree"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get All Categories Flat (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get Root Categories (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/roots",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"roots"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Direct Children by Parent ID (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/1/children",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"1",
+						"children"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Count Direct Children",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/1/children/count",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"1",
+						"children",
+						"count"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Get Categories Paginated",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/page?page=0&size=10&sortBy=sortOrder&sortDir=asc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"page"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						},
+						{
+							"key": "sortBy",
+							"value": "sortOrder"
+						},
+						{
+							"key": "sortDir",
+							"value": "asc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Get Category by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Get Category by Slug",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/slug/linh-kien-may-tinh",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"slug",
+						"linh-kien-may-tinh"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9. Create Root Category",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Linh kiện máy tính\",\n    \"slug\": \"linh-kien-may-tinh\",\n    \"parentId\": null,\n    \"iconUrl\": \"https://example.com/icons/components.png\",\n    \"description\": \"CPU, GPU, Mainboard, RAM, SSD, Nguồn...\",\n    \"sortOrder\": 1,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10. Create Child Category",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"CPU - Bộ vi xử lý\",\n    \"slug\": \"cpu-bo-vi-xu-ly\",\n    \"parentId\": 1,\n    \"iconUrl\": \"https://example.com/icons/cpu.png\",\n    \"description\": \"Vi xử lý Intel Core, AMD Ryzen...\",\n    \"sortOrder\": 1,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "11. Update Category",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"CPU - Bộ vi xử lý thế hệ mới\",\n    \"slug\": \"cpu-bo-vi-xu-ly\",\n    \"parentId\": 1,\n    \"iconUrl\": \"https://example.com/icons/cpu.png\",\n    \"description\": \"Vi xử lý Intel Gen 14, AMD 7000/8000 series\",\n    \"sortOrder\": 1,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "12. Delete Category",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/categories/2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"2"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

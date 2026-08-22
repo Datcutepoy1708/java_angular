@@ -1,0 +1,219 @@
+{
+	"info": {
+		"_postman_id": "8f685c18-9774-4b5c-a567-9c988b488730",
+		"name": "Brand CRUD API - Computer Store",
+		"description": "Postman collection for testing Brand CRUD APIs with Spring Boot backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "0. System Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/actuator/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"actuator",
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "1. Get All Brands (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Brands Paginated",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands/page?page=0&size=10&sortBy=name&sortDir=asc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands",
+						"page"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						},
+						{
+							"key": "sortBy",
+							"value": "name"
+						},
+						{
+							"key": "sortDir",
+							"value": "asc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get Brand by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Brand by Slug",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands/slug/asus-rog",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands",
+						"slug",
+						"asus-rog"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Create Brand",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Dell\",\n    \"slug\": \"dell\",\n    \"logoUrl\": \"https://example.com/dell.png\",\n    \"country\": \"USA\",\n    \"description\": \"Dell Technologies Laptop & PC\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Update Brand",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Dell Alienware\",\n    \"slug\": \"dell-alienware\",\n    \"logoUrl\": \"https://example.com/alienware.png\",\n    \"country\": \"USA\",\n    \"description\": \"High-performance gaming laptops\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Delete Brand",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/brands/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"brands",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

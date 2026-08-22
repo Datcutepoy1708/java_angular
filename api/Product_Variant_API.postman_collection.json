@@ -1,0 +1,163 @@
+{
+	"info": {
+		"_postman_id": "8c345de6-789a-4bc1-23de-def567890123",
+		"name": "Product Variant API - Computer Store",
+		"description": "Postman collection for testing Product Variant CRUD APIs nested under Product",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Get Variants of a Product",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/variants",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"variants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Variant by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/variants/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get Variant by SKU",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/variants/sku/RAM-CORSAIR-32GB-BLK",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"sku",
+						"RAM-CORSAIR-32GB-BLK"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Create Variant for Product",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"variantName\": \"32GB (2x16GB) 6000MHz Đen RGB\",\n    \"skuVariant\": \"RAM-CORSAIR-32GB-BLK\",\n    \"price\": 3200000.00,\n    \"salePrice\": 2990000.00,\n    \"costPrice\": 2500000.00,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/variants",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"variants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Update Variant",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"variantName\": \"32GB (2x16GB) 6000MHz Đen RGB Pro\",\n    \"skuVariant\": \"RAM-CORSAIR-32GB-BLK\",\n    \"price\": 3300000.00,\n    \"salePrice\": 3050000.00,\n    \"costPrice\": 2550000.00,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/variants/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Delete Variant",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/variants/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

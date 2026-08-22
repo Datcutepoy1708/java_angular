@@ -1,0 +1,28 @@
+# Root .gitignore for java_angular monorepo
+
+# Backend (demo)
+demo/target/
+demo/.mvn/wrapper/maven-wrapper.jar
+demo/build/
+
+# Frontend (Angular)
+frontend/node_modules/
+frontend/.angular/
+frontend/dist/
+frontend/.nx/cache/
+
+# IDEs & System
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+.DS_Store
+Thumbs.db
+*.log
+.env

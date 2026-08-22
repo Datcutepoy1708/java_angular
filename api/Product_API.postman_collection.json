@@ -1,0 +1,247 @@
+{
+	"info": {
+		"_postman_id": "7b234cd5-6789-4ef0-12ab-cdef45678901",
+		"name": "Product CRUD API - Computer Store",
+		"description": "Postman collection for testing Product CRUD APIs with dynamic search, filtering, and Redis caching",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Get Products with Filters & Pagination",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products?page=0&size=10&sortBy=createdAt&sortDir=desc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						},
+						{
+							"key": "sortBy",
+							"value": "createdAt"
+						},
+						{
+							"key": "sortDir",
+							"value": "desc"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Filter Products by Category & Keyword",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products?categoryId=1&includeChildren=true&keyword=Intel&status=active&page=0&size=10",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products"
+					],
+					"query": [
+						{
+							"key": "categoryId",
+							"value": "1"
+						},
+						{
+							"key": "includeChildren",
+							"value": "true"
+						},
+						{
+							"key": "keyword",
+							"value": "Intel"
+						},
+						{
+							"key": "status",
+							"value": "active"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get Product by ID (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Product by Slug (Cached)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/slug/intel-core-i9-14900k",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"slug",
+						"intel-core-i9-14900k"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Create Product",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"categoryId\": 1,\n    \"brandId\": 1,\n    \"supplierId\": 1,\n    \"name\": \"Intel Core i9 14900K\",\n    \"slug\": \"intel-core-i9-14900k\",\n    \"sku\": \"CPU-INTEL-14900K\",\n    \"shortDesc\": \"Vi xử lý flagship Intel Gen 14th\",\n    \"description\": \"24 nhân 32 luồng, xung nhịp tối đa lên tới 6.0 GHz\",\n    \"warrantyMonths\": 36,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Update Product",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"categoryId\": 1,\n    \"brandId\": 1,\n    \"supplierId\": 1,\n    \"name\": \"Intel Core i9 14900KS Special Edition\",\n    \"slug\": \"intel-core-i9-14900ks\",\n    \"sku\": \"CPU-INTEL-14900KS\",\n    \"shortDesc\": \"Vi xử lý đặc biệt 6.2 GHz\",\n    \"description\": \"Chi tiết thông số kỹ thuật...\",\n    \"warrantyMonths\": 36,\n    \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Increment View Count",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/view",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"view"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Delete Product",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

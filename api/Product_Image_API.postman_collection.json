@@ -1,0 +1,229 @@
+{
+	"info": {
+		"_postman_id": "6d456ef7-89ab-4cd2-34ef-ef6789012345",
+		"name": "Product Image API - Computer Store",
+		"description": "Postman collection for testing Product Image and Gallery APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Get Product Images",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/images",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Variant Images",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/variants/1/images",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"1",
+						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Add Main Image to Product",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"imageUrl\": \"https://example.com/images/rtx4090-cover.jpg\",\n    \"variantId\": null,\n    \"imageType\": \"main\",\n    \"sortOrder\": 0,\n    \"altText\": \"RTX 4090 ROG Strix Front View\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/images",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Add Sub Image to Variant",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"imageUrl\": \"https://example.com/images/rtx4090-oc-backplate.jpg\",\n    \"variantId\": 1,\n    \"imageType\": \"sub\",\n    \"sortOrder\": 1,\n    \"altText\": \"RTX 4090 OC Backplate View\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/images",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Set Image as Main",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/images/1/main",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"images",
+						"1",
+						"main"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Update Image",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"imageUrl\": \"https://example.com/images/rtx4090-cover-hd.jpg\",\n    \"sortOrder\": 0,\n    \"altText\": \"RTX 4090 ROG Strix Ultra HD Cover\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/images/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"images",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Reorder Images",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    2,\n    1,\n    3\n]"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/products/1/images/reorder",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"1",
+						"images",
+						"reorder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Delete Image",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/images/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"images",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
