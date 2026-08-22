@@ -47,6 +47,9 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x demo/mvnw
 
+      - name: Initialize Database Schema
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot computer_store_db < database/computer.sql
+
       - name: Run CI Build & Tests (Maven Verify)
         working-directory: demo
         env:
