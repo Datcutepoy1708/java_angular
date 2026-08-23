@@ -104,7 +104,9 @@ CREATE TABLE categories (
     description   VARCHAR(500),
     sort_order    INT DEFAULT 0,
     status        ENUM('active','inactive') DEFAULT 'active',
-    FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL
+    deleted_at    DATETIME NULL,
+    FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL,
+    INDEX idx_categories_deleted_at (deleted_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE brands (
@@ -113,7 +115,10 @@ CREATE TABLE brands (
     slug         VARCHAR(180) NOT NULL UNIQUE,
     logo_url     VARCHAR(500),
     country      VARCHAR(100),
-    description  VARCHAR(500)
+    description  VARCHAR(500),
+    status       ENUM('active','inactive') DEFAULT 'active',
+    deleted_at   DATETIME NULL,
+    INDEX idx_brands_deleted_at (deleted_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE suppliers (
@@ -139,6 +144,7 @@ CREATE TABLE products (
     description     LONGTEXT,
     warranty_months INT DEFAULT 12,
     status          ENUM('active','inactive','discontinued') DEFAULT 'active',
+    deleted_at      DATETIME NULL,
     view_count      INT DEFAULT 0,
     created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -146,7 +152,8 @@ CREATE TABLE products (
     FOREIGN KEY (brand_id) REFERENCES brands(brand_id),
     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id),
     INDEX idx_products_category (category_id),
-    INDEX idx_products_slug (slug)
+    INDEX idx_products_slug (slug),
+    INDEX idx_products_deleted_at (deleted_at)
 ) ENGINE=InnoDB;
 
 -- Biến thể sản phẩm (giá, dung lượng, màu... khác nhau)
@@ -159,8 +166,10 @@ CREATE TABLE product_variants (
     sale_price    DECIMAL(15,2),
     cost_price    DECIMAL(15,2),           -- giá vốn, phục vụ thống kê lợi nhuận
     status        ENUM('active','inactive') DEFAULT 'active',
+    deleted_at    DATETIME NULL,
     created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    INDEX idx_variants_deleted_at (deleted_at)
 ) ENGINE=InnoDB;
 
 -- Ảnh sản phẩm: ảnh chính & ảnh phụ
@@ -172,9 +181,11 @@ CREATE TABLE product_images (
     image_type   ENUM('main','sub') DEFAULT 'sub',
     sort_order   INT DEFAULT 0,
     alt_text     VARCHAR(255),
+    deleted_at   DATETIME NULL,
     created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
-    FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id) ON DELETE CASCADE
+    FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id) ON DELETE CASCADE,
+    INDEX idx_images_deleted_at (deleted_at)
 ) ENGINE=InnoDB;
 
 -- Thuộc tính kỹ thuật theo từng danh mục (EAV - linh hoạt cho CPU/RAM/VGA...)
