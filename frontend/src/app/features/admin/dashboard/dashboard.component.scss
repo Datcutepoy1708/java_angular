@@ -1,0 +1,217 @@
+$brand: #2563eb;
+$brand-light: #EEF3FF;
+$on-surface: #111827;
+$on-surface-variant: #6b7280;
+$surface: #ffffff;
+$surface-alt: #f9fafb;
+$border: #e5e7eb;
+$radius: 10px;
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// ── Stat Cards ────────────────────────────────────────────────────
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &--alert {
+    border-left: 3px solid #f59e0b;
+  }
+
+  .stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: $on-surface-variant;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $on-surface;
+    line-height: 1.1;
+  }
+
+  .stat-delta {
+    font-size: 0.78rem;
+    font-weight: 500;
+
+    &.positive { color: #16a34a; }
+    &.negative { color: #dc2626; }
+  }
+}
+
+// ── Middle row ────────────────────────────────────────────────────
+.mid-row {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+}
+
+// ── Card base ─────────────────────────────────────────────────────
+.card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid $border;
+
+  .card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: $on-surface;
+  }
+}
+
+// ── Chart ─────────────────────────────────────────────────────────
+.chart-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-area {
+  padding: 16px 20px 0;
+  flex: 1;
+
+  .sparkline {
+    width: 100%;
+    height: 160px;
+    display: block;
+  }
+}
+
+// ── Best Sellers ──────────────────────────────────────────────────
+.best-sellers-card { display: flex; flex-direction: column; }
+
+.best-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+  flex: 1;
+}
+
+.best-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid $border;
+  &:last-child { border-bottom: none; }
+}
+
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $brand-light;
+  color: $brand;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.best-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .best-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $on-surface;
+  }
+  .best-sold {
+    font-size: 0.75rem;
+    color: $on-surface-variant;
+  }
+}
+
+// ── Recent Orders table ───────────────────────────────────────────
+.orders-card {}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th, td {
+    padding: 12px 20px;
+    text-align: left;
+    border-bottom: 1px solid $border;
+  }
+
+  th {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $on-surface-variant;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: $surface-alt;
+  }
+
+  tbody tr {
+    transition: background 0.12s;
+    &:hover { background: $surface-alt; }
+    &:last-child td { border-bottom: none; }
+  }
+
+  .th-right, .td-right { text-align: right; }
+  .order-id { font-weight: 600; color: $on-surface; font-family: monospace; }
+}
+
+// Status badges
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--processing { background: #dbeafe; color: #1d4ed8; }
+  &--completed  { background: #dcfce7; color: #16a34a; }
+  &--pending    { background: #fef9c3; color: #a16207; }
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: $brand;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  &:hover { text-decoration: underline; }
+}

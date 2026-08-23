@@ -1,9 +1,86 @@
-<div class="admin-shell">
-  <!-- Admin Sidebar will go here -->
-  <div class="admin-content-area">
-    <!-- Admin Topbar will go here -->
+<div class="admin-layout">
+  <!-- ═══════════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════════ -->
+  <aside class="admin-sidebar">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <span class="logo-text">Complexus</span>
+      <span class="logo-sub">Admin Console</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav" aria-label="Admin navigation">
+      <ul>
+        @for (item of navItems; track item.path) {
+          <li>
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              class="nav-item"
+              [attr.aria-label]="item.label"
+            >
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path [attr.d]="item.icon"/>
+              </svg>
+              <span class="nav-label">{{ item.label }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!-- Logout at bottom -->
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()" type="button">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span class="nav-label">Đăng xuất</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════
+       CONTENT AREA (Topbar + Router)
+  ═══════════════════════════════════════════ -->
+  <div class="admin-content">
+    <!-- Topbar -->
+    <header class="admin-topbar">
+      <!-- Left: page title slot (children fill via service or title) -->
+      <div class="topbar-left">
+        <h1 class="page-title">Admin Panel</h1>
+      </div>
+
+      <!-- Right: notification bell + user avatar -->
+      <div class="topbar-right">
+        <!-- Notification bell — functional icon per AGENTS.md §11 -->
+        <button class="topbar-btn" type="button" aria-label="Thông báo" id="notification-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true" width="20" height="20">
+            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          @if (notificationCount() > 0) {
+            <span class="badge">{{ notificationCount() }}</span>
+          }
+        </button>
+
+        <!-- User avatar -->
+        <div class="user-avatar" [title]="currentUser()?.fullName ?? 'Admin'">
+          <span>{{ getUserInitials() }}</span>
+        </div>
+        <span class="user-name">{{ currentUser()?.fullName ?? 'Admin' }}</span>
+      </div>
+    </header>
+
+    <!-- Page content -->
     <main class="admin-main">
-      <router-outlet></router-outlet>
+      <router-outlet/>
     </main>
   </div>
 </div>

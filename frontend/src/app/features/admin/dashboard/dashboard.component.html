@@ -1,0 +1,102 @@
+<div class="dashboard">
+
+  <!-- ── Stat Cards ── -->
+  <div class="stat-grid">
+    @for (stat of stats(); track stat.label; let i = $index) {
+      <div class="stat-card" [class.stat-card--alert]="i === 3">
+        <div class="stat-header">
+          <span class="stat-label">{{ stat.label }}</span>
+        </div>
+        <div class="stat-value">{{ stat.value }}</div>
+        <div class="stat-delta" [class.positive]="stat.positive" [class.negative]="!stat.positive">
+          {{ stat.delta }}
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Middle row: Chart + Best Sellers ── -->
+  <div class="mid-row">
+
+    <!-- Revenue chart card -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <span class="card-title">Doanh thu — 30 ngày qua</span>
+      </div>
+      <div class="chart-area">
+        <svg viewBox="0 0 470 180" preserveAspectRatio="none" class="sparkline" aria-hidden="true">
+          <defs>
+            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2563eb" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path
+            [attr.d]="chartPath + ' L 440 180 L 30 180 Z'"
+            fill="url(#chartGrad)"
+          />
+          <path
+            [attr.d]="chartPath"
+            fill="none"
+            stroke="#2563eb"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Best sellers card -->
+    <div class="card best-sellers-card">
+      <div class="card-header">
+        <span class="card-title">Bán chạy nhất</span>
+      </div>
+      <ul class="best-list">
+        @for (item of bestSellers(); track item.rank) {
+          <li class="best-item">
+            <span class="rank-badge">{{ item.rank }}</span>
+            <div class="best-info">
+              <span class="best-name">{{ item.name }}</span>
+              <span class="best-sold">{{ item.sold }} đã bán</span>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Recent Orders ── -->
+  <div class="card orders-card">
+    <div class="card-header">
+      <span class="card-title">Đơn hàng gần đây</span>
+    </div>
+    <table class="orders-table">
+      <thead>
+        <tr>
+          <th>Mã đơn</th>
+          <th>Khách hàng</th>
+          <th>Trạng thái</th>
+          <th class="th-right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of recentOrders(); track order.orderId) {
+          <tr>
+            <td class="order-id">{{ order.orderId }}</td>
+            <td>{{ order.customer }}</td>
+            <td>
+              <span class="status-badge" [class]="'status-badge--' + getStatusClass(order.status)">
+                {{ getStatusLabel(order.status) }}
+              </span>
+            </td>
+            <td class="td-right">
+              <button class="link-btn">Xem chi tiết</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>

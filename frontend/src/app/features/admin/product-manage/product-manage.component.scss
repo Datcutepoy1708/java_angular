@@ -1,0 +1,394 @@
+$brand: #2563eb;
+$brand-light: #EEF3FF;
+$on-surface: #111827;
+$on-surface-variant: #6b7280;
+$surface: #ffffff;
+$surface-alt: #f9fafb;
+$border: #e5e7eb;
+$danger: #dc2626;
+$danger-light: #FEF2F2;
+$radius: 10px;
+$radius-sm: 6px;
+
+.page-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0;
+  }
+}
+
+.card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  overflow: hidden;
+}
+
+// ── Filter Card ───────────────────────────────────────────────────
+.filter-card {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+
+  .filter-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: $on-surface-variant;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    font-size: 0.875rem;
+    color: $on-surface;
+    background: $surface;
+    outline: none;
+    box-sizing: border-box;
+
+    &:focus {
+      border-color: $brand;
+      box-shadow: 0 0 0 2px rgba($brand, 0.1);
+    }
+  }
+}
+
+.filter-select-wrap {
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    font-size: 0.875rem;
+    color: $on-surface;
+    background: $surface;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+      border-color: $brand;
+    }
+  }
+}
+
+// ── Table Card ────────────────────────────────────────────────────
+.table-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid $border;
+  }
+
+  th {
+    background: $surface;
+    font-weight: 600;
+    color: $on-surface-variant;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background 0.12s ease;
+    &:hover { background: $surface-alt; }
+    &:last-child td { border-bottom: none; }
+  }
+
+  .th-product { width: 35%; }
+  .th-actions, .td-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 100px;
+  }
+}
+
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid $border;
+  background: $surface-alt;
+}
+
+.product-thumb-placeholder {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: $surface-alt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $on-surface-variant;
+}
+
+.product-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .product-name {
+    font-weight: 600;
+    color: $on-surface;
+    font-size: 0.875rem;
+  }
+
+  .product-sku {
+    font-size: 0.75rem;
+    color: $on-surface-variant;
+    font-family: 'Menlo', monospace;
+  }
+}
+
+.product-price {
+  font-weight: 600;
+  color: $on-surface;
+}
+
+// Status Pills matching mockup
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--active {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &--inactive {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  &--discontinued {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+// ── Pagination matching mockup ───────────────────────────────────
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid $border;
+  font-size: 0.85rem;
+  color: $on-surface-variant;
+}
+
+.rows-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .size-select {
+    padding: 4px 8px;
+    border: 1px solid $border;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: $on-surface;
+    background: $surface;
+    outline: none;
+    cursor: pointer;
+  }
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .pagination-info {
+    font-size: 0.85rem;
+  }
+
+  .arrow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $on-surface;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      background: $surface-alt;
+      border-color: #d1d5db;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ── Common buttons ───────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: $radius-sm;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: all 0.15s ease;
+
+  &-primary {
+    background: $brand;
+    color: white;
+    &:hover { background: #1d4ed8; }
+  }
+
+  &-ghost {
+    background: transparent;
+    border-color: $border;
+    color: $on-surface;
+    &:hover { background: $surface-alt; }
+  }
+
+  &-danger {
+    background: $danger;
+    color: white;
+    &:hover { background: #b91c1c; }
+  }
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $surface;
+  color: $on-surface-variant;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 4px;
+
+  &:hover { background: $surface-alt; color: $on-surface; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &--danger:hover {
+    background: $danger-light;
+    color: $danger;
+    border-color: #fca5a5;
+  }
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px 24px;
+  color: $on-surface-variant;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid $border;
+  border-top-color: $brand;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Delete Dialog ────────────────────────────────────────────────
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+
+  .dialog-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0 0 12px;
+  }
+
+  .dialog-body {
+    font-size: 0.875rem;
+    color: $on-surface-variant;
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+
+  .dialog-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+}

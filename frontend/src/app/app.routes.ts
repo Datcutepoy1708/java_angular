@@ -46,7 +46,37 @@ export const routes: Routes = [
         canActivate: [authGuard, roleGuard],
         data: { roles: ['ROLE_ADMIN', 'ROLE_STAFF'] },
         children: [
-          { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          {
+            path: 'dashboard',
+            loadComponent: () =>
+              import('./features/admin/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+          },
+          {
+            path: 'brands',
+            loadComponent: () =>
+              import('./features/admin/brand-manage/brand-manage.component').then((m) => m.BrandManageComponent)
+          },
+          {
+            path: 'categories',
+            loadComponent: () =>
+              import('./features/admin/category-manage/category-manage.component').then((m) => m.CategoryManageComponent)
+          },
+          {
+            path: 'products',
+            loadComponent: () =>
+              import('./features/admin/product-manage/product-manage.component').then((m) => m.ProductManageComponent)
+          },
+          {
+            path: 'products/new',
+            loadComponent: () =>
+              import('./features/admin/product-manage/product-form/product-form.component').then((m) => m.ProductFormComponent)
+          },
+          {
+            path: 'products/:id/edit',
+            loadComponent: () =>
+              import('./features/admin/product-manage/product-form/product-form.component').then((m) => m.ProductFormComponent)
+          }
         ]
       }
     ]

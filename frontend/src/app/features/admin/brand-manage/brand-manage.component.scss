@@ -1,0 +1,655 @@
+$brand: #2563eb;
+$brand-light: #EEF3FF;
+$on-surface: #111827;
+$on-surface-variant: #6b7280;
+$surface: #ffffff;
+$surface-alt: #f9fafb;
+$border: #e5e7eb;
+$danger: #dc2626;
+$danger-light: #FEF2F2;
+$radius: 12px;
+$radius-sm: 8px;
+
+.page-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// ── Header ────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .page-desc {
+    font-size: 0.875rem;
+    color: $on-surface-variant;
+    margin: 0;
+  }
+}
+
+// ── Card & Table Full Width ──────────────────────────────────────
+.table-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th, td {
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 1px solid $border;
+  }
+
+  th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background 0.12s ease;
+    &:hover { background: #f8fafc; }
+    &:last-child td { border-bottom: none; }
+  }
+
+  .th-logo, .td-logo { width: 70px; }
+  .td-name { font-weight: 600; color: $on-surface; }
+  .td-slug { max-width: 180px; }
+  .td-desc {
+    max-width: 320px;
+    color: $on-surface-variant;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .th-actions, .td-actions {
+    text-align: right;
+    white-space: nowrap;
+    width: 100px;
+  }
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: #ffffff;
+  padding: 2px;
+}
+
+.logo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: $brand-light;
+  color: $brand;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.slug-tag {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 0.78rem;
+  color: #334155;
+  white-space: nowrap;
+}
+
+// ── Action Buttons ────────────────────────────────────────────────
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $surface;
+  color: $on-surface-variant;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+
+  &:hover { background: #f1f5f9; color: $on-surface; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &--danger:hover {
+    background: $danger-light;
+    color: $danger;
+    border-color: #fca5a5;
+  }
+}
+
+// ── Pagination ────────────────────────────────────────────────────
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid $border;
+  background: #fafafa;
+  font-size: 0.85rem;
+  color: $on-surface-variant;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arrow-btn, .page-num-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $on-surface;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #f1f5f9;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.active {
+    background: $brand;
+    color: white;
+    border-color: $brand;
+    font-weight: 600;
+  }
+}
+
+// ── Common Button Styles ──────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: $radius-sm;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  &-primary {
+    background: $brand;
+    color: white;
+    &:hover:not(:disabled) { background: #1d4ed8; }
+  }
+
+  &-ghost {
+    background: transparent;
+    border-color: $border;
+    color: $on-surface;
+    &:hover:not(:disabled) { background: #f1f5f9; }
+  }
+
+  &-danger {
+    background: $danger;
+    color: white;
+    &:hover:not(:disabled) { background: #b91c1c; }
+  }
+}
+
+// ── States ────────────────────────────────────────────────────────
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px 24px;
+  color: $on-surface-variant;
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid $border;
+  border-top-color: $brand;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinner-sm {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ffffff;
+  border-top-color: $brand;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ══════════════════════════════════════════════════════════════════
+// CENTER MODAL DIALOG
+// ══════════════════════════════════════════════════════════════════
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fade-in 0.2s ease;
+}
+
+.modal-dialog {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 580px;
+  max-width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.2s ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid $border;
+
+  .modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0;
+  }
+}
+
+.btn-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  color: $on-surface-variant;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f5f9;
+    color: $on-surface;
+  }
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid $border;
+  margin-top: 8px;
+}
+
+// ── Form Elements ─────────────────────────────────────────────────
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $on-surface;
+
+  .required { color: $danger; }
+}
+
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.link-action {
+  background: none;
+  border: none;
+  color: $brand;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  &:hover { text-decoration: underline; }
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  font-size: 0.875rem;
+  color: $on-surface;
+  background: $surface;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: $brand;
+    box-shadow: 0 0 0 3px rgba($brand, 0.12);
+  }
+
+  &.is-invalid {
+    border-color: $danger;
+  }
+
+  &.is-readonly {
+    background: #f8fafc;
+    color: #64748b;
+    cursor: default;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-error {
+  font-size: 0.78rem;
+  color: $danger;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: $on-surface-variant;
+}
+
+// ── Logo Upload Dropzone & Switch ─────────────────────────────────
+.logo-mode-switch {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 2px;
+  border-radius: 6px;
+
+  .mode-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: $on-surface-variant;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.12s;
+
+    &.active {
+      background: #ffffff;
+      color: $brand;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+.upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: $radius-sm;
+  padding: 24px;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: $brand;
+    background: #f0f7ff;
+  }
+
+  .dropzone-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .drop-icon {
+    width: 36px;
+    height: 36px;
+    color: #94a3b8;
+  }
+
+  .drop-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $on-surface;
+  }
+
+  .drop-sub {
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+}
+
+.logo-preview-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+
+  .preview-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    background: #ffffff;
+    border: 1px solid $border;
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .preview-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .preview-status {
+    font-size: 0.8rem;
+    color: #16a34a;
+    font-weight: 600;
+  }
+
+  .preview-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-change-img {
+    font-size: 0.8rem;
+    color: $brand;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .btn-remove-img {
+    font-size: 0.8rem;
+    color: $danger;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    &:hover { text-decoration: underline; }
+  }
+
+  .upload-spinner-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: $brand;
+    font-weight: 600;
+  }
+}
+
+.url-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .url-preview-thumb {
+    width: 42px;
+    height: 42px;
+    border-radius: 6px;
+    border: 1px solid $border;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+// ── Confirm Delete Dialog ─────────────────────────────────────────
+.confirm-dialog {
+  background: $surface;
+  border-radius: $radius;
+  padding: 28px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: modal-pop 0.2s ease;
+
+  .confirm-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: $danger-light;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .danger-icon {
+    width: 24px;
+    height: 24px;
+    color: $danger;
+  }
+
+  .confirm-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0 0 8px;
+  }
+
+  .confirm-body {
+    font-size: 0.875rem;
+    color: $on-surface-variant;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+
+    .btn { flex: 1; }
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}

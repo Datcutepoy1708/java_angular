@@ -56,7 +56,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/variants/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/images/**").permitAll()
+                        // Static uploads & Upload API
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/v1/upload/**").permitAll()
                         // Auth APIs
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // OpenAPI / Swagger

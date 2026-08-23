@@ -1,0 +1,207 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Products</h2>
+    </div>
+    <a routerLink="/admin/products/new" class="btn btn-primary" id="btn-add-product">
+      + Add New Product
+    </a>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="card filter-card">
+    <form [formGroup]="filterForm" (ngSubmit)="onFilterChange()" class="filter-form">
+      <!-- Search Input -->
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          formControlName="keyword"
+          (keyup.enter)="onFilterChange()"
+          placeholder="Search by product name or SKU..."
+          class="search-input"
+          id="product-search-input"
+        />
+      </div>
+
+      <!-- Category Filter -->
+      <div class="filter-select-wrap">
+        <select formControlName="categoryId" (change)="onFilterChange()" class="filter-select" id="filter-category">
+          <option [ngValue]="null">All Categories</option>
+          @for (c of categories(); track c.categoryId) {
+            <option [ngValue]="c.categoryId">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Brand Filter -->
+      <div class="filter-select-wrap">
+        <select formControlName="brandId" (change)="onFilterChange()" class="filter-select" id="filter-brand">
+          <option [ngValue]="null">All Brands</option>
+          @for (b of brands(); track b.brandId) {
+            <option [ngValue]="b.brandId">{{ b.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="filter-select-wrap">
+        <select formControlName="status" (change)="onFilterChange()" class="filter-select" id="filter-status">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="discontinued">Discontinued</option>
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Product Table Card -->
+  <div class="card table-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Loading products...</span>
+      </div>
+    } @else if (products().length === 0) {
+      <div class="empty-state">
+        <p>No products found matching the criteria.</p>
+      </div>
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="th-product">Product</th>
+            <th>Category</th>
+            <th>Brand</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th class="th-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (prod of products(); track prod.productId) {
+            <tr>
+              <td class="td-product">
+                <div class="product-cell">
+                  @if (prod.mainImageUrl) {
+                    <img [src]="prod.mainImageUrl" [alt]="prod.name" class="product-thumb" />
+                  } @else {
+                    <div class="product-thumb-placeholder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                  }
+                  <div class="product-meta">
+                    <span class="product-name">{{ prod.name }}</span>
+                    @if (prod.sku) {
+                      <span class="product-sku">SKU: {{ prod.sku }}</span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>{{ prod.categoryName ?? '—' }}</td>
+              <td>{{ prod.brandName ?? '—' }}</td>
+              <td class="product-price">{{ getPriceDisplay(prod) }}</td>
+              <td>
+                <span class="status-pill" [class]="'status-pill--' + getStatusClass(prod.status)">
+                  {{ getStatusLabel(prod.status) }}
+                </span>
+              </td>
+              <td class="td-actions">
+                <button
+                  class="btn-icon"
+                  (click)="editProduct(prod.productId)"
+                  [attr.id]="'btn-edit-prod-' + prod.productId"
+                  title="Edit product"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                       stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button
+                  class="btn-icon btn-icon--danger"
+                  (click)="askDelete(prod)"
+                  [disabled]="deleting() === prod.productId"
+                  [attr.id]="'btn-delete-prod-' + prod.productId"
+                  title="Delete product"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                       stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- Bottom Pagination matching mockup -->
+      <div class="table-pagination">
+        <div class="rows-per-page">
+          <span>Rows per page:</span>
+          <select [value]="pageSize()" (change)="onPageSizeChange($event)" class="size-select">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+        </div>
+
+        <div class="pagination-controls">
+          <span class="pagination-info">{{ paginationText() }}</span>
+          <button
+            class="arrow-btn"
+            (click)="goToPage(currentPage() - 1)"
+            [disabled]="currentPage() === 0"
+            title="Previous page"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button
+            class="arrow-btn"
+            (click)="goToPage(currentPage() + 1)"
+            [disabled]="currentPage() >= totalPages() - 1"
+            title="Next page"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Confirm Delete Dialog -->
+@if (confirmDeleteId() !== null) {
+  <div class="dialog-overlay">
+    <div class="dialog" role="alertdialog">
+      <h4 class="dialog-title">Delete Product</h4>
+      <p class="dialog-body">
+        Are you sure you want to delete <strong>{{ confirmDeleteName() }}</strong>?
+        This action cannot be undone.
+      </p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmDelete()"
+                [disabled]="deleting() !== null" id="btn-confirm-delete-prod">
+          @if (deleting() !== null) { Deleting... } @else { Delete }
+        </button>
+      </div>
+    </div>
+  </div>
+}
