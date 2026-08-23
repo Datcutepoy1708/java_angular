@@ -9,15 +9,33 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CategoryService } from '../../../core/services/category.service';
 import { UploadService } from '../../../core/services/upload.service';
-import { CategoryResponse } from '../../../core/models/category.model';
+import { CategoryRequest, CategoryResponse } from '../../../core/models/category.model';
 import { BulkActionType } from '../../../core/models/bulk.model';
+import {
+  ConfirmDialogComponent,
+  PaginationComponent,
+  ImageUploadComponent,
+} from '../../../shared';
 
 type FormMode = 'create' | 'edit';
 type ViewMode = 'active' | 'trash';
 
+export interface FlatCategoryNode {
+  category: CategoryResponse;
+  level: number;
+  hasChildren: boolean;
+  childCount: number;
+  isExpanded: boolean;
+}
+
 @Component({
   selector: 'app-category-manage',
-  imports: [ReactiveFormsModule],
+  imports: [
+    ReactiveFormsModule,
+    ConfirmDialogComponent,
+    PaginationComponent,
+    ImageUploadComponent,
+  ],
   templateUrl: './category-manage.component.html',
   styleUrl: './category-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,16 +51,19 @@ export class CategoryManageComponent implements OnInit {
 
   // ── State ─────────────────────────────────────────────────────
   readonly categories = signal<CategoryResponse[]>([]);
-  readonly allCategories = signal<CategoryResponse[]>([]); // for parent dropdown
+  readonly allCategories = signal<CategoryResponse[]>([]); // for parent dropdown & tree
   readonly totalElements = signal(0);
   readonly totalPages = signal(0);
   readonly currentPage = signal(0);
-  readonly pageSize = signal(10);
+  readonly pageSize = signal(50); // Larger page size for tree view
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly uploadingIcon = signal(false);
   readonly deleting = signal<number | null>(null);
   readonly restoring = signal<number | null>(null);
+
+  // ── Collapsible Tree State ────────────────────────────────────
+  readonly expandedIds = signal<number[]>([]);
 
   // ── Multi-select / Bulk ───────────────────────────────────────
   readonly selectedIds = signal<number[]>([]);
@@ -62,6 +83,67 @@ export class CategoryManageComponent implements OnInit {
   readonly confirmDeleteId = signal<number | null>(null);
   readonly confirmDeleteName = signal('');
   readonly confirmDeleteChildCount = signal(0);
+
+  // ── Collapsed Tree Computed Nodes ─────────────────────────────
+  readonly displayedNodes = computed<FlatCategoryNode[]>(() => {
+    const items = this.categories();
+    if (items.length === 0) return [];
+
+    // Map children by parentId
+    const childrenMap = new Map<number, CategoryResponse[]>();
+    const allIds = new Set(items.map((c) => c.categoryId));
+
+    for (const item of items) {
+      if (item.parentId != null && allIds.has(item.parentId)) {
+        const list = childrenMap.get(item.parentId) || [];
+        list.push(item);
+        childrenMap.set(item.parentId, list);
+      }
+    }
+
+    // Sort children by sortOrder then name
+    for (const list of childrenMap.values()) {
+      list.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+    }
+
+    // Root items: parentId is null OR parent not in the current items list
+    const roots = items.filter(
+      (c) => c.parentId == null || !allIds.has(c.parentId)
+    );
+    roots.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+
+    const expanded = new Set(this.expandedIds());
+    const hasSearch = this.filterKeyword().trim().length > 0;
+
+    const result: FlatCategoryNode[] = [];
+
+    const traverse = (node: CategoryResponse, level: number) => {
+      const children = childrenMap.get(node.categoryId) || [];
+      const hasChildren = children.length > 0;
+      // Auto-expand all matching nodes when searching
+      const isExpanded = hasSearch ? true : expanded.has(node.categoryId);
+
+      result.push({
+        category: node,
+        level,
+        hasChildren,
+        childCount: children.length,
+        isExpanded,
+      });
+
+      if (hasChildren && isExpanded) {
+        for (const child of children) {
+          traverse(child, level + 1);
+        }
+      }
+    };
+
+    for (const root of roots) {
+      traverse(root, 0);
+    }
+
+    return result;
+  });
 
   // ── Computed ──────────────────────────────────────────────────
   readonly isAllSelected = computed(() => {
@@ -93,7 +175,7 @@ export class CategoryManageComponent implements OnInit {
     name: ['', [Validators.required, Validators.maxLength(150)]],
     parentId: [null],
     iconUrl: ['', Validators.maxLength(500)],
-    description: ['', Validators.maxLength(500)],
+    description: ['', Validators.maxLength(2000)],
     sortOrder: [0],
     status: ['active', Validators.required],
     slug: [{ value: '', disabled: true }, Validators.maxLength(180)],
@@ -104,12 +186,34 @@ export class CategoryManageComponent implements OnInit {
     this.loadAll();
   }
 
+  // ── Tree Expand / Collapse Handlers ───────────────────────────
+  toggleExpand(id: number, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.expandedIds.update((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+    );
+  }
+
+  expandAll(): void {
+    const parentIdsWithChildren = this.categories()
+      .filter((c) => this.categories().some((child) => child.parentId === c.categoryId))
+      .map((c) => c.categoryId);
+    this.expandedIds.set(parentIdsWithChildren);
+  }
+
+  collapseAll(): void {
+    this.expandedIds.set([]);
+  }
+
   // ── Tab & Filter Handlers ─────────────────────────────────────
   switchTab(mode: ViewMode): void {
     if (this.viewMode() === mode) return;
     this.viewMode.set(mode);
     this.currentPage.set(0);
     this.selectedIds.set([]);
+    this.expandedIds.set([]);
     this.loadAll();
   }
 
@@ -160,6 +264,7 @@ export class CategoryManageComponent implements OnInit {
     // Load active flat list for parent dropdown
     this.categoryService.getAll().subscribe({
       next: (res) => this.allCategories.set(res.data),
+      error: (err) => console.warn('Could not load allCategories for dropdown:', err),
     });
   }
 
@@ -184,35 +289,44 @@ export class CategoryManageComponent implements OnInit {
     );
   }
 
-  executeBulkAction(action: BulkActionType): void {
+  // ── Bulk Confirm Modal State ─────────────────────────────────
+  readonly showBulkConfirmModal = signal(false);
+  readonly pendingBulkAction = signal<BulkActionType>('delete');
+
+  openBulkConfirmModal(action: BulkActionType): void {
+    if (this.selectedIds().length === 0) return;
+    this.pendingBulkAction.set(action);
+    this.showBulkConfirmModal.set(true);
+  }
+
+  closeBulkConfirmModal(): void {
+    this.showBulkConfirmModal.set(false);
+  }
+
+  confirmBulkAction(): void {
     const ids = this.selectedIds();
+    const action = this.pendingBulkAction();
     if (ids.length === 0) return;
-
-    const actionNames: Record<string, string> = {
-      delete: 'chuyển vào thùng rác (bao gồm toàn bộ danh mục con)',
-      restore: 'khôi phục (bao gồm toàn bộ danh mục con)',
-    };
-
-    if (
-      !confirm(
-        `Bạn có chắc muốn ${actionNames[action] || action} ${ids.length} danh mục đã chọn?`
-      )
-    ) {
-      return;
-    }
 
     this.bulkLoading.set(true);
     this.categoryService.bulkAction({ ids, action }).subscribe({
       next: () => {
         this.bulkLoading.set(false);
+        this.closeBulkConfirmModal();
         this.selectedIds.set([]);
         this.loadAll();
       },
-      error: () => {
+      error: (err) => {
         this.bulkLoading.set(false);
-        alert('Thao tác hàng loạt thất bại. Vui lòng thử lại.');
+        const msg = err.error?.message || err.message || 'Thao tác hàng loạt thất bại. Vui lòng thử lại.';
+        alert(msg);
       },
     });
+  }
+
+  // Alias for backward compatibility
+  executeBulkAction(action: BulkActionType): void {
+    this.openBulkConfirmModal(action);
   }
 
   // ── Modal / Form ──────────────────────────────────────────────
@@ -222,7 +336,17 @@ export class CategoryManageComponent implements OnInit {
     this.slugEditable.set(false);
     this.iconPreview.set(null);
     this.iconInputMode.set('upload');
-    this.form.reset({ status: 'active', sortOrder: 0 });
+    this.uploadingIcon.set(false);
+    this.saving.set(false);
+    this.form.reset({
+      name: '',
+      parentId: null,
+      iconUrl: '',
+      description: '',
+      sortOrder: 0,
+      status: 'active',
+      slug: '',
+    });
     this.form.get('slug')?.disable();
     this.showModal.set(true);
   }
@@ -238,17 +362,18 @@ export class CategoryManageComponent implements OnInit {
     this.slugEditable.set(false);
     this.iconPreview.set(cat.iconUrl ?? null);
     this.iconInputMode.set(cat.iconUrl ? 'url' : 'upload');
-    this.form.reset();
-    this.form.get('slug')?.disable();
-    this.form.patchValue({
-      name: cat.name,
+    this.uploadingIcon.set(false);
+    this.saving.set(false);
+    this.form.reset({
+      name: cat.name || '',
       parentId: cat.parentId ?? null,
       iconUrl: cat.iconUrl ?? '',
       description: cat.description ?? '',
       sortOrder: cat.sortOrder ?? 0,
-      status: cat.status,
-      slug: cat.slug,
+      status: cat.status || 'active',
+      slug: cat.slug || '',
     });
+    this.form.get('slug')?.disable();
     this.showModal.set(true);
   }
 
@@ -257,11 +382,25 @@ export class CategoryManageComponent implements OnInit {
     this.openEditModal(cat);
   }
 
+  private isMouseDownOnBackdrop = false;
+
+  onBackdropMouseDown(event: MouseEvent): void {
+    this.isMouseDownOnBackdrop = event.target === event.currentTarget;
+  }
+
+  onBackdropMouseUp(event: MouseEvent): void {
+    if (this.isMouseDownOnBackdrop && event.target === event.currentTarget) {
+      this.closeModal();
+    }
+    this.isMouseDownOnBackdrop = false;
+  }
+
   closeModal(): void {
     this.showModal.set(false);
     this.form.reset({ status: 'active', sortOrder: 0 });
     this.iconPreview.set(null);
     this.slugEditable.set(false);
+    this.isMouseDownOnBackdrop = false;
   }
 
   // Alias for backward compatibility with specs
@@ -303,7 +442,7 @@ export class CategoryManageComponent implements OnInit {
     event.preventDefault();
   }
 
-  private handleFileUpload(file: File): void {
+  handleFileUpload(file: File): void {
     if (!file.type.startsWith('image/')) {
       alert('Vui lòng chọn một file ảnh hoặc icon hợp lệ (PNG, JPG, WEBP, SVG, GIF)');
       return;
@@ -341,28 +480,39 @@ export class CategoryManageComponent implements OnInit {
     this.iconPreview.set(url || null);
   }
 
+  onUrlIconUpdate(url: string): void {
+    this.form.patchValue({ iconUrl: url });
+    this.iconPreview.set(url || null);
+  }
+
   removeIcon(): void {
-    this.form.patchValue({ iconUrl: '' });
     this.iconPreview.set(null);
+    this.form.patchValue({ iconUrl: '' });
   }
 
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const invalidControls: string[] = [];
+      for (const name of Object.keys(this.form.controls)) {
+        if (this.form.controls[name].invalid) {
+          invalidControls.push(name);
+        }
+      }
+      alert('Vui lòng điền đầy đủ và chính xác các thông tin: ' + invalidControls.join(', '));
       return;
     }
+
     this.saving.set(true);
     const raw = this.form.getRawValue();
-    const request = {
+    const request: CategoryRequest = {
       name: raw.name.trim(),
-      parentId: raw.parentId ? Number(raw.parentId) : null,
+      parentId: raw.parentId != null ? Number(raw.parentId) : null,
       iconUrl: raw.iconUrl?.trim() || null,
       description: raw.description?.trim() || null,
       sortOrder: raw.sortOrder != null ? Number(raw.sortOrder) : 0,
-      status: raw.status || 'active',
-      ...(this.formMode() === 'edit' && this.slugEditable() && raw.slug
-        ? { slug: raw.slug.trim() }
-        : {}),
+      status: (raw.status as 'active' | 'inactive') || 'active',
+      slug: raw.slug?.trim() || null,
     };
 
     const op$ =
@@ -377,7 +527,17 @@ export class CategoryManageComponent implements OnInit {
         this.currentPage.set(0);
         this.loadAll();
       },
-      error: () => this.saving.set(false),
+      error: (err) => {
+        this.saving.set(false);
+        let msg = err.error?.message || err.message || 'Lưu danh mục thất bại. Vui lòng thử lại.';
+        if (err.error?.data && typeof err.error.data === 'object') {
+          const details = Object.entries(err.error.data)
+            .map(([field, error]) => `• ${field}: ${error}`)
+            .join('\n');
+          msg += `\n\nChi tiết:\n${details}`;
+        }
+        alert(msg);
+      },
     });
   }
 
@@ -443,8 +603,11 @@ export class CategoryManageComponent implements OnInit {
   getError(field: string): string {
     const ctrl = this.form.get(field);
     if (ctrl?.errors?.['required']) return 'Trường này là bắt buộc';
-    if (ctrl?.errors?.['maxlength'])
-      return `Tối đa ${ctrl.errors['maxlength'].requiredLength} ký tự`;
+    if (ctrl?.errors?.['maxlength']) {
+      const max = ctrl.errors['maxlength'].requiredLength;
+      const actual = ctrl.errors['maxlength'].actualLength;
+      return `Tối đa ${max} ký tự (hiện tại có ${actual} ký tự)`;
+    }
     return '';
   }
 }

@@ -1,0 +1,49 @@
+$brand: #2563eb;
+$on-surface: #111827;
+$on-surface-variant: #6b7280;
+$surface: #ffffff;
+$border: #e5e7eb;
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid $border;
+  background: #fafafa;
+  font-size: 0.825rem;
+  color: $on-surface-variant;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arrow-btn, .page-num-btn {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $on-surface;
+  font-size: 0.825rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #f1f5f9;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.active {
+    background: $brand;
+    color: white;
+    border-color: $brand;
+    font-weight: 600;
+  }
+}

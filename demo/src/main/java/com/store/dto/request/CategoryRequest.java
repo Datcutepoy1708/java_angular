@@ -28,7 +28,7 @@ public class CategoryRequest implements Serializable {
     @Size(max = 500, message = "Icon URL cannot exceed 500 characters")
     private String iconUrl;
 
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    @Size(max = 2000, message = "Description cannot exceed 2000 characters")
     private String description;
 
     private Integer sortOrder;

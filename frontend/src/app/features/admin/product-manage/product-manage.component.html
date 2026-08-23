@@ -240,63 +240,44 @@
         </table>
       </div>
 
-      <!-- Bottom Pagination -->
-      <div class="table-pagination">
-        <div class="rows-per-page">
-          <span>Số dòng mỗi trang:</span>
-          <select [value]="pageSize()" (change)="onPageSizeChange($event)" class="size-select">
-            <option [value]="5">5</option>
-            <option [value]="10">10</option>
-            <option [value]="20">20</option>
-            <option [value]="50">50</option>
-          </select>
-        </div>
-
-        <div class="pagination-controls">
-          <span class="pagination-info">{{ paginationText() }}</span>
-          <button
-            class="arrow-btn"
-            (click)="goToPage(currentPage() - 1)"
-            [disabled]="currentPage() === 0"
-            title="Trang trước"
-          >
-            ‹
-          </button>
-          @for (p of pageNumbers(); track p) {
-            <button class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">
-              {{ p + 1 }}
-            </button>
-          }
-          <button
-            class="arrow-btn"
-            (click)="goToPage(currentPage() + 1)"
-            [disabled]="currentPage() >= totalPages() - 1"
-            title="Trang sau"
-          >
-            ›
-          </button>
-        </div>
-      </div>
+      <!-- Shared Pagination -->
+      <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        itemLabel="sản phẩm"
+        (pageChanged)="goToPage($event)"
+      />
     }
   </div>
 </div>
 
-<!-- Confirm Delete Dialog -->
-@if (confirmDeleteId() !== null) {
-  <div class="dialog-overlay">
-    <div class="dialog" role="alertdialog">
-      <h4 class="dialog-title">Chuyển vào thùng rác</h4>
-      <p class="dialog-body">
-        Bạn có chắc muốn chuyển sản phẩm <strong>{{ confirmDeleteName() }}</strong> vào thùng rác không?
-        Sản phẩm sẽ bị ẩn khỏi cửa hàng nhưng có thể khôi phục lại bất cứ lúc nào.
-      </p>
-      <div class="dialog-actions">
-        <button class="btn btn-ghost" (click)="cancelDelete()">Hủy bỏ</button>
-        <button class="btn btn-danger" (click)="confirmDelete()"
-                [disabled]="deleting() !== null" id="btn-confirm-delete-prod">
-          @if (deleting() !== null) { Đang chuyển... } @else { Chuyển vào thùng rác }
-        </button>
-      </div>
-    </div>
-  </div>
-}
+<!-- ═══════════════════════════════════════
+     SHARED CONFIRM DIALOGS (Xóa đơn lẻ & Thao tác hàng loạt)
+════════════════════════════════════════ -->
+<app-confirm-dialog
+  [isOpen]="confirmDeleteId() !== null"
+  title="Bạn có chắc chắn muốn xóa không?"
+  [message]="'Sản phẩm <strong>&quot;' + confirmDeleteName() + '&quot;</strong> sẽ được chuyển vào thùng rác.<br>Bạn có thể khôi phục lại bất cứ lúc nào từ tab Thùng rác.'"
+  confirmText="Chắc chắn, xóa ngay"
+  cancelText="Hủy bỏ"
+  variant="danger"
+  [loading]="deleting() !== null"
+  loadingText="Đang xóa..."
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>
+
+<app-confirm-dialog
+  [isOpen]="showBulkConfirmModal()"
+  [title]="pendingBulkAction() === 'delete' ? 'Bạn có chắc chắn muốn xóa ' + selectedIds().length + ' sản phẩm đã chọn?' : 'Xác nhận khôi phục ' + selectedIds().length + ' sản phẩm đã chọn?'"
+  [message]="pendingBulkAction() === 'delete' ? 'Toàn bộ <strong>' + selectedIds().length + '</strong> sản phẩm đã chọn sẽ được chuyển vào thùng rác.' : 'Toàn bộ <strong>' + selectedIds().length + '</strong> sản phẩm đã chọn sẽ được khôi phục về trạng thái hoạt động.'"
+  [confirmText]="pendingBulkAction() === 'delete' ? 'Xác nhận xóa' : 'Xác nhận khôi phục'"
+  cancelText="Hủy bỏ"
+  [variant]="pendingBulkAction() === 'delete' ? 'danger' : 'primary'"
+  [loading]="bulkLoading()"
+  loadingText="Đang xử lý..."
+  (confirmed)="confirmBulkAction()"
+  (cancelled)="closeBulkConfirmModal()"
+/>

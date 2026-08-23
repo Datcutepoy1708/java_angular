@@ -12,12 +12,23 @@ import { UploadService } from '../../../core/services/upload.service';
 import { BrandResponse } from '../../../core/models/brand.model';
 import { BulkActionType } from '../../../core/models/bulk.model';
 
+import {
+  ConfirmDialogComponent,
+  PaginationComponent,
+  ImageUploadComponent,
+} from '../../../shared';
+
 type FormMode = 'create' | 'edit';
 type ViewMode = 'active' | 'trash';
 
 @Component({
   selector: 'app-brand-manage',
-  imports: [ReactiveFormsModule],
+  imports: [
+    ReactiveFormsModule,
+    ConfirmDialogComponent,
+    PaginationComponent,
+    ImageUploadComponent,
+  ],
   templateUrl: './brand-manage.component.html',
   styleUrl: './brand-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,7 +105,7 @@ export class BrandManageComponent implements OnInit {
     name: ['', [Validators.required, Validators.maxLength(150)]],
     logoUrl: ['', Validators.maxLength(500)],
     country: ['', Validators.maxLength(100)],
-    description: ['', Validators.maxLength(500)],
+    description: ['', Validators.maxLength(2000)],
     status: ['active', Validators.required],
     slug: [{ value: '', disabled: true }, Validators.maxLength(180)],
   });
@@ -191,33 +202,44 @@ export class BrandManageComponent implements OnInit {
     );
   }
 
-  executeBulkAction(action: BulkActionType): void {
+  // ── Bulk Confirm Modal State ─────────────────────────────────
+  readonly showBulkConfirmModal = signal(false);
+  readonly pendingBulkAction = signal<BulkActionType>('delete');
+
+  openBulkConfirmModal(action: BulkActionType): void {
+    if (this.selectedIds().length === 0) return;
+    this.pendingBulkAction.set(action);
+    this.showBulkConfirmModal.set(true);
+  }
+
+  closeBulkConfirmModal(): void {
+    this.showBulkConfirmModal.set(false);
+  }
+
+  confirmBulkAction(): void {
     const ids = this.selectedIds();
+    const action = this.pendingBulkAction();
     if (ids.length === 0) return;
-
-    const actionNames: Record<string, string> = {
-      delete: 'chuyển vào thùng rác',
-      restore: 'khôi phục',
-      activate: 'kích hoạt',
-      deactivate: 'tạm ngưng',
-    };
-
-    if (!confirm(`Bạn có chắc muốn ${actionNames[action] || action} ${ids.length} thương hiệu đã chọn?`)) {
-      return;
-    }
 
     this.bulkLoading.set(true);
     this.brandService.bulkAction({ ids, action }).subscribe({
-      next: (res) => {
+      next: () => {
         this.bulkLoading.set(false);
+        this.closeBulkConfirmModal();
         this.selectedIds.set([]);
         this.loadBrands();
       },
-      error: () => {
+      error: (err) => {
         this.bulkLoading.set(false);
-        alert('Thao tác hàng loạt thất bại. Vui lòng thử lại.');
+        const msg = err.error?.message || err.message || 'Thao tác hàng loạt thất bại. Vui lòng thử lại.';
+        alert(msg);
       },
     });
+  }
+
+  // Alias for backward compatibility
+  executeBulkAction(action: BulkActionType): void {
+    this.openBulkConfirmModal(action);
   }
 
   // ── Modal / Form ──────────────────────────────────────────────
@@ -251,11 +273,25 @@ export class BrandManageComponent implements OnInit {
     this.showModal.set(true);
   }
 
+  private isMouseDownOnBackdrop = false;
+
+  onBackdropMouseDown(event: MouseEvent): void {
+    this.isMouseDownOnBackdrop = event.target === event.currentTarget;
+  }
+
+  onBackdropMouseUp(event: MouseEvent): void {
+    if (this.isMouseDownOnBackdrop && event.target === event.currentTarget) {
+      this.closeModal();
+    }
+    this.isMouseDownOnBackdrop = false;
+  }
+
   closeModal(): void {
     this.showModal.set(false);
     this.form.reset({ status: 'active' });
     this.logoPreview.set(null);
     this.slugEditable.set(false);
+    this.isMouseDownOnBackdrop = false;
   }
 
   toggleSlugEdit(): void {
@@ -291,7 +327,7 @@ export class BrandManageComponent implements OnInit {
     event.preventDefault();
   }
 
-  private handleFileUpload(file: File): void {
+  handleFileUpload(file: File): void {
     if (!file.type.startsWith('image/')) {
       alert('Vui lòng chọn một file ảnh hợp lệ (PNG, JPG, WEBP, SVG, GIF)');
       return;
@@ -322,11 +358,15 @@ export class BrandManageComponent implements OnInit {
     });
   }
 
+  onUrlLogoUpdate(url: string): void {
+    this.form.patchValue({ logoUrl: url });
+    this.logoPreview.set(url || null);
+  }
+
   onUrlLogoChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const url = input.value.trim();
-    this.form.patchValue({ logoUrl: url });
-    this.logoPreview.set(url || null);
+    this.onUrlLogoUpdate(url);
   }
 
   removeLogo(): void {

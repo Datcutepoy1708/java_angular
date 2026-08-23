@@ -226,25 +226,15 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div class="table-pagination">
-        <span class="pagination-info">{{ paginationText() }}</span>
-        @if (totalPages() > 1) {
-          <div class="pagination-controls">
-            <button class="arrow-btn" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 0" title="Trang trước">
-              ‹
-            </button>
-            @for (p of pageNumbers(); track p) {
-              <button class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">
-                {{ p + 1 }}
-              </button>
-            }
-            <button class="arrow-btn" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages() - 1" title="Trang sau">
-              ›
-            </button>
-          </div>
-        }
-      </div>
+      <!-- Shared Pagination -->
+      <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        itemLabel="thương hiệu"
+        (pageChanged)="goToPage($event)"
+      />
     }
   </div>
 </div>
@@ -253,7 +243,11 @@
      CENTER MODAL DIALOG — Thêm / Chỉnh sửa
 ════════════════════════════════════════ -->
 @if (showModal()) {
-  <div class="modal-backdrop" (click)="closeModal()">
+  <div
+    class="modal-backdrop"
+    (mousedown)="onBackdropMouseDown($event)"
+    (mouseup)="onBackdropMouseUp($event)"
+  >
     <div class="modal-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
       <!-- Modal Header -->
       <div class="modal-header">
@@ -294,92 +288,17 @@
           </select>
         </div>
 
-        <!-- Logo Thương Hiệu Upload / Preview -->
-        <div class="form-group">
-          <div class="form-label-row">
-            <label class="form-label">Logo thương hiệu</label>
-            <div class="logo-mode-switch">
-              <button
-                type="button"
-                class="mode-btn"
-                [class.active]="logoInputMode() === 'upload'"
-                (click)="setLogoMode('upload')"
-              >
-                Tải ảnh lên
-              </button>
-              <button
-                type="button"
-                class="mode-btn"
-                [class.active]="logoInputMode() === 'url'"
-                (click)="setLogoMode('url')"
-              >
-                Nhập link URL
-              </button>
-            </div>
-          </div>
-
-          @if (logoInputMode() === 'upload') {
-            @if (logoPreview()) {
-              <div class="logo-preview-box">
-                <img [src]="logoPreview()" alt="Logo preview" class="preview-img" />
-                <div class="preview-info">
-                  <span class="preview-status">✓ Ảnh đã chọn</span>
-                  <div class="preview-actions">
-                    <label class="btn-change-img">
-                      Chọn ảnh khác
-                      <input type="file" (change)="onFileSelected($event)" accept="image/*" class="sr-only" />
-                    </label>
-                    <button type="button" class="btn-remove-img" (click)="removeLogo()">Xóa ảnh</button>
-                  </div>
-                </div>
-                @if (uploadingLogo()) {
-                  <div class="upload-spinner-overlay">
-                    <div class="spinner-sm"></div>
-                    <span>Đang tải lên máy chủ...</span>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div
-                class="upload-dropzone"
-                (drop)="onFileDropped($event)"
-                (dragover)="onDragOver($event)"
-              >
-                <input
-                  type="file"
-                  id="file-upload-input"
-                  (change)="onFileSelected($event)"
-                  accept="image/*"
-                  class="sr-only"
-                />
-                <label for="file-upload-input" class="dropzone-label">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="drop-icon">
-                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
-                    <path d="M12 12v9"/>
-                    <path d="m16 16-4-4-4 4"/>
-                  </svg>
-                  <span class="drop-text">Bấm vào đây hoặc kéo thả ảnh logo vào</span>
-                  <span class="drop-sub">Hỗ trợ PNG, JPG, WEBP, SVG (tối đa 5MB)</span>
-                </label>
-              </div>
-            }
-          } @else {
-            <div class="url-input-wrap">
-              <input
-                type="url"
-                class="form-control"
-                formControlName="logoUrl"
-                (input)="onUrlLogoChange($event)"
-                placeholder="https://example.com/logo.png"
-              />
-              @if (logoPreview()) {
-                <div class="url-preview-thumb">
-                  <img [src]="logoPreview()" alt="Logo preview" />
-                </div>
-              }
-            </div>
-          }
-        </div>
+        <!-- Logo Thương Hiệu (Shared Image Upload) -->
+        <app-image-upload
+          [imageUrl]="logoPreview()"
+          label="Logo thương hiệu"
+          helperText="Hỗ trợ PNG, JPG, WEBP, SVG (tối đa 5MB)"
+          [uploading]="uploadingLogo()"
+          placeholderText="https://example.com/logo.png"
+          (fileSelected)="handleFileUpload($event)"
+          (imageUrlChange)="onUrlLogoUpdate($event)"
+          (imageRemoved)="removeLogo()"
+        />
 
         <!-- Quốc gia xuất xứ -->
         <div class="form-group">
@@ -441,29 +360,30 @@
 }
 
 <!-- ═══════════════════════════════════════
-     DIALOG XÁC NHẬN XÓA MỀM
+     SHARED CONFIRM DIALOGS (Xóa đơn lẻ & Thao tác hàng loạt)
 ════════════════════════════════════════ -->
-@if (confirmDeleteId() !== null) {
-  <div class="modal-backdrop">
-    <div class="confirm-dialog" role="alertdialog">
-      <div class="confirm-icon-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="danger-icon">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-      </div>
-      <h4 class="confirm-title">Xác nhận chuyển vào thùng rác</h4>
-      <p class="confirm-body">
-        Bạn có chắc muốn chuyển thương hiệu <strong>{{ confirmDeleteName() }}</strong> vào thùng rác không?
-        Thương hiệu sẽ bị ẩn khỏi cửa hàng nhưng có thể khôi phục lại bất cứ lúc nào từ tab Thùng rác.
-      </p>
-      <div class="confirm-actions">
-        <button class="btn btn-ghost" (click)="cancelDelete()">Hủy bỏ</button>
-        <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="deleting() !== null" id="btn-confirm-delete-brand">
-          @if (deleting() !== null) { Đang chuyển... } @else { Chuyển vào thùng rác }
-        </button>
-      </div>
-    </div>
-  </div>
-}
+<app-confirm-dialog
+  [isOpen]="confirmDeleteId() !== null"
+  title="Bạn có chắc chắn muốn xóa không?"
+  [message]="'Thương hiệu <strong>&quot;' + confirmDeleteName() + '&quot;</strong> sẽ được chuyển vào thùng rác.<br>Bạn có thể khôi phục lại bất cứ lúc nào từ tab Thùng rác.'"
+  confirmText="Chắc chắn, xóa ngay"
+  cancelText="Hủy bỏ"
+  variant="danger"
+  [loading]="deleting() !== null"
+  loadingText="Đang xóa..."
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>
+
+<app-confirm-dialog
+  [isOpen]="showBulkConfirmModal()"
+  [title]="pendingBulkAction() === 'delete' ? 'Bạn có chắc chắn muốn xóa ' + selectedIds().length + ' thương hiệu đã chọn?' : (pendingBulkAction() === 'restore' ? 'Xác nhận khôi phục ' + selectedIds().length + ' thương hiệu đã chọn?' : (pendingBulkAction() === 'activate' ? 'Xác nhận kích hoạt ' + selectedIds().length + ' thương hiệu đã chọn?' : 'Xác nhận tạm ngưng ' + selectedIds().length + ' thương hiệu đã chọn?'))"
+  [message]="pendingBulkAction() === 'delete' ? 'Toàn bộ <strong>' + selectedIds().length + '</strong> thương hiệu đã chọn sẽ được chuyển vào thùng rác.' : (pendingBulkAction() === 'restore' ? 'Toàn bộ <strong>' + selectedIds().length + '</strong> thương hiệu đã chọn sẽ được khôi phục về trạng thái hoạt động.' : (pendingBulkAction() === 'activate' ? 'Toàn bộ <strong>' + selectedIds().length + '</strong> thương hiệu đã chọn sẽ được chuyển sang trạng thái &quot;Đang hoạt động&quot;.' : 'Toàn bộ <strong>' + selectedIds().length + '</strong> thương hiệu đã chọn sẽ được chuyển sang trạng thái &quot;Tạm ngưng&quot;.'))"
+  [confirmText]="pendingBulkAction() === 'delete' ? 'Xác nhận xóa' : 'Xác nhận thực hiện'"
+  cancelText="Hủy bỏ"
+  [variant]="pendingBulkAction() === 'delete' ? 'danger' : 'primary'"
+  [loading]="bulkLoading()"
+  loadingText="Đang xử lý..."
+  (confirmed)="confirmBulkAction()"
+  (cancelled)="closeBulkConfirmModal()"
+/>

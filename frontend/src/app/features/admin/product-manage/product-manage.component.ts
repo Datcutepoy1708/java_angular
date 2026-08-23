@@ -15,12 +15,18 @@ import { ProductResponse } from '../../../core/models/product.model';
 import { CategoryResponse } from '../../../core/models/category.model';
 import { BrandResponse } from '../../../core/models/brand.model';
 import { BulkActionType } from '../../../core/models/bulk.model';
+import { ConfirmDialogComponent, PaginationComponent } from '../../../shared';
 
 type ViewMode = 'active' | 'trash';
 
 @Component({
   selector: 'app-product-manage',
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    ConfirmDialogComponent,
+    PaginationComponent,
+  ],
   templateUrl: './product-manage.component.html',
   styleUrl: './product-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -191,31 +197,44 @@ export class ProductManageComponent implements OnInit {
     );
   }
 
-  executeBulkAction(action: BulkActionType): void {
+  // ── Bulk Confirm Modal State ─────────────────────────────────
+  readonly showBulkConfirmModal = signal(false);
+  readonly pendingBulkAction = signal<BulkActionType>('delete');
+
+  openBulkConfirmModal(action: BulkActionType): void {
+    if (this.selectedIds().length === 0) return;
+    this.pendingBulkAction.set(action);
+    this.showBulkConfirmModal.set(true);
+  }
+
+  closeBulkConfirmModal(): void {
+    this.showBulkConfirmModal.set(false);
+  }
+
+  confirmBulkAction(): void {
     const ids = this.selectedIds();
+    const action = this.pendingBulkAction();
     if (ids.length === 0) return;
-
-    const actionNames: Record<string, string> = {
-      delete: 'chuyển vào thùng rác',
-      restore: 'khôi phục',
-    };
-
-    if (!confirm(`Bạn có chắc muốn ${actionNames[action] || action} ${ids.length} sản phẩm đã chọn?`)) {
-      return;
-    }
 
     this.bulkLoading.set(true);
     this.productService.bulkAction({ ids, action }).subscribe({
       next: () => {
         this.bulkLoading.set(false);
+        this.closeBulkConfirmModal();
         this.selectedIds.set([]);
         this.loadProducts();
       },
-      error: () => {
+      error: (err) => {
         this.bulkLoading.set(false);
-        alert('Thao tác hàng loạt thất bại.');
+        const msg = err.error?.message || err.message || 'Thao tác hàng loạt thất bại.';
+        alert(msg);
       },
     });
+  }
+
+  // Alias for backward compatibility
+  executeBulkAction(action: BulkActionType): void {
+    this.openBulkConfirmModal(action);
   }
 
   editProduct(productId: number): void {

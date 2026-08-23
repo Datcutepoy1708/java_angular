@@ -42,7 +42,7 @@ $radius-sm: 8px;
   }
 }
 
-// ── Toolbar Card (Tabs + Filters + Bulk) ─────────────────────────
+// ── Toolbar Card (Tabs + Filters + Bulk + Tree Controls) ─────────
 .toolbar-card {
   background: $surface;
   border: 1px solid $border;
@@ -94,6 +94,12 @@ $radius-sm: 8px;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.tree-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .search-input-wrap {
@@ -172,7 +178,7 @@ $radius-sm: 8px;
   font-size: 0.875rem;
 
   th, td {
-    padding: 12px 16px;
+    padding: 11px 14px;
     text-align: left;
     border-bottom: 1px solid $border;
   }
@@ -193,6 +199,11 @@ $radius-sm: 8px;
     &.selected-row { background: #eff6ff; }
   }
 
+  tr.tree-child-row {
+    background: #fafcff;
+    &:hover { background: #f1f5f9; }
+  }
+
   .th-checkbox, .td-checkbox {
     width: 36px;
     text-align: center;
@@ -211,14 +222,99 @@ $radius-sm: 8px;
     width: 48px;
   }
 
+  .td-name {
+    min-width: 260px;
+  }
+
   .td-order { width: 60px; }
-  .td-name { color: $on-surface; font-size: 0.875rem; }
-  .td-parent { width: 180px; }
-  .td-slug { max-width: 180px; }
+  .td-parent { width: 160px; }
+  .td-slug { max-width: 160px; }
   .th-actions, .td-actions {
     text-align: right;
     white-space: nowrap;
     width: 90px;
+  }
+}
+
+// ── Tree Column Specifics ─────────────────────────────────────────
+.tree-node-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tree-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $brand-light;
+    color: $brand;
+    border-color: #bfdbfe;
+  }
+
+  .chevron-icon {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.18s ease;
+    transform: rotate(0deg);
+  }
+
+  &.expanded .chevron-icon {
+    transform: rotate(90deg);
+  }
+}
+
+.tree-leaf-bullet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.category-title {
+  font-size: 0.875rem;
+  color: $on-surface;
+  font-weight: 500;
+
+  &.is-root {
+    font-weight: 700;
+    color: #0f172a;
+  }
+}
+
+.child-count-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $brand-light;
+    color: $brand;
+    border-color: #bfdbfe;
   }
 }
 
@@ -254,17 +350,6 @@ $radius-sm: 8px;
   font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
-}
-
-.name-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tree-indent {
-  color: $brand;
-  font-weight: bold;
 }
 
 .parent-chip {
@@ -582,6 +667,17 @@ $radius-sm: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.char-counter {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  font-weight: 500;
+
+  &.over-limit {
+    color: $danger;
+    font-weight: 700;
+  }
 }
 
 .link-action {

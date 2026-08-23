@@ -43,9 +43,27 @@
         </button>
       </div>
 
-      <!-- Quick Filter -->
+      <!-- Quick Filter & Tree Collapse / Expand controls -->
       @if (viewMode() === 'active') {
         <div class="filter-group">
+          <!-- Expand/Collapse all buttons -->
+          <div class="tree-controls">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="expandAll()" title="Mở rộng toàn bộ cây danh mục">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="7 13 12 18 17 13"/>
+                <polyline points="7 6 12 11 17 6"/>
+              </svg>
+              Mở rộng
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="collapseAll()" title="Thu gọn toàn bộ cây danh mục">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="17 11 12 6 7 11"/>
+                <polyline points="17 18 12 13 7 18"/>
+              </svg>
+              Thu gọn
+            </button>
+          </div>
+
           <!-- Search box -->
           <div class="search-input-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
@@ -88,7 +106,7 @@
     }
   </div>
 
-  <!-- Table Card Full Width -->
+  <!-- Table Card Full Width (Collapsible Tree Table) -->
   <div class="card table-card">
     @if (loading()) {
       <div class="loading-state">
@@ -118,8 +136,8 @@
                 />
               </th>
               <th>ICON / ẢNH</th>
+              <th>TÊN DANH MỤC (PHÂN CẤP CÂY)</th>
               <th>THỨ TỰ</th>
-              <th>TÊN DANH MỤC</th>
               <th>DANH MỤC CHA</th>
               <th>ĐƯỜNG DẪN (SLUG)</th>
               <th>TRẠNG THÁI</th>
@@ -127,59 +145,104 @@
             </tr>
           </thead>
           <tbody>
-            @for (cat of categories(); track cat.categoryId) {
-              <tr [class.selected-row]="selectedIds().includes(cat.categoryId)">
+            @for (node of displayedNodes(); track node.category.categoryId) {
+              <tr
+                [class.selected-row]="selectedIds().includes(node.category.categoryId)"
+                [class.tree-child-row]="node.level > 0"
+              >
+                <!-- Checkbox -->
                 <td class="td-checkbox">
                   <input
                     type="checkbox"
-                    [checked]="selectedIds().includes(cat.categoryId)"
-                    (change)="toggleSelectItem(cat.categoryId)"
-                    [attr.aria-label]="'Chọn ' + cat.name"
+                    [checked]="selectedIds().includes(node.category.categoryId)"
+                    (change)="toggleSelectItem(node.category.categoryId)"
+                    [attr.aria-label]="'Chọn ' + node.category.name"
                   />
                 </td>
+
+                <!-- Icon -->
                 <td class="td-icon">
-                  @if (cat.iconUrl) {
-                    <img [src]="cat.iconUrl" [alt]="cat.name" class="category-icon-thumb" />
+                  @if (node.category.iconUrl) {
+                    <img [src]="node.category.iconUrl" [alt]="node.category.name" class="category-icon-thumb" />
                   } @else {
-                    <div class="category-icon-placeholder">{{ cat.name[0] }}</div>
+                    <div class="category-icon-placeholder">{{ node.category.name[0] }}</div>
                   }
                 </td>
-                <td class="td-order">
-                  <span class="badge-order">{{ cat.sortOrder ?? 0 }}</span>
-                </td>
+
+                <!-- Tên danh mục (Collapsible Tree Column) -->
                 <td class="td-name">
-                  <div class="name-cell">
-                    @if (cat.parentId) {
-                      <span class="tree-indent">↳</span>
+                  <div class="tree-node-cell" [style.padding-left.px]="node.level * 22">
+                    <!-- Collapse / Expand chevron button -->
+                    @if (node.hasChildren) {
+                      <button
+                        type="button"
+                        class="tree-toggle-btn"
+                        [class.expanded]="node.isExpanded"
+                        (click)="toggleExpand(node.category.categoryId, $event)"
+                        title="{{ node.isExpanded ? 'Thu gọn' : 'Mở rộng' }}"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron-icon">
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                      </button>
+                    } @else {
+                      <span class="tree-leaf-bullet">•</span>
                     }
-                    <strong>{{ cat.name }}</strong>
+
+                    <!-- Tên danh mục & Badge số lượng con khi thu gọn -->
+                    <span class="category-title" [class.is-root]="node.level === 0">
+                      {{ node.category.name }}
+                    </span>
+
+                    @if (node.hasChildren && !node.isExpanded) {
+                      <span
+                        class="child-count-pill"
+                        (click)="toggleExpand(node.category.categoryId, $event)"
+                        title="Bấm để mở rộng danh mục con"
+                      >
+                        +{{ node.childCount }} mục con
+                      </span>
+                    }
                   </div>
                 </td>
+
+                <!-- Thứ tự -->
+                <td class="td-order">
+                  <span class="badge-order">{{ node.category.sortOrder ?? 0 }}</span>
+                </td>
+
+                <!-- Danh mục cha -->
                 <td class="td-parent">
-                  @if (cat.parentName) {
-                    <span class="parent-chip">{{ cat.parentName }}</span>
+                  @if (node.category.parentName) {
+                    <span class="parent-chip">{{ node.category.parentName }}</span>
                   } @else {
                     <span class="text-muted">— (Gốc)</span>
                   }
                 </td>
+
+                <!-- Slug -->
                 <td class="td-slug">
-                  <code class="slug-tag">{{ cat.slug }}</code>
+                  <code class="slug-tag">{{ node.category.slug }}</code>
                 </td>
+
+                <!-- Trạng thái -->
                 <td class="td-status">
-                  @if (cat.deleted) {
+                  @if (node.category.deleted) {
                     <span class="status-badge status-badge--trash">Đã xóa mềm</span>
-                  } @else if (cat.status === 'active') {
+                  } @else if (node.category.status === 'active') {
                     <span class="status-badge status-badge--active">Hoạt động</span>
                   } @else {
                     <span class="status-badge status-badge--inactive">Tạm ngưng</span>
                   }
                 </td>
+
+                <!-- Thao tác -->
                 <td class="td-actions">
                   @if (viewMode() === 'active') {
                     <button
                       class="btn-icon"
-                      (click)="openEditModal(cat)"
-                      [attr.id]="'btn-edit-cat-' + cat.categoryId"
+                      (click)="openEditModal(node.category)"
+                      [attr.id]="'btn-edit-cat-' + node.category.categoryId"
                       title="Chỉnh sửa"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -189,9 +252,9 @@
                     </button>
                     <button
                       class="btn-icon btn-icon--danger"
-                      (click)="askDelete(cat)"
-                      [disabled]="deleting() === cat.categoryId"
-                      [attr.id]="'btn-delete-cat-' + cat.categoryId"
+                      (click)="askDelete(node.category)"
+                      [disabled]="deleting() === node.category.categoryId"
+                      [attr.id]="'btn-delete-cat-' + node.category.categoryId"
                       title="Xóa danh mục"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -202,9 +265,9 @@
                   } @else {
                     <button
                       class="btn-icon btn-icon--success"
-                      (click)="restoreCategory(cat.categoryId)"
-                      [disabled]="restoring() === cat.categoryId"
-                      [attr.id]="'btn-restore-cat-' + cat.categoryId"
+                      (click)="restoreCategory(node.category.categoryId)"
+                      [disabled]="restoring() === node.category.categoryId"
+                      [attr.id]="'btn-restore-cat-' + node.category.categoryId"
                       title="Khôi phục danh mục và toàn bộ danh mục con"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -223,21 +286,15 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div class="table-pagination">
-        <span class="pagination-info">{{ paginationText() }}</span>
-        @if (totalPages() > 1) {
-          <div class="pagination-controls">
-            <button class="arrow-btn" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 0">‹</button>
-            @for (p of pageNumbers(); track p) {
-              <button class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">
-                {{ p + 1 }}
-              </button>
-            }
-            <button class="arrow-btn" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages() - 1">›</button>
-          </div>
-        }
-      </div>
+      <!-- Shared Pagination -->
+      <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalElements]="totalElements()"
+        [pageSize]="pageSize()"
+        itemLabel="danh mục"
+        (pageChanged)="goToPage($event)"
+      />
     }
   </div>
 </div>
@@ -246,7 +303,11 @@
      CENTER MODAL DIALOG — Thêm / Chỉnh sửa
 ════════════════════════════════════════ -->
 @if (showModal()) {
-  <div class="modal-backdrop" (click)="closeModal()">
+  <div
+    class="modal-backdrop"
+    (mousedown)="onBackdropMouseDown($event)"
+    (mouseup)="onBackdropMouseUp($event)"
+  >
     <div class="modal-dialog" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
       <!-- Modal Header -->
       <div class="modal-header">
@@ -282,7 +343,7 @@
           <select id="cat-parent" class="form-control" formControlName="parentId">
             <option [ngValue]="null">— Là danh mục gốc (không có cha) —</option>
             @for (c of availableParents(); track c.categoryId) {
-              <option [value]="c.categoryId">{{ c.name }}</option>
+              <option [ngValue]="c.categoryId">{{ c.name }}</option>
             }
           </select>
           <span class="form-hint">Chọn danh mục cha để tạo cấu trúc cây phân cấp</span>
@@ -304,92 +365,17 @@
           </div>
         </div>
 
-        <!-- Icon / Ảnh đại diện danh mục (Upload hoặc Link URL) -->
-        <div class="form-group">
-          <div class="form-label-row">
-            <label class="form-label">Ảnh / Icon danh mục</label>
-            <div class="icon-mode-switch">
-              <button
-                type="button"
-                class="mode-btn"
-                [class.active]="iconInputMode() === 'upload'"
-                (click)="setIconMode('upload')"
-              >
-                Tải ảnh lên
-              </button>
-              <button
-                type="button"
-                class="mode-btn"
-                [class.active]="iconInputMode() === 'url'"
-                (click)="setIconMode('url')"
-              >
-                Nhập link URL
-              </button>
-            </div>
-          </div>
-
-          @if (iconInputMode() === 'upload') {
-            @if (iconPreview()) {
-              <div class="icon-preview-box">
-                <img [src]="iconPreview()" alt="Icon preview" class="preview-img" />
-                <div class="preview-info">
-                  <span class="preview-status">✓ Ảnh đã chọn</span>
-                  <div class="preview-actions">
-                    <label class="btn-change-img">
-                      Chọn ảnh khác
-                      <input type="file" (change)="onFileSelected($event)" accept="image/*" class="sr-only" />
-                    </label>
-                    <button type="button" class="btn-remove-img" (click)="removeIcon()">Xóa ảnh</button>
-                  </div>
-                </div>
-                @if (uploadingIcon()) {
-                  <div class="upload-spinner-overlay">
-                    <div class="spinner-sm"></div>
-                    <span>Đang tải lên máy chủ...</span>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div
-                class="upload-dropzone"
-                (drop)="onFileDropped($event)"
-                (dragover)="onDragOver($event)"
-              >
-                <input
-                  type="file"
-                  id="cat-file-upload-input"
-                  (change)="onFileSelected($event)"
-                  accept="image/*"
-                  class="sr-only"
-                />
-                <label for="cat-file-upload-input" class="dropzone-label">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="drop-icon">
-                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
-                    <path d="M12 12v9"/>
-                    <path d="m16 16-4-4-4 4"/>
-                  </svg>
-                  <span class="drop-text">Bấm vào đây hoặc kéo thả ảnh icon vào</span>
-                  <span class="drop-sub">Hỗ trợ PNG, JPG, WEBP, SVG (tối đa 5MB)</span>
-                </label>
-              </div>
-            }
-          } @else {
-            <div class="url-input-wrap">
-              <input
-                type="url"
-                class="form-control"
-                formControlName="iconUrl"
-                (input)="onUrlIconChange($event)"
-                placeholder="https://example.com/icon.svg"
-              />
-              @if (iconPreview()) {
-                <div class="url-preview-thumb">
-                  <img [src]="iconPreview()" alt="Icon preview" />
-                </div>
-              }
-            </div>
-          }
-        </div>
+        <!-- Icon / Ảnh đại diện danh mục (Shared Image Upload) -->
+        <app-image-upload
+          [imageUrl]="iconPreview()"
+          label="Ảnh / Icon danh mục"
+          helperText="Hỗ trợ PNG, JPG, WEBP, SVG (tối đa 5MB)"
+          [uploading]="uploadingIcon()"
+          placeholderText="https://example.com/icon.svg"
+          (fileSelected)="handleFileUpload($event)"
+          (imageUrlChange)="onUrlIconUpdate($event)"
+          (imageRemoved)="removeIcon()"
+        />
 
         <!-- Slug (Chỉ hiển thị khi chỉnh sửa) -->
         @if (formMode() === 'edit') {
@@ -413,14 +399,23 @@
 
         <!-- Mô tả -->
         <div class="form-group">
-          <label class="form-label" for="cat-desc">Mô tả danh mục</label>
+          <div class="form-label-row">
+            <label class="form-label" for="cat-desc">Mô tả danh mục</label>
+            <span class="char-counter" [class.over-limit]="(form.get('description')?.value?.length || 0) > 2000">
+              {{ form.get('description')?.value?.length || 0 }} / 2000 ký tự
+            </span>
+          </div>
           <textarea
             id="cat-desc"
             class="form-control form-textarea"
+            [class.is-invalid]="hasError('description')"
             formControlName="description"
             rows="3"
             placeholder="Mô tả về nhóm sản phẩm này..."
           ></textarea>
+          @if (hasError('description')) {
+            <span class="form-error">{{ getError('description') }}</span>
+          }
         </div>
 
         <!-- Modal Footer Actions -->
@@ -436,35 +431,31 @@
 }
 
 <!-- ═══════════════════════════════════════
-     DIALOG XÁC NHẬN XÓA MỀM (CASCADE WARNING)
+     SHARED CONFIRM DIALOGS (Xóa đơn lẻ & Thao tác hàng loạt)
 ════════════════════════════════════════ -->
-@if (confirmDeleteId() !== null) {
-  <div class="modal-backdrop">
-    <div class="confirm-dialog" role="alertdialog">
-      <div class="confirm-icon-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="danger-icon">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-      </div>
-      <h4 class="confirm-title">Xác nhận chuyển vào thùng rác</h4>
-      <p class="confirm-body">
-        Bạn có chắc muốn chuyển danh mục <strong>{{ confirmDeleteName() }}</strong> vào thùng rác?
-        @if (confirmDeleteChildCount() > 0) {
-          <br><br>
-          <span class="cascade-warning">
-            ⚠️ <strong>Cảnh báo:</strong> Danh mục này có <strong>{{ confirmDeleteChildCount() }}</strong> danh mục con.
-            Toàn bộ các danh mục con và cháu trong cây phân cấp cũng sẽ tự động bị ẩn theo (Cascade Soft-delete).
-          </span>
-        }
-      </p>
-      <div class="confirm-actions">
-        <button class="btn btn-ghost" (click)="cancelDelete()">Hủy bỏ</button>
-        <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="deleting() !== null" id="btn-confirm-delete-cat">
-          @if (deleting() !== null) { Đang chuyển... } @else { Chuyển vào thùng rác }
-        </button>
-      </div>
-    </div>
-  </div>
-}
+<app-confirm-dialog
+  [isOpen]="confirmDeleteId() !== null"
+  title="Bạn có chắc chắn muốn xóa không?"
+  [message]="'Danh mục <strong>&quot;' + confirmDeleteName() + '&quot;</strong> sẽ được chuyển vào thùng rác (xóa mềm).'"
+  [warningMessage]="confirmDeleteChildCount() > 0 ? '⚠️ Cảnh báo phân cấp: Danh mục này đang có ' + confirmDeleteChildCount() + ' danh mục con. Toàn bộ các danh mục con và cháu trong cây cũng sẽ tự động bị chuyển vào thùng rác.' : null"
+  confirmText="Chắc chắn, xóa ngay"
+  cancelText="Hủy bỏ"
+  variant="danger"
+  [loading]="deleting() !== null"
+  loadingText="Đang xóa..."
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>
+
+<app-confirm-dialog
+  [isOpen]="showBulkConfirmModal()"
+  [title]="pendingBulkAction() === 'delete' ? 'Bạn có chắc chắn muốn xóa ' + selectedIds().length + ' danh mục đã chọn?' : 'Xác nhận khôi phục ' + selectedIds().length + ' danh mục đã chọn?'"
+  [message]="pendingBulkAction() === 'delete' ? 'Toàn bộ <strong>' + selectedIds().length + '</strong> danh mục đã chọn cùng tất cả danh mục con của chúng sẽ được chuyển vào thùng rác.' : 'Toàn bộ <strong>' + selectedIds().length + '</strong> danh mục đã chọn cùng tất cả danh mục con sẽ được khôi phục về trạng thái hoạt động.'"
+  [confirmText]="pendingBulkAction() === 'delete' ? 'Xác nhận xóa' : 'Xác nhận khôi phục'"
+  cancelText="Hủy bỏ"
+  [variant]="pendingBulkAction() === 'delete' ? 'danger' : 'primary'"
+  [loading]="bulkLoading()"
+  loadingText="Đang xử lý..."
+  (confirmed)="confirmBulkAction()"
+  (cancelled)="closeBulkConfirmModal()"
+/>

@@ -28,6 +28,6 @@ public class BrandRequest implements Serializable {
     @Size(max = 100, message = "Country cannot exceed 100 characters")
     private String country;
 
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    @Size(max = 2000, message = "Description cannot exceed 2000 characters")
     private String description;
 }

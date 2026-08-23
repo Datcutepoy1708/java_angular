@@ -1,0 +1,38 @@
+<div class="table-pagination">
+  <span class="pagination-info">{{ paginationText() }}</span>
+  @if (totalPages() > 1) {
+    <div class="pagination-controls">
+      <button
+        type="button"
+        class="arrow-btn"
+        (click)="goToPage(currentPage() - 1)"
+        [disabled]="currentPage() === 0"
+        title="Trang trước"
+        aria-label="Trang trước"
+      >
+        ‹
+      </button>
+      @for (p of pageNumbers(); track p) {
+        <button
+          type="button"
+          class="page-num-btn"
+          [class.active]="p === currentPage()"
+          (click)="goToPage(p)"
+          [attr.aria-label]="'Trang ' + (p + 1)"
+        >
+          {{ p + 1 }}
+        </button>
+      }
+      <button
+        type="button"
+        class="arrow-btn"
+        (click)="goToPage(currentPage() + 1)"
+        [disabled]="currentPage() >= totalPages() - 1"
+        title="Trang sau"
+        aria-label="Trang sau"
+      >
+        ›
+      </button>
+    </div>
+  }
+</div>

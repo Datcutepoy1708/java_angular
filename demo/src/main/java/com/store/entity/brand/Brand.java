@@ -41,7 +41,7 @@ public class Brand {
     @Column(name = "country", length = 100)
     private String country;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Convert(converter = BrandStatusConverter.class)

@@ -101,7 +101,7 @@ CREATE TABLE categories (
     name          VARCHAR(150) NOT NULL,
     slug          VARCHAR(180) NOT NULL UNIQUE,
     icon_url      VARCHAR(500),
-    description   VARCHAR(500),
+    description   TEXT,
     sort_order    INT DEFAULT 0,
     status        ENUM('active','inactive') DEFAULT 'active',
     deleted_at    DATETIME NULL,
@@ -115,7 +115,7 @@ CREATE TABLE brands (
     slug         VARCHAR(180) NOT NULL UNIQUE,
     logo_url     VARCHAR(500),
     country      VARCHAR(100),
-    description  VARCHAR(500),
+    description  TEXT,
     status       ENUM('active','inactive') DEFAULT 'active',
     deleted_at   DATETIME NULL,
     INDEX idx_brands_deleted_at (deleted_at)

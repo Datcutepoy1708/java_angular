@@ -53,7 +53,7 @@ public class Category {
     @Column(name = "icon_url", length = 500)
     private String iconUrl;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "sort_order")

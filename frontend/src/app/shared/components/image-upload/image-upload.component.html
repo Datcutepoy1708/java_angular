@@ -1,0 +1,91 @@
+<div class="image-upload-group">
+  <div class="image-upload-header">
+    <label class="upload-label">{{ label() }}</label>
+    <div class="mode-switch">
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="inputMode() === 'upload'"
+        (click)="setMode('upload')"
+      >
+        Tải ảnh lên
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="inputMode() === 'url'"
+        (click)="setMode('url')"
+      >
+        Nhập link URL
+      </button>
+    </div>
+  </div>
+
+  @if (inputMode() === 'upload') {
+    @if (imageUrl()) {
+      <div class="preview-box">
+        <img [src]="imageUrl()" alt="Preview" class="preview-img" />
+        <div class="preview-info">
+          <span class="preview-status">✓ Ảnh đã chọn</span>
+          <div class="preview-actions">
+            <label class="btn-change">
+              Chọn ảnh khác
+              <input type="file" (change)="onFileChange($event)" accept="image/*" class="sr-only" />
+            </label>
+            <button type="button" class="btn-remove" (click)="onRemove()">Xóa ảnh</button>
+          </div>
+        </div>
+        @if (uploading()) {
+          <div class="upload-overlay">
+            <div class="spinner-sm"></div>
+            <span>Đang tải lên...</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div
+        class="dropzone"
+        (drop)="onFileDrop($event)"
+        (dragover)="onDragOver($event)"
+      >
+        <input
+          type="file"
+          id="shared-file-upload-input"
+          (change)="onFileChange($event)"
+          accept="image/*"
+          class="sr-only"
+        />
+        <label for="shared-file-upload-input" class="dropzone-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="drop-icon">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+            <path d="M12 12v9"/>
+            <path d="m16 16-4-4-4 4"/>
+          </svg>
+          <span class="drop-title">Bấm vào đây hoặc kéo thả ảnh vào</span>
+          <span class="drop-sub">{{ helperText() }}</span>
+        </label>
+        @if (uploading()) {
+          <div class="upload-overlay">
+            <div class="spinner-sm"></div>
+            <span>Đang tải lên...</span>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <div class="url-input-container">
+      <input
+        type="url"
+        class="form-control"
+        [value]="imageUrl() || ''"
+        (input)="onUrlChange($event)"
+        [placeholder]="placeholderText()"
+      />
+      @if (imageUrl()) {
+        <div class="url-thumb-preview">
+          <img [src]="imageUrl()" alt="URL preview" />
+        </div>
+      }
+    </div>
+  }
+</div>
