@@ -64,4 +64,8 @@ public class ProductVariant {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    /** Soft-delete timestamp. NULL = active; NOT NULL = deleted (independently of Product's deleted_at). */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

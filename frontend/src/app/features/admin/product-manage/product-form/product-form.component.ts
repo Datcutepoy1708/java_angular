@@ -20,9 +20,10 @@ import { BrandService } from '../../../../core/services/brand.service';
 import {
   ImageFormItem,
   ImageType,
+  ProductImageResponse,
   ProductRequest,
-  ProductResponse,
   ProductStatus,
+  ProductVariantResponse,
   VariantFormItem,
   VariantStatus,
 } from '../../../../core/models/product.model';
@@ -57,9 +58,17 @@ export class ProductFormComponent implements OnInit {
   readonly saving = signal(false);
   readonly saveMessage = signal<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null);
 
-  // ── Variants & Images Lists ───────────────────────────────────
+  // ── Sub-tabs for nested items ─────────────────────────────────
+  readonly variantTab = signal<'active' | 'trash'>('active');
+  readonly imageTab = signal<'active' | 'trash'>('active');
+
+  // ── Active Variants & Images Lists ────────────────────────────
   readonly variants = signal<VariantFormItem[]>([]);
   readonly images = signal<ImageFormItem[]>([]);
+
+  // ── Deleted Variants & Images (Soft-deleted) ──────────────────
+  readonly deletedVariants = signal<ProductVariantResponse[]>([]);
+  readonly deletedImages = signal<ProductImageResponse[]>([]);
 
   // Image URL input field
   readonly newImageUrl = signal('');
@@ -88,6 +97,8 @@ export class ProductFormComponent implements OnInit {
       this.isEditMode.set(true);
       this.productId.set(Number(idParam));
       this.loadProductData(Number(idParam));
+      this.loadDeletedVariants(Number(idParam));
+      this.loadDeletedImages(Number(idParam));
     } else {
       // Default with one initial variant
       this.addVariant();
@@ -159,6 +170,18 @@ export class ProductFormComponent implements OnInit {
     });
   }
 
+  loadDeletedVariants(productId: number): void {
+    this.productService.getDeletedVariants(productId).subscribe({
+      next: (res) => this.deletedVariants.set(res.data),
+    });
+  }
+
+  loadDeletedImages(productId: number): void {
+    this.productService.getDeletedImages(productId).subscribe({
+      next: (res) => this.deletedImages.set(res.data),
+    });
+  }
+
   // ── Variant Actions ───────────────────────────────────────────
   addVariant(): void {
     this.variants.update((list) => [
@@ -181,15 +204,28 @@ export class ProductFormComponent implements OnInit {
   removeVariant(index: number): void {
     const item = this.variants()[index];
     if (item.variantId) {
-      // If already persisted on server, call delete API
-      this.productService.deleteVariant(item.variantId).subscribe({
+      this.productService.softDeleteVariant(item.variantId).subscribe({
         next: () => {
           this.variants.update((list) => list.filter((_, i) => i !== index));
+          if (this.productId()) {
+            this.loadDeletedVariants(this.productId()!);
+          }
         },
       });
     } else {
       this.variants.update((list) => list.filter((_, i) => i !== index));
     }
+  }
+
+  restoreVariant(variantId: number): void {
+    this.productService.restoreVariant(variantId).subscribe({
+      next: () => {
+        if (this.productId()) {
+          this.loadProductData(this.productId()!);
+          this.loadDeletedVariants(this.productId()!);
+        }
+      },
+    });
   }
 
   updateVariantField(index: number, field: string, value: any): void {
@@ -199,7 +235,7 @@ export class ProductFormComponent implements OnInit {
       const req = { ...target.request, [field]: value };
       target.request = req;
       if (target.saveStatus === 'saved') {
-        target.saveStatus = 'pending'; // Mark as dirty
+        target.saveStatus = 'pending';
       }
       copy[index] = target;
       return copy;
@@ -245,16 +281,30 @@ export class ProductFormComponent implements OnInit {
   removeImage(index: number): void {
     const item = this.images()[index];
     if (item.imageId) {
-      this.productService.deleteImage(item.imageId).subscribe({
+      this.productService.softDeleteImage(item.imageId).subscribe({
         next: () => {
           this.images.update((list) => list.filter((_, i) => i !== index));
           this.ensureMainImage();
+          if (this.productId()) {
+            this.loadDeletedImages(this.productId()!);
+          }
         },
       });
     } else {
       this.images.update((list) => list.filter((_, i) => i !== index));
       this.ensureMainImage();
     }
+  }
+
+  restoreImage(imageId: number): void {
+    this.productService.restoreImage(imageId).subscribe({
+      next: () => {
+        if (this.productId()) {
+          this.loadProductData(this.productId()!);
+          this.loadDeletedImages(this.productId()!);
+        }
+      },
+    });
   }
 
   setMainImage(index: number): void {
@@ -293,7 +343,6 @@ export class ProductFormComponent implements OnInit {
       const copy = [...list];
       const [dragged] = copy.splice(this.draggedImageIndex!, 1);
       copy.splice(targetIndex, 0, dragged);
-      // Update sortOrder
       return copy.map((img, idx) => ({
         ...img,
         request: { ...img.request, sortOrder: idx },
@@ -302,13 +351,13 @@ export class ProductFormComponent implements OnInit {
     this.draggedImageIndex = null;
   }
 
-  // ── Save Flow (Multi-step with partial failure handling) ───────
+  // ── Save Flow ─────────────────────────────────────────────────
   saveProduct(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.saveMessage.set({
         type: 'error',
-        text: 'Please fill in all required fields.',
+        text: 'Vui lòng điền đầy đủ các thông tin bắt buộc.',
       });
       return;
     }
@@ -328,7 +377,6 @@ export class ProductFormComponent implements OnInit {
       status: raw.status,
     };
 
-    // Step 1: Save Product
     const saveProduct$ = this.isEditMode()
       ? this.productService.update(this.productId()!, productReq)
       : this.productService.create(productReq);
@@ -339,14 +387,13 @@ export class ProductFormComponent implements OnInit {
         this.productId.set(targetProdId);
         this.isEditMode.set(true);
 
-        // Step 2 & 3: Save Variants & Images in parallel with catchError per item
         this.saveVariantsAndImages(targetProdId);
       },
       error: (err) => {
         this.saving.set(false);
         this.saveMessage.set({
           type: 'error',
-          text: err.error?.message || 'Failed to save product information.',
+          text: err.error?.message || 'Lưu thông tin sản phẩm thất bại.',
         });
       },
     });
@@ -356,7 +403,6 @@ export class ProductFormComponent implements OnInit {
     const variantList = this.variants();
     const imageList = this.images();
 
-    // Mark items as saving
     this.variants.update((list) =>
       list.map((v) => (v.saveStatus === 'saved' ? v : { ...v, saveStatus: 'saving' }))
     );
@@ -364,7 +410,6 @@ export class ProductFormComponent implements OnInit {
       list.map((img) => (img.saveStatus === 'saved' ? img : { ...img, saveStatus: 'saving' }))
     );
 
-    // Build Variant Observables
     const variantObs = variantList.map((v, i) => {
       if (v.saveStatus === 'saved') return of(v);
 
@@ -377,14 +422,13 @@ export class ProductFormComponent implements OnInit {
           this.updateVariantStatus(i, 'saved', res.data.variantId);
         }),
         catchError((err) => {
-          const msg = err.error?.message || 'Error saving variant';
+          const msg = err.error?.message || 'Lỗi lưu phiên bản';
           this.updateVariantStatus(i, 'error', null, msg);
-          return of(null); // Prevent forkJoin from cancelling
+          return of(null);
         })
       );
     });
 
-    // Build Image Observables
     const imageObs = imageList.map((img, i) => {
       if (img.saveStatus === 'saved') return of(img);
 
@@ -397,9 +441,9 @@ export class ProductFormComponent implements OnInit {
           this.updateImageStatus(i, 'saved', res.data.imageId);
         }),
         catchError((err) => {
-          const msg = err.error?.message || 'Error saving image';
+          const msg = err.error?.message || 'Lỗi lưu hình ảnh';
           this.updateImageStatus(i, 'error', null, msg);
-          return of(null); // Prevent forkJoin from cancelling
+          return of(null);
         })
       );
     });
@@ -409,7 +453,6 @@ export class ProductFormComponent implements OnInit {
       images: forkJoin(imageObs.length ? imageObs : [of(null)]),
     }).subscribe({
       next: () => {
-        // Reorder images if all images have imageId
         const savedImageIds = this.images()
           .map((img) => img.imageId)
           .filter((id): id is number => id != null);
@@ -475,24 +518,23 @@ export class ProductFormComponent implements OnInit {
     if (errorVariants.length === 0 && errorImages.length === 0) {
       this.saveMessage.set({
         type: 'success',
-        text: 'Product and all nested items saved successfully!',
+        text: 'Đã lưu thành công sản phẩm và toàn bộ phiên bản, hình ảnh!',
       });
     } else {
       const parts = [];
       if (errorVariants.length > 0) {
-        parts.push(`${errorVariants.length} variant(s) failed`);
+        parts.push(`${errorVariants.length} phiên bản lỗi`);
       }
       if (errorImages.length > 0) {
-        parts.push(`${errorImages.length} image(s) failed`);
+        parts.push(`${errorImages.length} ảnh lỗi`);
       }
       this.saveMessage.set({
         type: 'warning',
-        text: `Product saved, but ${parts.join(' and ')}. Check the highlighted items and try saving again.`,
+        text: `Đã lưu sản phẩm nhưng có ${parts.join(' và ')}. Vui lòng kiểm tra lại.`,
       });
     }
   }
 
-  // Helper
   hasError(field: string): boolean {
     const ctrl = this.form.get(field);
     return !!(ctrl?.invalid && ctrl?.touched);

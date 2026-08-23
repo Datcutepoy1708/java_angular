@@ -10,6 +10,7 @@ import {
   ProductResponse,
   ProductVariantRequest,
 } from '../models/product.model';
+import { BulkActionRequest } from '../models/bulk.model';
 
 describe('ProductService', () => {
   let service: ProductService;
@@ -33,6 +34,8 @@ describe('ProductService', () => {
     description: 'High performance processor',
     warrantyMonths: 36,
     status: 'active',
+    deleted: false,
+    deletedAt: null,
     viewCount: 150,
     mainImageUrl: 'https://example.com/i7.jpg',
     images: [],
@@ -107,6 +110,38 @@ describe('ProductService', () => {
     const req = httpMock.expectOne(`${baseUrl}/products`);
     expect(req.request.method).toBe('POST');
     req.flush({ success: true, message: 'Created', data: mockProduct });
+  });
+
+  it('should soft-delete product', () => {
+    service.softDelete(1).subscribe((res) => {
+      expect(res.success).toBe(true);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/products/1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ success: true, message: 'Deleted', data: null });
+  });
+
+  it('should restore product', () => {
+    service.restore(1).subscribe((res) => {
+      expect(res.success).toBe(true);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/products/1/restore`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ success: true, message: 'Restored', data: null });
+  });
+
+  it('should bulk action products', () => {
+    const bulkReq: BulkActionRequest = { ids: [1, 2], action: 'delete' };
+    service.bulkAction(bulkReq).subscribe((res) => {
+      expect(res.data.successCount).toBe(2);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/products/bulk`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual(bulkReq);
+    req.flush({ success: true, message: 'Bulk done', data: { successCount: 2, failCount: 0, results: [] } });
   });
 
   it('should create variant for product', () => {

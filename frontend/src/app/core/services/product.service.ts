@@ -11,14 +11,15 @@ import {
   ProductVariantRequest,
   ProductVariantResponse,
 } from '../models/product.model';
+import { BulkActionRequest, BulkActionResult } from '../models/bulk.model';
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
-interface PageResponse<T> {
+export interface PageResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
@@ -45,6 +46,11 @@ export class ProductService {
     return this.http.get<ApiResponse<PageResponse<ProductResponse>>>(`${this.base}/products`, { params });
   }
 
+  getTrash(page = 0, size = 10): Observable<ApiResponse<PageResponse<ProductResponse>>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<ApiResponse<PageResponse<ProductResponse>>>(`${this.base}/products/trash`, { params });
+  }
+
   getById(id: number): Observable<ApiResponse<ProductResponse>> {
     return this.http.get<ApiResponse<ProductResponse>>(`${this.base}/products/${id}`);
   }
@@ -57,14 +63,30 @@ export class ProductService {
     return this.http.put<ApiResponse<ProductResponse>>(`${this.base}/products/${id}`, request);
   }
 
-  delete(id: number): Observable<ApiResponse<void>> {
+  softDelete(id: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.base}/products/${id}`);
+  }
+
+  restore(id: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.base}/products/${id}/restore`, {});
+  }
+
+  bulkAction(request: BulkActionRequest): Observable<ApiResponse<BulkActionResult>> {
+    return this.http.patch<ApiResponse<BulkActionResult>>(`${this.base}/products/bulk`, request);
+  }
+
+  delete(id: number): Observable<ApiResponse<void>> {
+    return this.softDelete(id);
   }
 
   // ─── Variant CRUD ─────────────────────────────────────────────
 
   getVariants(productId: number): Observable<ApiResponse<ProductVariantResponse[]>> {
     return this.http.get<ApiResponse<ProductVariantResponse[]>>(`${this.base}/products/${productId}/variants`);
+  }
+
+  getDeletedVariants(productId: number): Observable<ApiResponse<ProductVariantResponse[]>> {
+    return this.http.get<ApiResponse<ProductVariantResponse[]>>(`${this.base}/products/${productId}/variants/deleted`);
   }
 
   createVariant(productId: number, request: ProductVariantRequest): Observable<ApiResponse<ProductVariantResponse>> {
@@ -75,14 +97,26 @@ export class ProductService {
     return this.http.put<ApiResponse<ProductVariantResponse>>(`${this.base}/variants/${variantId}`, request);
   }
 
-  deleteVariant(variantId: number): Observable<ApiResponse<void>> {
+  softDeleteVariant(variantId: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.base}/variants/${variantId}`);
+  }
+
+  restoreVariant(variantId: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.base}/variants/${variantId}/restore`, {});
+  }
+
+  deleteVariant(variantId: number): Observable<ApiResponse<void>> {
+    return this.softDeleteVariant(variantId);
   }
 
   // ─── Image CRUD ───────────────────────────────────────────────
 
   getImages(productId: number): Observable<ApiResponse<ProductImageResponse[]>> {
     return this.http.get<ApiResponse<ProductImageResponse[]>>(`${this.base}/products/${productId}/images`);
+  }
+
+  getDeletedImages(productId: number): Observable<ApiResponse<ProductImageResponse[]>> {
+    return this.http.get<ApiResponse<ProductImageResponse[]>>(`${this.base}/products/${productId}/images/deleted`);
   }
 
   addImage(productId: number, request: ProductImageRequest): Observable<ApiResponse<ProductImageResponse>> {
@@ -93,18 +127,22 @@ export class ProductService {
     return this.http.put<ApiResponse<ProductImageResponse>>(`${this.base}/images/${imageId}`, request);
   }
 
-  deleteImage(imageId: number): Observable<ApiResponse<void>> {
+  softDeleteImage(imageId: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.base}/images/${imageId}`);
+  }
+
+  restoreImage(imageId: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.base}/images/${imageId}/restore`, {});
+  }
+
+  deleteImage(imageId: number): Observable<ApiResponse<void>> {
+    return this.softDeleteImage(imageId);
   }
 
   setMainImage(imageId: number): Observable<ApiResponse<ProductImageResponse>> {
     return this.http.patch<ApiResponse<ProductImageResponse>>(`${this.base}/images/${imageId}/main`, {});
   }
 
-  /**
-   * Reorder images by sending the ordered list of imageIds.
-   * Called after drag-and-drop reordering in the product form.
-   */
   reorderImages(productId: number, imageIds: number[]): Observable<ApiResponse<void>> {
     return this.http.put<ApiResponse<void>>(`${this.base}/products/${productId}/images/reorder`, imageIds);
   }

@@ -1,7 +1,9 @@
 package com.store.service.impl;
 
+import com.store.dto.request.BulkActionRequest;
 import com.store.dto.request.ProductFilterRequest;
 import com.store.dto.request.ProductRequest;
+import com.store.dto.response.BulkActionResult;
 import com.store.dto.response.PageResponse;
 import com.store.dto.response.ProductResponse;
 import com.store.entity.brand.Brand;
@@ -89,6 +91,15 @@ public class ProductServiceImpl implements ProductService {
                 .map(ProductResponse::fromEntity);
 
         return PageResponse.of(productPage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ProductResponse> getDeletedProducts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("deletedAt").descending());
+        Page<ProductResponse> result = productRepository.findByDeletedAtIsNotNull(pageable)
+                .map(ProductResponse::fromEntity);
+        return PageResponse.of(result);
     }
 
     @Override
@@ -236,11 +247,72 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
-    public void deleteProduct(Long id) {
-        log.info("Deleting product with id {}", id);
+    public void softDeleteProduct(Long id) {
+        log.info("Soft-deleting product with id {}", id);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-        productRepository.delete(product);
+        if (product.getDeletedAt() != null) {
+            throw new IllegalStateException("Product is already deleted");
+        }
+        // Only set deletedAt — status and variants/images are NOT changed
+        product.setDeletedAt(java.time.LocalDateTime.now());
+        productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public void restoreProduct(Long id) {
+        log.info("Restoring product with id {}", id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        if (product.getDeletedAt() == null) {
+            throw new IllegalStateException("Product is not deleted");
+        }
+        product.setDeletedAt(null);
+        productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public BulkActionResult bulkAction(BulkActionRequest request) {
+        log.info("Bulk action '{}' on {} product(s)", request.getAction(), request.getIds().size());
+        List<BulkActionResult.BulkItemResult> results = new ArrayList<>();
+        int successCount = 0;
+        int failCount = 0;
+
+        for (Long id : request.getIds()) {
+            try {
+                Product product = productRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("NOT_FOUND"));
+
+                switch (request.getAction()) {
+                    case "delete" -> {
+                        if (product.getDeletedAt() != null) throw new IllegalStateException("ALREADY_DELETED");
+                        product.setDeletedAt(java.time.LocalDateTime.now());
+                    }
+                    case "restore" -> {
+                        if (product.getDeletedAt() == null) throw new IllegalStateException("ALREADY_ACTIVE");
+                        product.setDeletedAt(null);
+                    }
+                    default -> throw new IllegalArgumentException("Unknown action: " + request.getAction());
+                }
+                productRepository.save(product);
+                results.add(BulkActionResult.BulkItemResult.builder().id(id).success(true).build());
+                successCount++;
+            } catch (Exception e) {
+                results.add(BulkActionResult.BulkItemResult.builder()
+                        .id(id).success(false).error(e.getMessage()).build());
+                failCount++;
+            }
+        }
+
+        return BulkActionResult.builder()
+                .successCount(successCount)
+                .failCount(failCount)
+                .results(results)
+                .build();
     }
 
     @Override
@@ -251,5 +323,14 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         product.setViewCount(product.getViewCount() + 1);
         productRepository.save(product);
+    }
+
+    /** @deprecated Use softDeleteProduct instead */
+    @Override
+    @Deprecated
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public void deleteProduct(Long id) {
+        softDeleteProduct(id);
     }
 }

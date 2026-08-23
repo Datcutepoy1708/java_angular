@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { BrandService } from './brand.service';
 import { environment } from '../../../environments/environment';
 import { BrandRequest, BrandResponse } from '../models/brand.model';
+import { BulkActionRequest } from '../models/bulk.model';
 
 describe('BrandService', () => {
   let service: BrandService;
@@ -18,6 +19,9 @@ describe('BrandService', () => {
     logoUrl: 'https://example.com/asus.png',
     country: 'Taiwan',
     description: 'PC Hardware manufacturer',
+    status: 'active',
+    deleted: false,
+    deletedAt: null,
     createdAt: '2026-08-23T00:00:00Z',
     updatedAt: '2026-08-23T00:00:00Z',
   };
@@ -56,7 +60,7 @@ describe('BrandService', () => {
   });
 
   it('should get paginated brands with query parameters', () => {
-    service.getPaginated(1, 5, 'name', 'desc').subscribe((res) => {
+    service.getPaginated(1, 5, '', '', 'name', 'desc').subscribe((res) => {
       expect(res.success).toBe(true);
       expect(res.data.content.length).toBe(1);
       expect(res.data.totalElements).toBe(10);
@@ -122,13 +126,35 @@ describe('BrandService', () => {
     req.flush({ success: true, message: 'Updated', data: { ...mockBrand, name: 'ASUS ROG' } });
   });
 
-  it('should delete a brand', () => {
-    service.delete(1).subscribe((res) => {
+  it('should soft-delete a brand', () => {
+    service.softDelete(1).subscribe((res) => {
       expect(res.success).toBe(true);
     });
 
     const req = httpMock.expectOne(`${baseUrl}/1`);
     expect(req.request.method).toBe('DELETE');
     req.flush({ success: true, message: 'Deleted', data: null });
+  });
+
+  it('should restore a brand', () => {
+    service.restore(1).subscribe((res) => {
+      expect(res.success).toBe(true);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/1/restore`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ success: true, message: 'Restored', data: null });
+  });
+
+  it('should bulk action brands', () => {
+    const bulkReq: BulkActionRequest = { ids: [1, 2], action: 'delete' };
+    service.bulkAction(bulkReq).subscribe((res) => {
+      expect(res.data.successCount).toBe(2);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/bulk`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual(bulkReq);
+    req.flush({ success: true, message: 'Bulk done', data: { successCount: 2, failCount: 0, results: [] } });
   });
 });

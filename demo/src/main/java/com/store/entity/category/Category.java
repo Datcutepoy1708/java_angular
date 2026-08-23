@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,4 +63,11 @@ public class Category {
     @Column(name = "status", columnDefinition = "enum('active','inactive')")
     @Builder.Default
     private CategoryStatus status = CategoryStatus.ACTIVE;
+
+    /**
+     * Soft-delete timestamp. NULL = active; NOT NULL = in trash.
+     * Never changes the `status` field — preserves original business state on restore.
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

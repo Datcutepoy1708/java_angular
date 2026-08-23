@@ -93,7 +93,7 @@ class ProductImageServiceTest {
         @DisplayName("getImagesByProductId should return list when product exists")
         void getImagesByProductId_success() {
             when(productRepository.existsById(1L)).thenReturn(true);
-            when(productImageRepository.findByProduct_ProductIdOrderBySortOrderAscImageIdAsc(1L))
+            when(productImageRepository.findByProduct_ProductIdAndDeletedAtIsNullOrderBySortOrderAscImageIdAsc(1L))
                     .thenReturn(List.of(testMainImage, testSubImage));
 
             List<ProductImageResponse> result = productImageService.getImagesByProductId(1L);
@@ -205,13 +205,14 @@ class ProductImageServiceTest {
         }
 
         @Test
-        @DisplayName("deleteImage should delete when found")
+        @DisplayName("deleteImage should soft-delete when found")
         void deleteImage_success() {
             when(productImageRepository.findById(100L)).thenReturn(Optional.of(testMainImage));
 
             productImageService.deleteImage(100L);
 
-            verify(productImageRepository).delete(testMainImage);
+            verify(productImageRepository).save(testMainImage);
+            assertThat(testMainImage.getDeletedAt()).isNotNull();
         }
 
         @Test

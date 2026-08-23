@@ -5,6 +5,9 @@ export interface BrandResponse {
   logoUrl: string | null;
   country: string | null;
   description: string | null;
+  status: 'active' | 'inactive';
+  deleted: boolean;
+  deletedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -18,7 +21,8 @@ export interface BrandRequest {
   logoUrl?: string | null;
   country?: string | null;
   description?: string | null;
-  slug?: string | null; // optional — omit on create, include only if editing slug
+  slug?: string | null;
+  status?: 'active' | 'inactive';
 }
 
 export interface BrandPage {

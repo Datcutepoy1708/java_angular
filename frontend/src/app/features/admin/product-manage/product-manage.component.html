@@ -2,63 +2,112 @@
   <!-- Header -->
   <div class="page-header">
     <div>
-      <h2 class="page-title">Products</h2>
+      <h2 class="page-title">Quản lý sản phẩm</h2>
+      <p class="page-desc">Danh sách máy tính, laptop, linh kiện phần cứng và thiết bị ngoại vi</p>
     </div>
-    <a routerLink="/admin/products/new" class="btn btn-primary" id="btn-add-product">
-      + Add New Product
-    </a>
+    @if (viewMode() === 'active') {
+      <a routerLink="/admin/products/new" class="btn btn-primary" id="btn-add-product">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Thêm sản phẩm mới
+      </a>
+    }
   </div>
 
-  <!-- Filter Bar -->
-  <div class="card filter-card">
-    <form [formGroup]="filterForm" (ngSubmit)="onFilterChange()" class="filter-form">
-      <!-- Search Input -->
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" class="search-icon">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-        </svg>
-        <input
-          type="text"
-          formControlName="keyword"
-          (keyup.enter)="onFilterChange()"
-          placeholder="Search by product name or SKU..."
-          class="search-input"
-          id="product-search-input"
-        />
+  <!-- Tab Toggle & Filter Bar Card -->
+  <div class="card toolbar-card">
+    <div class="toolbar-top">
+      <!-- Tabs -->
+      <div class="tab-group" role="tablist">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="viewMode() === 'active'"
+          (click)="switchTab('active')"
+          role="tab"
+          id="tab-prod-active"
+        >
+          Đang hoạt động
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="viewMode() === 'trash'"
+          (click)="switchTab('trash')"
+          role="tab"
+          id="tab-prod-trash"
+        >
+          Thùng rác (Đã xóa mềm)
+        </button>
       </div>
 
-      <!-- Category Filter -->
-      <div class="filter-select-wrap">
-        <select formControlName="categoryId" (change)="onFilterChange()" class="filter-select" id="filter-category">
-          <option [ngValue]="null">All Categories</option>
-          @for (c of categories(); track c.categoryId) {
-            <option [ngValue]="c.categoryId">{{ c.name }}</option>
+      <!-- Quick Filter (Active mode only) -->
+      @if (viewMode() === 'active') {
+        <form [formGroup]="filterForm" (ngSubmit)="onFilterChange()" class="filter-group">
+          <!-- Search box -->
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              formControlName="keyword"
+              (keyup.enter)="onFilterChange()"
+              placeholder="Tìm theo tên hoặc SKU..."
+              class="search-input"
+              id="product-search-input"
+            />
+          </div>
+
+          <!-- Category Filter -->
+          <select formControlName="categoryId" (change)="onFilterChange()" class="filter-select" id="filter-category">
+            <option [ngValue]="null">Tất cả danh mục</option>
+            @for (c of categories(); track c.categoryId) {
+              <option [ngValue]="c.categoryId">{{ c.name }}</option>
+            }
+          </select>
+
+          <!-- Brand Filter -->
+          <select formControlName="brandId" (change)="onFilterChange()" class="filter-select" id="filter-brand">
+            <option [ngValue]="null">Tất cả thương hiệu</option>
+            @for (b of brands(); track b.brandId) {
+              <option [ngValue]="b.brandId">{{ b.name }}</option>
+            }
+          </select>
+
+          <!-- Status Filter -->
+          <select formControlName="status" (change)="onFilterChange()" class="filter-select" id="filter-status">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Đang bán</option>
+            <option value="inactive">Tạm ẩn</option>
+            <option value="discontinued">Ngừng kinh doanh</option>
+          </select>
+
+          <button type="button" class="btn btn-ghost btn-sm" (click)="resetFilter()">Đặt lại</button>
+        </form>
+      }
+    </div>
+
+    <!-- Bulk Actions Bar -->
+    @if (selectedIds().length > 0) {
+      <div class="bulk-action-bar">
+        <span class="bulk-count">Đã chọn <strong>{{ selectedIds().length }}</strong> sản phẩm</span>
+        <div class="bulk-btns">
+          @if (viewMode() === 'active') {
+            <button class="btn btn-sm btn-ghost-danger" (click)="executeBulkAction('delete')" [disabled]="bulkLoading()">
+              Xóa vào thùng rác
+            </button>
+          } @else {
+            <button class="btn btn-sm btn-primary" (click)="executeBulkAction('restore')" [disabled]="bulkLoading()">
+              Khôi phục mục đã chọn
+            </button>
           }
-        </select>
+        </div>
       </div>
-
-      <!-- Brand Filter -->
-      <div class="filter-select-wrap">
-        <select formControlName="brandId" (change)="onFilterChange()" class="filter-select" id="filter-brand">
-          <option [ngValue]="null">All Brands</option>
-          @for (b of brands(); track b.brandId) {
-            <option [ngValue]="b.brandId">{{ b.name }}</option>
-          }
-        </select>
-      </div>
-
-      <!-- Status Filter -->
-      <div class="filter-select-wrap">
-        <select formControlName="status" (change)="onFilterChange()" class="filter-select" id="filter-status">
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="discontinued">Discontinued</option>
-        </select>
-      </div>
-    </form>
+    }
   </div>
 
   <!-- Product Table Card -->
@@ -66,90 +115,135 @@
     @if (loading()) {
       <div class="loading-state">
         <div class="spinner"></div>
-        <span>Loading products...</span>
+        <span>Đang tải danh sách sản phẩm...</span>
       </div>
     } @else if (products().length === 0) {
       <div class="empty-state">
-        <p>No products found matching the criteria.</p>
+        @if (viewMode() === 'trash') {
+          <p>Thùng rác trống. Không có sản phẩm nào bị ẩn.</p>
+        } @else {
+          <p>Không tìm thấy sản phẩm nào phù hợp tiêu chí.</p>
+        }
       </div>
     } @else {
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="th-product">Product</th>
-            <th>Category</th>
-            <th>Brand</th>
-            <th>Price</th>
-            <th>Status</th>
-            <th class="th-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (prod of products(); track prod.productId) {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
             <tr>
-              <td class="td-product">
-                <div class="product-cell">
-                  @if (prod.mainImageUrl) {
-                    <img [src]="prod.mainImageUrl" [alt]="prod.name" class="product-thumb" />
-                  } @else {
-                    <div class="product-thumb-placeholder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                    </div>
-                  }
-                  <div class="product-meta">
-                    <span class="product-name">{{ prod.name }}</span>
-                    @if (prod.sku) {
-                      <span class="product-sku">SKU: {{ prod.sku }}</span>
-                    }
-                  </div>
-                </div>
-              </td>
-              <td>{{ prod.categoryName ?? '—' }}</td>
-              <td>{{ prod.brandName ?? '—' }}</td>
-              <td class="product-price">{{ getPriceDisplay(prod) }}</td>
-              <td>
-                <span class="status-pill" [class]="'status-pill--' + getStatusClass(prod.status)">
-                  {{ getStatusLabel(prod.status) }}
-                </span>
-              </td>
-              <td class="td-actions">
-                <button
-                  class="btn-icon"
-                  (click)="editProduct(prod.productId)"
-                  [attr.id]="'btn-edit-prod-' + prod.productId"
-                  title="Edit product"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                       stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                  </svg>
-                </button>
-                <button
-                  class="btn-icon btn-icon--danger"
-                  (click)="askDelete(prod)"
-                  [disabled]="deleting() === prod.productId"
-                  [attr.id]="'btn-delete-prod-' + prod.productId"
-                  title="Delete product"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                       stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
-                </button>
-              </td>
+              <th class="th-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="isAllSelected()"
+                  [indeterminate]="isSomeSelected()"
+                  (change)="toggleSelectAll()"
+                  aria-label="Chọn tất cả sản phẩm"
+                />
+              </th>
+              <th class="th-product">SẢN PHẨM</th>
+              <th>DANH MỤC</th>
+              <th>THƯƠNG HIỆU</th>
+              <th>KHOẢNG GIÁ</th>
+              <th>TRẠNG THÁI</th>
+              <th class="th-actions">THAO TÁC</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (prod of products(); track prod.productId) {
+              <tr [class.selected-row]="selectedIds().includes(prod.productId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedIds().includes(prod.productId)"
+                    (change)="toggleSelectItem(prod.productId)"
+                    [attr.aria-label]="'Chọn ' + prod.name"
+                  />
+                </td>
+                <td class="td-product">
+                  <div class="product-cell">
+                    @if (prod.mainImageUrl) {
+                      <img [src]="prod.mainImageUrl" [alt]="prod.name" class="product-thumb" />
+                    } @else {
+                      <div class="product-thumb-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                    }
+                    <div class="product-meta">
+                      <span class="product-name">{{ prod.name }}</span>
+                      @if (prod.sku) {
+                        <span class="product-sku">SKU: {{ prod.sku }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td>{{ prod.categoryName ?? '—' }}</td>
+                <td>{{ prod.brandName ?? '—' }}</td>
+                <td class="product-price">{{ getPriceDisplay(prod) }}</td>
+                <td>
+                  @if (prod.deleted) {
+                    <span class="status-badge status-badge--trash">Đã xóa mềm</span>
+                  } @else {
+                    <span class="status-badge" [class]="'status-badge--' + getStatusClass(prod.status)">
+                      {{ getStatusLabel(prod.status) }}
+                    </span>
+                  }
+                </td>
+                <td class="td-actions">
+                  @if (viewMode() === 'active') {
+                    <button
+                      class="btn-icon"
+                      (click)="editProduct(prod.productId)"
+                      [attr.id]="'btn-edit-prod-' + prod.productId"
+                      title="Chỉnh sửa sản phẩm"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                           stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                    </button>
+                    <button
+                      class="btn-icon btn-icon--danger"
+                      (click)="askDelete(prod)"
+                      [disabled]="deleting() === prod.productId"
+                      [attr.id]="'btn-delete-prod-' + prod.productId"
+                      title="Xóa vào thùng rác"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                           stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  } @else {
+                    <button
+                      class="btn-icon btn-icon--success"
+                      (click)="restoreProduct(prod.productId)"
+                      [disabled]="restoring() === prod.productId"
+                      [attr.id]="'btn-restore-prod-' + prod.productId"
+                      title="Khôi phục sản phẩm"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                           stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                        <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                      </svg>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
 
-      <!-- Bottom Pagination matching mockup -->
+      <!-- Bottom Pagination -->
       <div class="table-pagination">
         <div class="rows-per-page">
-          <span>Rows per page:</span>
+          <span>Số dòng mỗi trang:</span>
           <select [value]="pageSize()" (change)="onPageSizeChange($event)" class="size-select">
             <option [value]="5">5</option>
             <option [value]="10">10</option>
@@ -164,21 +258,22 @@
             class="arrow-btn"
             (click)="goToPage(currentPage() - 1)"
             [disabled]="currentPage() === 0"
-            title="Previous page"
+            title="Trang trước"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
+            ‹
           </button>
+          @for (p of pageNumbers(); track p) {
+            <button class="page-num-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">
+              {{ p + 1 }}
+            </button>
+          }
           <button
             class="arrow-btn"
             (click)="goToPage(currentPage() + 1)"
             [disabled]="currentPage() >= totalPages() - 1"
-            title="Next page"
+            title="Trang sau"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
+            ›
           </button>
         </div>
       </div>
@@ -190,16 +285,16 @@
 @if (confirmDeleteId() !== null) {
   <div class="dialog-overlay">
     <div class="dialog" role="alertdialog">
-      <h4 class="dialog-title">Delete Product</h4>
+      <h4 class="dialog-title">Chuyển vào thùng rác</h4>
       <p class="dialog-body">
-        Are you sure you want to delete <strong>{{ confirmDeleteName() }}</strong>?
-        This action cannot be undone.
+        Bạn có chắc muốn chuyển sản phẩm <strong>{{ confirmDeleteName() }}</strong> vào thùng rác không?
+        Sản phẩm sẽ bị ẩn khỏi cửa hàng nhưng có thể khôi phục lại bất cứ lúc nào.
       </p>
       <div class="dialog-actions">
-        <button class="btn btn-ghost" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-ghost" (click)="cancelDelete()">Hủy bỏ</button>
         <button class="btn btn-danger" (click)="confirmDelete()"
                 [disabled]="deleting() !== null" id="btn-confirm-delete-prod">
-          @if (deleting() !== null) { Deleting... } @else { Delete }
+          @if (deleting() !== null) { Đang chuyển... } @else { Chuyển vào thùng rác }
         </button>
       </div>
     </div>

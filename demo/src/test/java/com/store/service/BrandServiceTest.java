@@ -59,13 +59,13 @@ class BrandServiceTest {
     @Test
     @DisplayName("Should return all brands successfully")
     void testGetAllBrands() {
-        when(brandRepository.findAll(any(Sort.class))).thenReturn(List.of(brand));
+        when(brandRepository.findAllActive()).thenReturn(List.of(brand));
 
         List<BrandResponse> result = brandService.getAllBrands();
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().getName()).isEqualTo("ASUS");
-        verify(brandRepository, times(1)).findAll(any(Sort.class));
+        verify(brandRepository, times(1)).findAllActive();
     }
 
     @Test
@@ -93,7 +93,7 @@ class BrandServiceTest {
     @Test
     @DisplayName("Should create brand successfully")
     void testCreateBrand_Success() {
-        when(brandRepository.existsByName("ASUS")).thenReturn(false);
+        when(brandRepository.existsByNameAndDeletedAtIsNull("ASUS")).thenReturn(false);
         when(brandRepository.existsBySlug("asus")).thenReturn(false);
         when(brandRepository.save(any(Brand.class))).thenReturn(brand);
 
@@ -107,7 +107,7 @@ class BrandServiceTest {
     @Test
     @DisplayName("Should throw DuplicateResourceException when brand name already exists")
     void testCreateBrand_DuplicateName() {
-        when(brandRepository.existsByName("ASUS")).thenReturn(true);
+        when(brandRepository.existsByNameAndDeletedAtIsNull("ASUS")).thenReturn(true);
 
         assertThatThrownBy(() -> brandService.createBrand(brandRequest))
                 .isInstanceOf(DuplicateResourceException.class)
@@ -129,13 +129,14 @@ class BrandServiceTest {
     }
 
     @Test
-    @DisplayName("Should delete brand successfully")
+    @DisplayName("Should soft-delete brand successfully")
     void testDeleteBrand_Success() {
         when(brandRepository.findById(1)).thenReturn(Optional.of(brand));
-        doNothing().when(brandRepository).delete(brand);
+        when(brandRepository.save(any(Brand.class))).thenReturn(brand);
 
         brandService.deleteBrand(1);
 
-        verify(brandRepository, times(1)).delete(brand);
+        verify(brandRepository, times(1)).save(brand);
+        assertThat(brand.getDeletedAt()).isNotNull();
     }
 }

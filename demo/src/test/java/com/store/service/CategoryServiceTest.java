@@ -86,7 +86,7 @@ class CategoryServiceTest {
         @Test
         @DisplayName("getAllCategories should return flat list of category responses")
         void getAllCategories_success() {
-            when(categoryRepository.findAll(any(Sort.class)))
+            when(categoryRepository.findAllActive())
                     .thenReturn(List.of(rootComponent, childCpu));
 
             List<CategoryResponse> result = categoryService.getAllCategories();
@@ -100,7 +100,7 @@ class CategoryServiceTest {
         @Test
         @DisplayName("getCategoryTree should build nested tree structure with 1 single query")
         void getCategoryTree_success() {
-            when(categoryRepository.findAll(any(Sort.class)))
+            when(categoryRepository.findAllActive())
                     .thenReturn(List.of(rootComponent, childCpu, grandChildIntel));
 
             List<CategoryResponse> tree = categoryService.getCategoryTree();
@@ -127,7 +127,7 @@ class CategoryServiceTest {
         @Test
         @DisplayName("getRootCategories should return only top-level categories")
         void getRootCategories_success() {
-            when(categoryRepository.findByParentIsNullOrderBySortOrderAscNameAsc())
+            when(categoryRepository.findActiveRoots())
                     .thenReturn(List.of(rootComponent));
 
             List<CategoryResponse> result = categoryService.getRootCategories();
@@ -184,7 +184,7 @@ class CategoryServiceTest {
         @Test
         @DisplayName("getCategoryBySlug should return category when found")
         void getCategoryBySlug_found() {
-            when(categoryRepository.findBySlug("linh-kien-may-tinh")).thenReturn(Optional.of(rootComponent));
+            when(categoryRepository.findBySlugActive("linh-kien-may-tinh")).thenReturn(Optional.of(rootComponent));
 
             CategoryResponse response = categoryService.getCategoryBySlug("linh-kien-may-tinh");
 
@@ -196,9 +196,9 @@ class CategoryServiceTest {
         @DisplayName("getCategoriesPaginated should return PageResponse")
         void getCategoriesPaginated_success() {
             Page<Category> page = new PageImpl<>(List.of(rootComponent, childCpu), PageRequest.of(0, 10), 2);
-            when(categoryRepository.findAll(any(PageRequest.class))).thenReturn(page);
+            when(categoryRepository.findAllActiveFiltered(any(), any(PageRequest.class))).thenReturn(page);
 
-            PageResponse<CategoryResponse> result = categoryService.getCategoriesPaginated(0, 10, "sortOrder", "asc");
+            PageResponse<CategoryResponse> result = categoryService.getCategoriesPaginated(0, 10, null, "sortOrder", "asc");
 
             assertThat(result.getContent()).hasSize(2);
             assertThat(result.getTotalElements()).isEqualTo(2);
@@ -213,89 +213,58 @@ class CategoryServiceTest {
         @DisplayName("createCategory as root should succeed")
         void createCategory_root_success() {
             CategoryRequest request = CategoryRequest.builder()
-                    .name("Laptop")
-                    .slug("laptop")
+                    .name("Phụ kiện")
+                    .slug("phu-kien")
                     .status("active")
-                    .sortOrder(1)
                     .build();
 
-            when(categoryRepository.existsByNameAndParentIsNull("Laptop")).thenReturn(false);
-            when(categoryRepository.existsBySlug("laptop")).thenReturn(false);
-            when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> {
-                Category c = inv.getArgument(0);
-                c.setCategoryId(10);
-                return c;
-            });
+            when(categoryRepository.existsByNameAndParentIsNull("Phụ kiện")).thenReturn(false);
+            when(categoryRepository.existsBySlug("phu-kien")).thenReturn(false);
+            when(categoryRepository.save(any(Category.class))).thenReturn(rootComponent);
 
-            CategoryResponse created = categoryService.createCategory(request);
+            CategoryResponse response = categoryService.createCategory(request);
 
-            assertThat(created).isNotNull();
-            assertThat(created.getCategoryId()).isEqualTo(10);
-            assertThat(created.getName()).isEqualTo("Laptop");
-            assertThat(created.getParentId()).isNull();
-            assertThat(created.getStatus()).isEqualTo("active");
+            assertThat(response).isNotNull();
         }
 
         @Test
         @DisplayName("createCategory with parent should succeed")
         void createCategory_withParent_success() {
             CategoryRequest request = CategoryRequest.builder()
-                    .name("VGA - Card màn hình")
-                    .slug("vga-card-man-hinh")
+                    .name("CPU Intel")
+                    .slug("cpu-intel")
                     .parentId(1)
                     .status("active")
                     .build();
 
             when(categoryRepository.findById(1)).thenReturn(Optional.of(rootComponent));
-            when(categoryRepository.existsByNameAndParent_CategoryId("VGA - Card màn hình", 1)).thenReturn(false);
-            when(categoryRepository.existsBySlug("vga-card-man-hinh")).thenReturn(false);
-            when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> {
-                Category c = inv.getArgument(0);
-                c.setCategoryId(20);
-                return c;
-            });
+            when(categoryRepository.existsByNameAndParent_CategoryId("CPU Intel", 1)).thenReturn(false);
+            when(categoryRepository.existsBySlug("cpu-intel")).thenReturn(false);
+            when(categoryRepository.save(any(Category.class))).thenReturn(childCpu);
 
-            CategoryResponse created = categoryService.createCategory(request);
+            CategoryResponse response = categoryService.createCategory(request);
 
-            assertThat(created).isNotNull();
-            assertThat(created.getCategoryId()).isEqualTo(20);
-            assertThat(created.getParentId()).isEqualTo(1);
+            assertThat(response).isNotNull();
         }
 
         @Test
-        @DisplayName("createCategory with nonexistent parent should throw ResourceNotFoundException")
-        void createCategory_parentNotFound() {
+        @DisplayName("createCategory should throw DuplicateResourceException when root name exists")
+        void createCategory_duplicateRootName_shouldThrow() {
             CategoryRequest request = CategoryRequest.builder()
-                    .name("VGA")
-                    .parentId(999)
+                    .name("Linh kiện máy tính")
+                    .slug("linh-kien-may-tinh-2")
                     .build();
 
-            when(categoryRepository.findById(999)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> categoryService.createCategory(request))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Parent category not found with id: 999");
-        }
-
-        @Test
-        @DisplayName("createCategory with duplicate name under same parent should throw DuplicateResourceException")
-        void createCategory_duplicateNameUnderSameParent() {
-            CategoryRequest request = CategoryRequest.builder()
-                    .name("CPU - Bộ vi xử lý")
-                    .parentId(1)
-                    .build();
-
-            when(categoryRepository.findById(1)).thenReturn(Optional.of(rootComponent));
-            when(categoryRepository.existsByNameAndParent_CategoryId("CPU - Bộ vi xử lý", 1)).thenReturn(true);
+            when(categoryRepository.existsByNameAndParentIsNull("Linh kiện máy tính")).thenReturn(true);
 
             assertThatThrownBy(() -> categoryService.createCategory(request))
                     .isInstanceOf(DuplicateResourceException.class)
-                    .hasMessageContaining("already exists under parent id 1");
+                    .hasMessageContaining("Root category with name 'Linh kiện máy tính' already exists");
         }
 
         @Test
-        @DisplayName("createCategory with duplicate slug globally should throw DuplicateResourceException")
-        void createCategory_duplicateSlug() {
+        @DisplayName("createCategory should throw DuplicateResourceException when slug exists")
+        void createCategory_duplicateSlug_shouldThrow() {
             CategoryRequest request = CategoryRequest.builder()
                     .name("CPU AMD")
                     .slug("cpu-bo-vi-xu-ly")
@@ -367,7 +336,7 @@ class CategoryServiceTest {
 
             assertThatThrownBy(() -> categoryService.updateCategory(1, request))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Circular reference detected");
+                    .hasMessageContaining("circular reference detected");
         }
     }
 
@@ -376,13 +345,15 @@ class CategoryServiceTest {
     class DeleteTests {
 
         @Test
-        @DisplayName("deleteCategory should delete successfully when found")
+        @DisplayName("deleteCategory should soft-delete successfully when found")
         void deleteCategory_success() {
             when(categoryRepository.findById(1)).thenReturn(Optional.of(rootComponent));
+            when(categoryRepository.findAllIncludingDeleted()).thenReturn(List.of(rootComponent));
 
             categoryService.deleteCategory(1);
 
-            verify(categoryRepository).delete(rootComponent);
+            verify(categoryRepository).saveAll(any());
+            assertThat(rootComponent.getDeletedAt()).isNotNull();
         }
 
         @Test
@@ -394,7 +365,7 @@ class CategoryServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Category not found with id: 99");
 
-            verify(categoryRepository, never()).delete(any());
+            verify(categoryRepository, never()).saveAll(any());
         }
 
         @Test

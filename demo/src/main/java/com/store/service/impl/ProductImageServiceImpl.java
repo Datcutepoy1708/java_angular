@@ -31,11 +31,24 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductImageResponse> getImagesByProductId(Long productId) {
-        log.info("Fetching images for product id {}", productId);
+        log.info("Fetching active images for product id {}", productId);
         if (!productRepository.existsById(productId)) {
             throw new ResourceNotFoundException("Product not found with id: " + productId);
         }
-        return productImageRepository.findByProduct_ProductIdOrderBySortOrderAscImageIdAsc(productId)
+        return productImageRepository.findByProduct_ProductIdAndDeletedAtIsNullOrderBySortOrderAscImageIdAsc(productId)
+                .stream()
+                .map(ProductImageResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductImageResponse> getDeletedImagesByProductId(Long productId) {
+        log.info("Fetching deleted images for product id {}", productId);
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Product not found with id: " + productId);
+        }
+        return productImageRepository.findByProduct_ProductIdAndDeletedAtIsNotNull(productId)
                 .stream()
                 .map(ProductImageResponse::fromEntity)
                 .toList();
@@ -151,11 +164,38 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     @Transactional
     @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
-    public void deleteImage(Long imageId) {
-        log.info("Deleting image id {}", imageId);
+    public void softDeleteImage(Long imageId) {
+        log.info("Soft-deleting image id {}", imageId);
         ProductImage image = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product image not found with id: " + imageId));
-        productImageRepository.delete(image);
+        if (image.getDeletedAt() != null) {
+            throw new IllegalStateException("Image is already deleted");
+        }
+        image.setDeletedAt(java.time.LocalDateTime.now());
+        productImageRepository.save(image);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public void restoreImage(Long imageId) {
+        log.info("Restoring image id {}", imageId);
+        ProductImage image = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product image not found with id: " + imageId));
+        if (image.getDeletedAt() == null) {
+            throw new IllegalStateException("Image is not deleted");
+        }
+        image.setDeletedAt(null);
+        productImageRepository.save(image);
+    }
+
+    /** @deprecated Use softDeleteImage instead */
+    @Override
+    @Deprecated
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public void deleteImage(Long imageId) {
+        softDeleteImage(imageId);
     }
 
     @Override

@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CategoryService } from './category.service';
 import { environment } from '../../../environments/environment';
 import { CategoryRequest, CategoryResponse } from '../models/category.model';
+import { BulkActionRequest } from '../models/bulk.model';
 
 describe('CategoryService', () => {
   let service: CategoryService;
@@ -21,6 +22,8 @@ describe('CategoryService', () => {
     description: 'PC Components',
     sortOrder: 0,
     status: 'active',
+    deleted: false,
+    deletedAt: null,
     children: [],
   };
 
@@ -108,13 +111,35 @@ describe('CategoryService', () => {
     req.flush({ success: true, message: 'Updated', data: { ...mockCategory, name: 'PC Components & Parts' } });
   });
 
-  it('should delete category', () => {
-    service.delete(1).subscribe((res) => {
+  it('should soft-delete category', () => {
+    service.softDelete(1).subscribe((res) => {
       expect(res.success).toBe(true);
     });
 
     const req = httpMock.expectOne(`${baseUrl}/1`);
     expect(req.request.method).toBe('DELETE');
     req.flush({ success: true, message: 'Deleted', data: null });
+  });
+
+  it('should restore category', () => {
+    service.restore(1).subscribe((res) => {
+      expect(res.success).toBe(true);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/1/restore`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ success: true, message: 'Restored', data: null });
+  });
+
+  it('should execute bulk action', () => {
+    const bulkReq: BulkActionRequest = { ids: [1, 2], action: 'delete' };
+    service.bulkAction(bulkReq).subscribe((res) => {
+      expect(res.data.successCount).toBe(2);
+    });
+
+    const req = httpMock.expectOne(`${baseUrl}/bulk`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual(bulkReq);
+    req.flush({ success: true, message: 'Bulk done', data: { successCount: 2, failCount: 0, results: [] } });
   });
 });

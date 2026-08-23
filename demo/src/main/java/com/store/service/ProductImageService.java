@@ -7,7 +7,11 @@ import java.util.List;
 
 public interface ProductImageService {
 
+    /** Returns only active (non-deleted) images */
     List<ProductImageResponse> getImagesByProductId(Long productId);
+
+    /** Returns only soft-deleted images for the product */
+    List<ProductImageResponse> getDeletedImagesByProductId(Long productId);
 
     List<ProductImageResponse> getImagesByVariantId(Long variantId);
 
@@ -17,7 +21,15 @@ public interface ProductImageService {
 
     ProductImageResponse updateImage(Long imageId, ProductImageRequest request);
 
-    void deleteImage(Long imageId);
+    /** Soft-delete: sets deleted_at = NOW() */
+    void softDeleteImage(Long imageId);
+
+    /** Restore: sets deleted_at = NULL */
+    void restoreImage(Long imageId);
 
     void updateSortOrders(Long productId, List<Long> imageIdsInOrder);
+
+    /** @deprecated Use softDeleteImage instead */
+    @Deprecated
+    void deleteImage(Long imageId);
 }

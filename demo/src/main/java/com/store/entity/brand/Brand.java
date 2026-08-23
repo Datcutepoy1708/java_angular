@@ -1,6 +1,7 @@
 package com.store.entity.brand;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,6 +12,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "brands")
@@ -40,4 +43,16 @@ public class Brand {
 
     @Column(name = "description", length = 500)
     private String description;
+
+    @Convert(converter = BrandStatusConverter.class)
+    @Column(name = "status", columnDefinition = "enum('active','inactive')")
+    @Builder.Default
+    private BrandStatus status = BrandStatus.ACTIVE;
+
+    /**
+     * Soft-delete timestamp. NULL = active; NOT NULL = in trash.
+     * Never changes the `status` field — preserves original business state on restore.
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

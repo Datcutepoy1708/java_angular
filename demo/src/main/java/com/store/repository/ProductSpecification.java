@@ -47,6 +47,9 @@ public class ProductSpecification {
                 predicates.add(criteriaBuilder.or(nameLike, skuLike, slugLike));
             }
 
+            // Always exclude soft-deleted products from normal listings
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }

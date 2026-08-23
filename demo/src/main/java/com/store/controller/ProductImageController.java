@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -29,61 +30,77 @@ public class ProductImageController {
     private final ProductImageService productImageService;
 
     @GetMapping("/api/v1/products/{productId}/images")
-    @Operation(summary = "Get images of a product", description = "Retrieve all gallery images of a specific product")
+    @Operation(summary = "Get active images of a product")
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> getImagesByProductId(@PathVariable Long productId) {
-        List<ProductImageResponse> images = productImageService.getImagesByProductId(productId);
-        return ResponseEntity.ok(ApiResponse.success("Product images retrieved successfully", images));
+        return ResponseEntity.ok(ApiResponse.success("Product images retrieved successfully",
+                productImageService.getImagesByProductId(productId)));
+    }
+
+    @GetMapping("/api/v1/products/{productId}/images/deleted")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
+    @Operation(summary = "Get soft-deleted (hidden) images for a product")
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> getDeletedImages(@PathVariable Long productId) {
+        return ResponseEntity.ok(ApiResponse.success("Deleted images retrieved",
+                productImageService.getDeletedImagesByProductId(productId)));
     }
 
     @PostMapping("/api/v1/products/{productId}/images")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Add image to product", description = "Add a new image to product or variant and evict product cache")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
+    @Operation(summary = "Add image to product")
     public ResponseEntity<ApiResponse<ProductImageResponse>> addImage(
             @PathVariable Long productId,
             @Valid @RequestBody ProductImageRequest request
     ) {
-        ProductImageResponse createdImage = productImageService.addImage(productId, request);
+        ProductImageResponse created = productImageService.addImage(productId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Product image added successfully", createdImage));
+                .body(ApiResponse.success("Product image added successfully", created));
     }
 
     @GetMapping("/api/v1/variants/{variantId}/images")
-    @Operation(summary = "Get images of a variant", description = "Retrieve all images associated with a specific product variant")
+    @Operation(summary = "Get images of a variant")
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> getImagesByVariantId(@PathVariable Long variantId) {
-        List<ProductImageResponse> images = productImageService.getImagesByVariantId(variantId);
-        return ResponseEntity.ok(ApiResponse.success("Variant images retrieved successfully", images));
+        return ResponseEntity.ok(ApiResponse.success("Variant images retrieved successfully",
+                productImageService.getImagesByVariantId(variantId)));
     }
 
     @PatchMapping("/api/v1/images/{id}/main")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Set as main image", description = "Set an image as the primary cover photo, demoting any existing main image")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
+    @Operation(summary = "Set as main image")
     public ResponseEntity<ApiResponse<ProductImageResponse>> setMainImage(@PathVariable Long id) {
-        ProductImageResponse updated = productImageService.setMainImage(id);
-        return ResponseEntity.ok(ApiResponse.success("Image set as main successfully", updated));
+        return ResponseEntity.ok(ApiResponse.success("Image set as main successfully",
+                productImageService.setMainImage(id)));
     }
 
     @PutMapping("/api/v1/images/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Update image details", description = "Update image URL, sort order, or alt text")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
+    @Operation(summary = "Update image details")
     public ResponseEntity<ApiResponse<ProductImageResponse>> updateImage(
             @PathVariable Long id,
             @Valid @RequestBody ProductImageRequest request
     ) {
-        ProductImageResponse updated = productImageService.updateImage(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Image updated successfully", updated));
+        return ResponseEntity.ok(ApiResponse.success("Image updated successfully",
+                productImageService.updateImage(id, request)));
     }
 
     @DeleteMapping("/api/v1/images/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_DELETE')")
-    @Operation(summary = "Delete an image", description = "Delete an image from the gallery and evict product cache")
-    public ResponseEntity<ApiResponse<Void>> deleteImage(@PathVariable Long id) {
-        productImageService.deleteImage(id);
-        return ResponseEntity.ok(ApiResponse.success("Image deleted successfully", null));
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_DELETE')")
+    @Operation(summary = "Soft-delete an image (moves to hidden)")
+    public ResponseEntity<ApiResponse<Void>> softDeleteImage(@PathVariable Long id) {
+        productImageService.softDeleteImage(id);
+        return ResponseEntity.ok(ApiResponse.success("Image hidden (soft-deleted)", null));
+    }
+
+    @PatchMapping("/api/v1/images/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
+    @Operation(summary = "Restore a soft-deleted image")
+    public ResponseEntity<ApiResponse<Void>> restoreImage(@PathVariable Long id) {
+        productImageService.restoreImage(id);
+        return ResponseEntity.ok(ApiResponse.success("Image restored successfully", null));
     }
 
     @PutMapping("/api/v1/products/{productId}/images/reorder")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Reorder product images", description = "Update sort order of images for drag & drop gallery sorting")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
+    @Operation(summary = "Reorder product images (drag & drop)")
     public ResponseEntity<ApiResponse<Void>> reorderImages(
             @PathVariable Long productId,
             @RequestBody List<Long> imageIds

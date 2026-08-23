@@ -267,13 +267,14 @@ class ProductServiceTest {
     class OtherTests {
 
         @Test
-        @DisplayName("deleteProduct should delete when found")
+        @DisplayName("deleteProduct should soft-delete when found")
         void deleteProduct_success() {
             when(productRepository.findById(100L)).thenReturn(Optional.of(testProduct));
 
             productService.deleteProduct(100L);
 
-            verify(productRepository).delete(testProduct);
+            verify(productRepository).save(testProduct);
+            assertThat(testProduct.getDeletedAt()).isNotNull();
         }
 
         @Test
@@ -285,7 +286,7 @@ class ProductServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Product not found with id: 999");
 
-            verify(productRepository, never()).delete(any(Product.class));
+            verify(productRepository, never()).save(any(Product.class));
         }
 
         @Test

@@ -3,14 +3,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CategoryChildrenCount, CategoryRequest, CategoryResponse } from '../models/category.model';
+import { BulkActionRequest, BulkActionResult } from '../models/bulk.model';
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
-interface PageResponse<T> {
+export interface PageResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
@@ -43,13 +44,29 @@ export class CategoryService {
     return this.http.get<ApiResponse<CategoryChildrenCount>>(`${this.base}/${id}/children/count`);
   }
 
-  getPaginated(page = 0, size = 10, sortBy = 'sortOrder', sortDir = 'asc'): Observable<ApiResponse<PageResponse<CategoryResponse>>> {
-    const params = new HttpParams()
+  getPaginated(
+    page = 0,
+    size = 10,
+    keyword = '',
+    sortBy = 'sortOrder',
+    sortDir = 'asc'
+  ): Observable<ApiResponse<PageResponse<CategoryResponse>>> {
+    let params = new HttpParams()
       .set('page', page)
       .set('size', size)
       .set('sortBy', sortBy)
       .set('sortDir', sortDir);
+
+    if (keyword.trim()) {
+      params = params.set('keyword', keyword.trim());
+    }
+
     return this.http.get<ApiResponse<PageResponse<CategoryResponse>>>(`${this.base}/page`, { params });
+  }
+
+  getTrash(page = 0, size = 10): Observable<ApiResponse<PageResponse<CategoryResponse>>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<ApiResponse<PageResponse<CategoryResponse>>>(`${this.base}/trash`, { params });
   }
 
   getById(id: number): Observable<ApiResponse<CategoryResponse>> {
@@ -64,7 +81,19 @@ export class CategoryService {
     return this.http.put<ApiResponse<CategoryResponse>>(`${this.base}/${id}`, request);
   }
 
-  delete(id: number): Observable<ApiResponse<void>> {
+  softDelete(id: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.base}/${id}`);
+  }
+
+  restore(id: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.base}/${id}/restore`, {});
+  }
+
+  bulkAction(request: BulkActionRequest): Observable<ApiResponse<BulkActionResult>> {
+    return this.http.patch<ApiResponse<BulkActionResult>>(`${this.base}/bulk`, request);
+  }
+
+  delete(id: number): Observable<ApiResponse<void>> {
+    return this.softDelete(id);
   }
 }

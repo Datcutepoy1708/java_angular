@@ -91,4 +91,11 @@ public class Product {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /**
+     * Soft-delete timestamp. NULL = active; NOT NULL = in trash.
+     * Never changes the `status` field — Variants/Images are hidden indirectly via this field.
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

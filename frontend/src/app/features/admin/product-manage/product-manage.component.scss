@@ -7,8 +7,10 @@ $surface-alt: #f9fafb;
 $border: #e5e7eb;
 $danger: #dc2626;
 $danger-light: #FEF2F2;
-$radius: 10px;
-$radius-sm: 6px;
+$success: #16a34a;
+$success-light: #F0FDF4;
+$radius: 12px;
+$radius-sm: 8px;
 
 .page-container {
   width: 100%;
@@ -20,11 +22,19 @@ $radius-sm: 6px;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  gap: 16px;
 
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
     color: $on-surface;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .page-desc {
+    font-size: 0.875rem;
+    color: $on-surface-variant;
     margin: 0;
   }
 }
@@ -36,72 +46,141 @@ $radius-sm: 6px;
   overflow: hidden;
 }
 
-// ── Filter Card ───────────────────────────────────────────────────
-.filter-card {
+// ── Toolbar Card (Tabs + Filters + Bulk) ─────────────────────────
+.toolbar-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 14px 18px;
   margin-bottom: 16px;
-  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
 
-  .filter-form {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+.toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tab-group {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+
+  .tab-btn {
+    padding: 6px 14px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: $on-surface-variant;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &.active {
+      background: $surface;
+      color: $brand;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
   }
 }
 
-.search-box {
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.search-input-wrap {
   position: relative;
-  flex: 1;
-  min-width: 240px;
+  display: flex;
+  align-items: center;
 
   .search-icon {
     position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    left: 10px;
     width: 16px;
     height: 16px;
-    color: $on-surface-variant;
+    color: #94a3b8;
+    pointer-events: none;
   }
 
   .search-input {
-    width: 100%;
-    padding: 8px 12px 8px 36px;
+    padding: 7px 12px 7px 32px;
     border: 1px solid $border;
-    border-radius: $radius-sm;
-    font-size: 0.875rem;
+    border-radius: 6px;
+    font-size: 0.825rem;
     color: $on-surface;
-    background: $surface;
+    background: #f8fafc;
+    width: 220px;
     outline: none;
-    box-sizing: border-box;
+    transition: all 0.15s;
 
     &:focus {
+      background: $surface;
       border-color: $brand;
-      box-shadow: 0 0 0 2px rgba($brand, 0.1);
+      box-shadow: 0 0 0 3px rgba($brand, 0.1);
+      width: 260px;
     }
   }
 }
 
-.filter-select-wrap {
-  .filter-select {
-    padding: 8px 12px;
-    border: 1px solid $border;
-    border-radius: $radius-sm;
-    font-size: 0.875rem;
-    color: $on-surface;
-    background: $surface;
-    outline: none;
-    cursor: pointer;
+.filter-select {
+  padding: 7px 12px;
+  border: 1px solid $border;
+  border-radius: 6px;
+  font-size: 0.825rem;
+  color: $on-surface;
+  background: #f8fafc;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
 
-    &:focus {
-      border-color: $brand;
-    }
+  &:focus {
+    border-color: $brand;
+    background: $surface;
+  }
+}
+
+// ── Bulk Actions Bar ──────────────────────────────────────────────
+.bulk-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: $brand-light;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  animation: fade-in 0.15s ease;
+
+  .bulk-count {
+    font-size: 0.825rem;
+    color: #1e40af;
+  }
+
+  .bulk-btns {
+    display: flex;
+    gap: 8px;
   }
 }
 
 // ── Table Card ────────────────────────────────────────────────────
 .table-card {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .data-table {
@@ -116,24 +195,40 @@ $radius-sm: 6px;
   }
 
   th {
-    background: $surface;
+    background: #f8fafc;
     font-weight: 600;
-    color: $on-surface-variant;
-    font-size: 0.8rem;
+    color: #475569;
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
     white-space: nowrap;
   }
 
   tbody tr {
     transition: background 0.12s ease;
-    &:hover { background: $surface-alt; }
+    &:hover { background: #f8fafc; }
     &:last-child td { border-bottom: none; }
+    &.selected-row { background: #eff6ff; }
+  }
+
+  .th-checkbox, .td-checkbox {
+    width: 36px;
+    text-align: center;
+    padding-left: 14px;
+    padding-right: 0;
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: $brand;
+    }
   }
 
   .th-product { width: 35%; }
   .th-actions, .td-actions {
     text-align: right;
     white-space: nowrap;
-    width: 100px;
+    width: 90px;
   }
 }
 
@@ -185,41 +280,53 @@ $radius-sm: 6px;
 .product-price {
   font-weight: 600;
   color: $on-surface;
+  white-space: nowrap;
 }
 
-// Status Pills matching mockup
-.status-pill {
+// ── Status Badges ─────────────────────────────────────────────────
+.status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.725rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
 
   &--active {
-    background: #dcfce7;
-    color: #15803d;
+    background: $success-light;
+    color: $success;
+    border: 1px solid #bbf7d0;
   }
 
   &--inactive {
-    background: #e0f2fe;
-    color: #0369a1;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
   }
 
   &--discontinued {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+  }
+
+  &--trash {
+    background: $danger-light;
+    color: $danger;
+    border: 1px solid #fecaca;
   }
 }
 
-// ── Pagination matching mockup ───────────────────────────────────
+// ── Pagination ────────────────────────────────────────────────────
 .table-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 12px 18px;
   border-top: 1px solid $border;
-  font-size: 0.85rem;
+  background: #fafafa;
+  font-size: 0.825rem;
   color: $on-surface-variant;
 }
 
@@ -232,7 +339,7 @@ $radius-sm: 6px;
     padding: 4px 8px;
     border: 1px solid $border;
     border-radius: 4px;
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     color: $on-surface;
     background: $surface;
     outline: none;
@@ -243,34 +350,33 @@ $radius-sm: 6px;
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
+}
 
-  .pagination-info {
-    font-size: 0.85rem;
+.arrow-btn, .page-num-btn {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $on-surface;
+  font-size: 0.825rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #f1f5f9;
   }
 
-  .arrow-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border: 1px solid $border;
-    border-radius: 4px;
-    background: $surface;
-    color: $on-surface;
-    cursor: pointer;
-    transition: all 0.15s;
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-    &:hover:not(:disabled) {
-      background: $surface-alt;
-      border-color: #d1d5db;
-    }
-
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+  &.active {
+    background: $brand;
+    color: white;
+    border-color: $brand;
+    font-weight: 600;
   }
 }
 
@@ -279,32 +385,47 @@ $radius-sm: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: $radius-sm;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
   text-decoration: none;
   transition: all 0.15s ease;
 
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  &-sm {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+
   &-primary {
     background: $brand;
     color: white;
-    &:hover { background: #1d4ed8; }
+    &:hover:not(:disabled) { background: #1d4ed8; }
   }
 
   &-ghost {
-    background: transparent;
+    background: $surface;
     border-color: $border;
     color: $on-surface;
-    &:hover { background: $surface-alt; }
+    &:hover:not(:disabled) { background: #f1f5f9; }
+  }
+
+  &-ghost-danger {
+    background: $surface;
+    border-color: #fca5a5;
+    color: $danger;
+    &:hover:not(:disabled) { background: $danger-light; }
   }
 
   &-danger {
     background: $danger;
     color: white;
-    &:hover { background: #b91c1c; }
+    &:hover:not(:disabled) { background: #b91c1c; }
   }
 }
 
@@ -320,15 +441,21 @@ $radius-sm: 6px;
   color: $on-surface-variant;
   cursor: pointer;
   transition: all 0.15s ease;
-  margin-left: 4px;
+  margin-left: 6px;
 
-  &:hover { background: $surface-alt; color: $on-surface; }
+  &:hover { background: #f1f5f9; color: $on-surface; }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &--danger:hover {
     background: $danger-light;
     color: $danger;
     border-color: #fca5a5;
+  }
+
+  &--success:hover {
+    background: $success-light;
+    color: $success;
+    border-color: #86efac;
   }
 }
 
@@ -357,30 +484,38 @@ $radius-sm: 6px;
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  animation: fade-in 0.2s ease;
 }
 
 .dialog {
   background: $surface;
   border-radius: $radius;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   padding: 24px;
-  max-width: 400px;
-  width: 90%;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: modal-pop 0.2s ease;
 
   .dialog-title {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: $on-surface;
-    margin: 0 0 12px;
+    margin: 0 0 8px;
   }
 
   .dialog-body {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     color: $on-surface-variant;
     margin: 0 0 20px;
     line-height: 1.5;
@@ -388,7 +523,20 @@ $radius-sm: 6px;
 
   .dialog-actions {
     display: flex;
-    gap: 8px;
-    justify-content: flex-end;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+
+    .btn { flex: 1; }
   }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }

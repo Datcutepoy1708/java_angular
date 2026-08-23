@@ -10,8 +10,10 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { BrandService } from '../../../core/services/brand.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { BrandResponse } from '../../../core/models/brand.model';
+import { BulkActionType } from '../../../core/models/bulk.model';
 
 type FormMode = 'create' | 'edit';
+type ViewMode = 'active' | 'trash';
 
 @Component({
   selector: 'app-brand-manage',
@@ -25,6 +27,11 @@ export class BrandManageComponent implements OnInit {
   private readonly uploadService = inject(UploadService);
   private readonly fb = inject(FormBuilder);
 
+  // ── View Mode & Filter ────────────────────────────────────────
+  readonly viewMode = signal<ViewMode>('active');
+  readonly filterKeyword = signal('');
+  readonly filterStatus = signal('');
+
   // ── State ─────────────────────────────────────────────────────
   readonly brands = signal<BrandResponse[]>([]);
   readonly totalElements = signal(0);
@@ -35,8 +42,13 @@ export class BrandManageComponent implements OnInit {
   readonly saving = signal(false);
   readonly uploadingLogo = signal(false);
   readonly deleting = signal<number | null>(null);
+  readonly restoring = signal<number | null>(null);
 
-  // Modal dialog state (Centered Dialog)
+  // ── Multi-select / Bulk ───────────────────────────────────────
+  readonly selectedIds = signal<number[]>([]);
+  readonly bulkLoading = signal(false);
+
+  // ── Modal dialog state ────────────────────────────────────────
   readonly showModal = signal(false);
   readonly formMode = signal<FormMode>('create');
   readonly editingId = signal<number | null>(null);
@@ -45,12 +57,25 @@ export class BrandManageComponent implements OnInit {
   readonly logoPreview = signal<string | null>(null);
   readonly logoInputMode = signal<'upload' | 'url'>('upload');
 
-  // Slug edit toggle (read-only by default on edit)
+  // Slug edit toggle
   readonly slugEditable = signal(false);
 
   // Confirm delete dialog state
   readonly confirmDeleteId = signal<number | null>(null);
   readonly confirmDeleteName = signal('');
+
+  // ── Computed ──────────────────────────────────────────────────
+  readonly isAllSelected = computed(() => {
+    const list = this.brands();
+    const sel = this.selectedIds();
+    return list.length > 0 && list.every((b) => sel.includes(b.brandId));
+  });
+
+  readonly isSomeSelected = computed(() => {
+    const list = this.brands();
+    const sel = this.selectedIds();
+    return sel.length > 0 && !list.every((b) => sel.includes(b.brandId));
+  });
 
   readonly pageNumbers = computed(() =>
     Array.from({ length: this.totalPages() }, (_, i) => i)
@@ -70,6 +95,7 @@ export class BrandManageComponent implements OnInit {
     logoUrl: ['', Validators.maxLength(500)],
     country: ['', Validators.maxLength(100)],
     description: ['', Validators.maxLength(500)],
+    status: ['active', Validators.required],
     slug: [{ value: '', disabled: true }, Validators.maxLength(180)],
   });
 
@@ -78,24 +104,120 @@ export class BrandManageComponent implements OnInit {
     this.loadBrands();
   }
 
+  // ── Tab & Filter Handlers ─────────────────────────────────────
+  switchTab(mode: ViewMode): void {
+    if (this.viewMode() === mode) return;
+    this.viewMode.set(mode);
+    this.currentPage.set(0);
+    this.selectedIds.set([]);
+    this.loadBrands();
+  }
+
+  onSearch(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.filterKeyword.set(value);
+    this.currentPage.set(0);
+    this.selectedIds.set([]);
+    this.loadBrands();
+  }
+
+  onStatusChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.filterStatus.set(value);
+    this.currentPage.set(0);
+    this.selectedIds.set([]);
+    this.loadBrands();
+  }
+
+  resetFilter(): void {
+    this.filterKeyword.set('');
+    this.filterStatus.set('');
+    this.currentPage.set(0);
+    this.selectedIds.set([]);
+    this.loadBrands();
+  }
+
   // ── Data Loading ──────────────────────────────────────────────
   loadBrands(): void {
     this.loading.set(true);
-    this.brandService.getPaginated(this.currentPage(), this.pageSize()).subscribe({
-      next: (res) => {
-        this.brands.set(res.data.content);
-        this.totalElements.set(res.data.totalElements);
-        this.totalPages.set(res.data.totalPages);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.selectedIds.set([]);
+
+    if (this.viewMode() === 'trash') {
+      this.brandService.getTrash(this.currentPage(), this.pageSize()).subscribe({
+        next: (res) => {
+          this.brands.set(res.data.content);
+          this.totalElements.set(res.data.totalElements);
+          this.totalPages.set(res.data.totalPages);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    } else {
+      this.brandService.getPaginated(
+        this.currentPage(),
+        this.pageSize(),
+        this.filterKeyword(),
+        this.filterStatus()
+      ).subscribe({
+        next: (res) => {
+          this.brands.set(res.data.content);
+          this.totalElements.set(res.data.totalElements);
+          this.totalPages.set(res.data.totalPages);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    }
   }
 
   goToPage(page: number): void {
     if (page < 0 || page >= this.totalPages()) return;
     this.currentPage.set(page);
     this.loadBrands();
+  }
+
+  // ── Selection & Bulk Actions ──────────────────────────────────
+  toggleSelectAll(): void {
+    if (this.isAllSelected()) {
+      this.selectedIds.set([]);
+    } else {
+      this.selectedIds.set(this.brands().map((b) => b.brandId));
+    }
+  }
+
+  toggleSelectItem(id: number): void {
+    this.selectedIds.update((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+    );
+  }
+
+  executeBulkAction(action: BulkActionType): void {
+    const ids = this.selectedIds();
+    if (ids.length === 0) return;
+
+    const actionNames: Record<string, string> = {
+      delete: 'chuyển vào thùng rác',
+      restore: 'khôi phục',
+      activate: 'kích hoạt',
+      deactivate: 'tạm ngưng',
+    };
+
+    if (!confirm(`Bạn có chắc muốn ${actionNames[action] || action} ${ids.length} thương hiệu đã chọn?`)) {
+      return;
+    }
+
+    this.bulkLoading.set(true);
+    this.brandService.bulkAction({ ids, action }).subscribe({
+      next: (res) => {
+        this.bulkLoading.set(false);
+        this.selectedIds.set([]);
+        this.loadBrands();
+      },
+      error: () => {
+        this.bulkLoading.set(false);
+        alert('Thao tác hàng loạt thất bại. Vui lòng thử lại.');
+      },
+    });
   }
 
   // ── Modal / Form ──────────────────────────────────────────────
@@ -105,7 +227,7 @@ export class BrandManageComponent implements OnInit {
     this.slugEditable.set(false);
     this.logoPreview.set(null);
     this.logoInputMode.set('upload');
-    this.form.reset();
+    this.form.reset({ status: 'active' });
     this.form.get('slug')?.disable();
     this.showModal.set(true);
   }
@@ -123,6 +245,7 @@ export class BrandManageComponent implements OnInit {
       logoUrl: brand.logoUrl ?? '',
       country: brand.country ?? '',
       description: brand.description ?? '',
+      status: brand.status ?? 'active',
       slug: brand.slug,
     });
     this.showModal.set(true);
@@ -130,7 +253,7 @@ export class BrandManageComponent implements OnInit {
 
   closeModal(): void {
     this.showModal.set(false);
-    this.form.reset();
+    this.form.reset({ status: 'active' });
     this.logoPreview.set(null);
     this.slugEditable.set(false);
   }
@@ -179,14 +302,12 @@ export class BrandManageComponent implements OnInit {
       return;
     }
 
-    // Local preview immediately
     const reader = new FileReader();
     reader.onload = (e) => {
       this.logoPreview.set(e.target?.result as string);
     };
     reader.readAsDataURL(file);
 
-    // Upload to server
     this.uploadingLogo.set(true);
     this.uploadService.uploadImage(file).subscribe({
       next: (url) => {
@@ -226,6 +347,7 @@ export class BrandManageComponent implements OnInit {
       logoUrl: raw.logoUrl?.trim() || null,
       country: raw.country?.trim() || null,
       description: raw.description?.trim() || null,
+      status: raw.status || 'active',
       ...(this.formMode() === 'edit' && this.slugEditable() && raw.slug
         ? { slug: raw.slug.trim() }
         : {}),
@@ -246,7 +368,7 @@ export class BrandManageComponent implements OnInit {
     });
   }
 
-  // ── Delete ────────────────────────────────────────────────────
+  // ── Delete / Restore Single ───────────────────────────────────
   askDelete(brand: BrandResponse): void {
     this.confirmDeleteId.set(brand.brandId);
     this.confirmDeleteName.set(brand.name);
@@ -261,7 +383,7 @@ export class BrandManageComponent implements OnInit {
     const id = this.confirmDeleteId();
     if (id == null) return;
     this.deleting.set(id);
-    this.brandService.delete(id).subscribe({
+    this.brandService.softDelete(id).subscribe({
       next: () => {
         this.deleting.set(null);
         this.confirmDeleteId.set(null);
@@ -275,6 +397,20 @@ export class BrandManageComponent implements OnInit {
     });
   }
 
+  restoreBrand(id: number): void {
+    this.restoring.set(id);
+    this.brandService.restore(id).subscribe({
+      next: () => {
+        this.restoring.set(null);
+        this.loadBrands();
+      },
+      error: () => {
+        this.restoring.set(null);
+        alert('Khôi phục thương hiệu thất bại.');
+      },
+    });
+  }
+
   // ── Helpers ───────────────────────────────────────────────────
   hasError(field: string): boolean {
     const ctrl = this.form.get(field);
@@ -283,7 +419,7 @@ export class BrandManageComponent implements OnInit {
 
   getError(field: string): string {
     const ctrl = this.form.get(field);
-    if (ctrl?.errors?.['required']) return 'Vui lòng nhập tên thương hiệu';
+    if (ctrl?.errors?.['required']) return 'Vui lòng nhập trường này';
     if (ctrl?.errors?.['maxlength']) return `Tối đa ${ctrl.errors['maxlength'].requiredLength} ký tự`;
     return '';
   }

@@ -9,6 +9,8 @@ export interface ProductImageResponse {
   imageType: ImageType;
   altText: string | null;
   sortOrder: number;
+  deleted?: boolean;
+  deletedAt?: string | null;
 }
 
 export interface ProductImageRequest {
@@ -34,6 +36,8 @@ export interface ProductVariantResponse {
   status: VariantStatus;
   mainImageUrl: string | null;
   images: ProductImageResponse[];
+  deleted?: boolean;
+  deletedAt?: string | null;
   createdAt: string | null;
 }
 
@@ -70,6 +74,8 @@ export interface ProductResponse {
   mainImageUrl: string | null;
   images: ProductImageResponse[];
   variants: ProductVariantResponse[];
+  deleted?: boolean;
+  deletedAt?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }

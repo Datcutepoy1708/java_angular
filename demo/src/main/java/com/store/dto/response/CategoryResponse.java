@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,8 @@ public class CategoryResponse implements Serializable {
     private String description;
     private Integer sortOrder;
     private String status;
+    private boolean deleted;
+    private LocalDateTime deletedAt;
     private List<CategoryResponse> children;
 
     public static CategoryResponse fromEntity(Category category) {
@@ -38,7 +41,11 @@ public class CategoryResponse implements Serializable {
         String parentName = null;
         if (category.getParent() != null) {
             parentId = category.getParent().getCategoryId();
-            parentName = category.getParent().getName();
+            // NPE guard: parent may be soft-deleted and filtered out of lookup;
+            // show null instead of a name pointing to a deleted category
+            parentName = category.getParent().getDeletedAt() == null
+                    ? category.getParent().getName()
+                    : null;
         }
 
         return CategoryResponse.builder()
@@ -51,6 +58,8 @@ public class CategoryResponse implements Serializable {
                 .description(category.getDescription())
                 .sortOrder(category.getSortOrder())
                 .status(category.getStatus() != null ? category.getStatus().getValue() : null)
+                .deleted(category.getDeletedAt() != null)
+                .deletedAt(category.getDeletedAt())
                 .children(new ArrayList<>())
                 .build();
     }

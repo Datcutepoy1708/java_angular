@@ -1,7 +1,9 @@
 package com.store.controller;
 
+import com.store.dto.request.BulkActionRequest;
 import com.store.dto.request.CategoryRequest;
 import com.store.dto.response.ApiResponse;
+import com.store.dto.response.BulkActionResult;
 import com.store.dto.response.CategoryResponse;
 import com.store.dto.response.PageResponse;
 import com.store.service.CategoryService;
@@ -11,8 +13,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -32,92 +36,118 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    // ── Public / Read ──────────────────────────────────────────────
+
     @GetMapping
-    @Operation(summary = "Get all categories", description = "Retrieve a flat list of all categories (Cached)")
+    @Operation(summary = "Get all active categories (Cached)")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
-        List<CategoryResponse> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categories));
+        return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categoryService.getAllCategories()));
     }
 
     @GetMapping("/tree")
-    @Operation(summary = "Get category tree", description = "Retrieve categories as a hierarchical tree from root down to subcategories (Cached)")
+    @Operation(summary = "Get active category tree (Cached)")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategoryTree() {
-        List<CategoryResponse> tree = categoryService.getCategoryTree();
-        return ResponseEntity.ok(ApiResponse.success("Category tree retrieved successfully", tree));
+        return ResponseEntity.ok(ApiResponse.success("Category tree retrieved successfully", categoryService.getCategoryTree()));
     }
 
     @GetMapping("/roots")
-    @Operation(summary = "Get root categories", description = "Retrieve only top-level root categories without parent (Cached)")
+    @Operation(summary = "Get active root categories (Cached)")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getRootCategories() {
-        List<CategoryResponse> roots = categoryService.getRootCategories();
-        return ResponseEntity.ok(ApiResponse.success("Root categories retrieved successfully", roots));
+        return ResponseEntity.ok(ApiResponse.success("Root categories retrieved successfully", categoryService.getRootCategories()));
     }
 
     @GetMapping("/{id}/children")
-    @Operation(summary = "Get direct children", description = "Retrieve direct subcategories of a specified parent category (Cached)")
+    @Operation(summary = "Get direct active children")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getChildren(@PathVariable Integer id) {
-        List<CategoryResponse> children = categoryService.getChildrenByParentId(id);
-        return ResponseEntity.ok(ApiResponse.success("Children categories retrieved successfully", children));
+        return ResponseEntity.ok(ApiResponse.success("Children categories retrieved successfully", categoryService.getChildrenByParentId(id)));
     }
 
     @GetMapping("/{id}/children/count")
-    @Operation(summary = "Count direct children", description = "Get the number of subcategories for pre-delete warning in admin panel")
+    @Operation(summary = "Count direct children")
     public ResponseEntity<ApiResponse<Map<String, Object>>> countChildren(@PathVariable Integer id) {
         long count = categoryService.countChildren(id);
         return ResponseEntity.ok(ApiResponse.success(Map.of("categoryId", id, "childrenCount", count)));
     }
 
     @GetMapping("/page")
-    @Operation(summary = "Get paginated categories", description = "Retrieve categories with pagination and sorting")
+    @Operation(summary = "Get paginated active categories with keyword filter")
     public ResponseEntity<ApiResponse<PageResponse<CategoryResponse>>> getCategoriesPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "sortOrder") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
-        PageResponse<CategoryResponse> result = categoryService.getCategoriesPaginated(page, size, sortBy, sortDir);
+        PageResponse<CategoryResponse> result = categoryService.getCategoriesPaginated(page, size, keyword, sortBy, sortDir);
         return ResponseEntity.ok(ApiResponse.success("Categories page retrieved successfully", result));
     }
 
+    @GetMapping("/trash")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
+    @Operation(summary = "Get deleted (trashed) categories")
+    public ResponseEntity<ApiResponse<PageResponse<CategoryResponse>>> getDeletedCategories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(ApiResponse.success("Deleted categories retrieved", categoryService.getDeletedCategories(page, size)));
+    }
+
     @GetMapping("/{id}")
-    @Operation(summary = "Get category by ID", description = "Retrieve a single category by primary key ID (Cached)")
+    @Operation(summary = "Get category by ID (Cached)")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryById(@PathVariable Integer id) {
-        CategoryResponse category = categoryService.getCategoryById(id);
-        return ResponseEntity.ok(ApiResponse.success(category));
+        return ResponseEntity.ok(ApiResponse.success(categoryService.getCategoryById(id)));
     }
 
     @GetMapping("/slug/{slug}")
-    @Operation(summary = "Get category by slug", description = "Retrieve a single category by URL slug (Cached)")
+    @Operation(summary = "Get category by slug (Cached)")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryBySlug(@PathVariable String slug) {
-        CategoryResponse category = categoryService.getCategoryBySlug(slug);
-        return ResponseEntity.ok(ApiResponse.success(category));
+        return ResponseEntity.ok(ApiResponse.success(categoryService.getCategoryBySlug(slug)));
     }
 
+    // ── Write ─────────────────────────────────────────────────────
+
     @PostMapping
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
-    @Operation(summary = "Create a new category", description = "Create a new category and evict cache")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
+    @Operation(summary = "Create a new category")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest request) {
-        CategoryResponse createdCategory = categoryService.createCategory(request);
+        CategoryResponse created = categoryService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Category created successfully", createdCategory));
+                .body(ApiResponse.success("Category created successfully", created));
     }
 
     @PutMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
-    @Operation(summary = "Update an existing category", description = "Update category details, validate hierarchy, and evict cache")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
+    @Operation(summary = "Update an existing category")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Integer id,
             @Valid @RequestBody CategoryRequest request
     ) {
-        CategoryResponse updatedCategory = categoryService.updateCategory(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Category updated successfully", updatedCategory));
+        return ResponseEntity.ok(ApiResponse.success("Category updated successfully", categoryService.updateCategory(id, request)));
     }
 
+    // ── Soft-delete / Restore / Bulk ──────────────────────────────
+
     @DeleteMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
-    @Operation(summary = "Delete a category", description = "Delete category by ID (children will have parent_id set to null)")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Integer id) {
-        categoryService.deleteCategory(id);
-        return ResponseEntity.ok(ApiResponse.success("Category deleted successfully", null));
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
+    @Operation(summary = "Soft-delete a category and all descendants (moves to trash)")
+    public ResponseEntity<ApiResponse<Void>> softDeleteCategory(@PathVariable Integer id) {
+        categoryService.softDeleteCategory(id);
+        return ResponseEntity.ok(ApiResponse.success("Category and descendants moved to trash", null));
+    }
+
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
+    @Operation(summary = "Restore a soft-deleted category and all descendants")
+    public ResponseEntity<ApiResponse<Void>> restoreCategory(@PathVariable Integer id) {
+        categoryService.restoreCategory(id);
+        return ResponseEntity.ok(ApiResponse.success("Category and descendants restored successfully", null));
+    }
+
+    @PatchMapping("/bulk")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('CATEGORY_MANAGE')")
+    @Operation(summary = "Bulk action on categories (delete/restore)")
+    public ResponseEntity<ApiResponse<BulkActionResult>> bulkAction(@Valid @RequestBody BulkActionRequest request) {
+        BulkActionResult result = categoryService.bulkAction(request);
+        return ResponseEntity.ok(ApiResponse.success("Bulk action completed", result));
     }
 }

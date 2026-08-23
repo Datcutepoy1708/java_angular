@@ -32,7 +32,7 @@ class CacheEvictionIntegrationTest {
     void brandCache_readAndEvict_success() {
         // 1. Create a brand
         BrandRequest createRequest = BrandRequest.builder()
-                .name("Brand Cache Test")
+                .name("Brand Cache Test " + System.currentTimeMillis())
                 .slug("brand-cache-test-" + System.currentTimeMillis())
                 .description("Testing cache")
                 .build();
@@ -52,7 +52,7 @@ class CacheEvictionIntegrationTest {
 
         // 3. Update brand (triggers @CacheEvict(cacheNames = "brands", allEntries = true))
         BrandRequest updateRequest = BrandRequest.builder()
-                .name("Brand Cache Test Updated")
+                .name("Brand Cache Test Updated " + System.currentTimeMillis())
                 .slug(created.getSlug())
                 .description("Updated description")
                 .build();
@@ -71,7 +71,7 @@ class CacheEvictionIntegrationTest {
     void categoryCache_readAndEvict_success() {
         // 1. Create a category
         CategoryRequest request = CategoryRequest.builder()
-                .name("Category Cache Test")
+                .name("Category Cache Test " + System.currentTimeMillis())
                 .slug("category-cache-test-" + System.currentTimeMillis())
                 .status("active")
                 .build();
@@ -91,7 +91,7 @@ class CacheEvictionIntegrationTest {
 
         // 3. Update category (triggers @CacheEvict(cacheNames = "categories", allEntries = true))
         CategoryRequest updateRequest = CategoryRequest.builder()
-                .name("Category Cache Test Updated")
+                .name("Category Cache Test Updated " + System.currentTimeMillis())
                 .slug(created.getSlug())
                 .status("active")
                 .build();

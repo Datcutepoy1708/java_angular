@@ -7,7 +7,11 @@ import java.util.List;
 
 public interface ProductVariantService {
 
+    /** Returns only active (non-deleted) variants */
     List<ProductVariantResponse> getVariantsByProductId(Long productId);
+
+    /** Returns only soft-deleted variants for the product */
+    List<ProductVariantResponse> getDeletedVariantsByProductId(Long productId);
 
     ProductVariantResponse getVariantById(Long variantId);
 
@@ -17,5 +21,13 @@ public interface ProductVariantService {
 
     ProductVariantResponse updateVariant(Long variantId, ProductVariantRequest request);
 
+    /** Soft-delete: sets deleted_at = NOW(), does NOT change status */
+    void softDeleteVariant(Long variantId);
+
+    /** Restore: sets deleted_at = NULL */
+    void restoreVariant(Long variantId);
+
+    /** @deprecated Use softDeleteVariant instead */
+    @Deprecated
     void deleteVariant(Long variantId);
 }

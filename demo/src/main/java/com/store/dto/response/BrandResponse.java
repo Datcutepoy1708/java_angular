@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -20,6 +21,9 @@ public class BrandResponse implements Serializable {
     private String logoUrl;
     private String country;
     private String description;
+    private String status;
+    private boolean deleted;
+    private LocalDateTime deletedAt;
 
     public static BrandResponse fromEntity(Brand brand) {
         if (brand == null) {
@@ -32,6 +36,9 @@ public class BrandResponse implements Serializable {
                 .logoUrl(brand.getLogoUrl())
                 .country(brand.getCountry())
                 .description(brand.getDescription())
+                .status(brand.getStatus() != null ? brand.getStatus().getValue() : "active")
+                .deleted(brand.getDeletedAt() != null)
+                .deletedAt(brand.getDeletedAt())
                 .build();
     }
 }

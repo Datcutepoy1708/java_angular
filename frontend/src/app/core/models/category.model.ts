@@ -8,6 +8,8 @@ export interface CategoryResponse {
   description: string | null;
   sortOrder: number | null;
   status: 'active' | 'inactive' | string;
+  deleted: boolean;
+  deletedAt: string | null;
   children: CategoryResponse[];
 }
 

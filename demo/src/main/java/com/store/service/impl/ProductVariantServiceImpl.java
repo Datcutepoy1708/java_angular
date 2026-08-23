@@ -31,11 +31,24 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductVariantResponse> getVariantsByProductId(Long productId) {
-        log.info("Fetching variants for product id {}", productId);
+        log.info("Fetching active variants for product id {}", productId);
         if (!productRepository.existsById(productId)) {
             throw new ResourceNotFoundException("Product not found with id: " + productId);
         }
-        return productVariantRepository.findByProduct_ProductIdOrderByPriceAsc(productId)
+        return productVariantRepository.findByProduct_ProductIdAndDeletedAtIsNullOrderByPriceAsc(productId)
+                .stream()
+                .map(ProductVariantResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductVariantResponse> getDeletedVariantsByProductId(Long productId) {
+        log.info("Fetching deleted variants for product id {}", productId);
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Product not found with id: " + productId);
+        }
+        return productVariantRepository.findByProduct_ProductIdAndDeletedAtIsNotNull(productId)
                 .stream()
                 .map(ProductVariantResponse::fromEntity)
                 .toList();
@@ -137,11 +150,38 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     @Override
     @Transactional
     @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
-    public void deleteVariant(Long variantId) {
-        log.info("Deleting variant with id {}", variantId);
+    public void softDeleteVariant(Long variantId) {
+        log.info("Soft-deleting variant with id {}", variantId);
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product variant not found with id: " + variantId));
-        productVariantRepository.delete(variant);
+        if (variant.getDeletedAt() != null) {
+            throw new IllegalStateException("Variant is already deleted");
+        }
+        variant.setDeletedAt(java.time.LocalDateTime.now());
+        productVariantRepository.save(variant);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public void restoreVariant(Long variantId) {
+        log.info("Restoring variant with id {}", variantId);
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found with id: " + variantId));
+        if (variant.getDeletedAt() == null) {
+            throw new IllegalStateException("Variant is not deleted");
+        }
+        variant.setDeletedAt(null);
+        productVariantRepository.save(variant);
+    }
+
+    /** @deprecated Use softDeleteVariant instead */
+    @Override
+    @Deprecated
+    @Transactional
+    @CacheEvict(cacheNames = {"products", "productDetail"}, allEntries = true)
+    public void deleteVariant(Long variantId) {
+        softDeleteVariant(variantId);
     }
 
     private String generateSkuVariant(Product product, String variantName) {

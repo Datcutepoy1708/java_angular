@@ -73,7 +73,7 @@ class ProductVariantServiceTest {
         @DisplayName("getVariantsByProductId should return list when product exists")
         void getVariantsByProductId_success() {
             when(productRepository.existsById(1L)).thenReturn(true);
-            when(productVariantRepository.findByProduct_ProductIdOrderByPriceAsc(1L)).thenReturn(List.of(testVariant));
+            when(productVariantRepository.findByProduct_ProductIdAndDeletedAtIsNullOrderByPriceAsc(1L)).thenReturn(List.of(testVariant));
 
             List<ProductVariantResponse> result = productVariantService.getVariantsByProductId(1L);
 
@@ -195,13 +195,14 @@ class ProductVariantServiceTest {
         }
 
         @Test
-        @DisplayName("deleteVariant should delete when found")
+        @DisplayName("deleteVariant should soft-delete when found")
         void deleteVariant_success() {
             when(productVariantRepository.findById(10L)).thenReturn(Optional.of(testVariant));
 
             productVariantService.deleteVariant(10L);
 
-            verify(productVariantRepository).delete(testVariant);
+            verify(productVariantRepository).save(testVariant);
+            assertThat(testVariant.getDeletedAt()).isNotNull();
         }
 
         @Test
@@ -213,7 +214,7 @@ class ProductVariantServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Product variant not found with id: 99");
 
-            verify(productVariantRepository, never()).delete(any(ProductVariant.class));
+            verify(productVariantRepository, never()).save(any(ProductVariant.class));
         }
     }
 }
