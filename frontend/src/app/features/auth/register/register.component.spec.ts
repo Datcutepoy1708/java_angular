@@ -89,7 +89,7 @@ describe('RegisterComponent', () => {
     component.registerForm.setValue({
       fullName: 'Nguyễn Văn B',
       email: 'user@example.com',
-      phone: '+84987654321',
+      phone: '0987654321',
       password: 'Password123!',
       confirmPassword: 'Password123!',
       agreeTerms: true
@@ -100,7 +100,7 @@ describe('RegisterComponent', () => {
     expect(authService.register).toHaveBeenCalledWith({
       fullName: 'Nguyễn Văn B',
       email: 'user@example.com',
-      phone: '+84987654321',
+      phone: '0987654321',
       password: 'Password123!'
     });
     expect(component.successMessage()).toContain('thành công');
@@ -126,5 +126,14 @@ describe('RegisterComponent', () => {
     component.onSubmit();
 
     expect(component.errorMessage()).toContain('đã được đăng ký');
+  });
+
+  it('should invalidate passwords with Vietnamese diacritics or accents', () => {
+    const pwdControl = component.registerForm.get('password');
+    pwdControl?.setValue('Mậtkhẩu123!');
+    expect(pwdControl?.hasError('pattern')).toBe(true);
+
+    pwdControl?.setValue('Password123!');
+    expect(pwdControl?.hasError('pattern')).toBe(false);
   });
 });

@@ -26,10 +26,11 @@ public class RegisterRequest implements Serializable {
     @Size(max = 150, message = "Email không được vượt quá 150 ký tự")
     private String email;
 
-    @Pattern(regexp = "^(0[3|5|7|8|9])[0-9]{8}$", message = "Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)")
+    @Pattern(regexp = "^$|^(0[35789])[0-9]{8}$", message = "Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)")
     private String phone;
 
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 6, max = 50, message = "Mật khẩu phải từ 6 đến 50 ký tự")
+    @Pattern(regexp = "^[\\x21-\\x7E]+$", message = "Mật khẩu chỉ được chứa chữ cái không dấu, chữ số và ký tự đặc biệt (không chứa dấu tiếng Việt hoặc khoảng trắng)")
     private String password;
 }

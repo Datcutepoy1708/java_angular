@@ -63,6 +63,11 @@ export const routes: Routes = [
               import('./features/admin/category-manage/category-manage.component').then((m) => m.CategoryManageComponent)
           },
           {
+            path: 'category-attributes',
+            loadComponent: () =>
+              import('./features/admin/category-attributes-manage/category-attributes-manage.component').then((m) => m.CategoryAttributesManageComponent)
+          },
+          {
             path: 'products',
             loadComponent: () =>
               import('./features/admin/product-manage/product-manage.component').then((m) => m.ProductManageComponent)
@@ -88,10 +93,24 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./layout/public-shell/public-shell.component').then((m) => m.PublicShellComponent),
     children: [
-      { path: '', redirectTo: 'auth/login', pathMatch: 'full' }
-    ]
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/shop/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./features/shop/product-listing/product-listing.component').then((m) => m.ProductListingComponent),
+      },
+      {
+        path: 'products/:slug',
+        loadComponent: () =>
+          import('./features/shop/product-detail/product-detail.component').then((m) => m.ProductDetailComponent),
+      },
+    ],
   },
 
   // 4. Wildcard fallback
-  { path: '**', redirectTo: 'auth/login' }
+  { path: '**', redirectTo: '' }
 ];

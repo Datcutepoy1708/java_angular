@@ -1,3 +1,5 @@
+import { ProductAttributeValueResponse } from './attribute.model';
+
 // ─── Product Image ───────────────────────────────────────────────
 export type ImageType = 'MAIN' | 'GALLERY';
 
@@ -74,6 +76,7 @@ export interface ProductResponse {
   mainImageUrl: string | null;
   images: ProductImageResponse[];
   variants: ProductVariantResponse[];
+  specifications?: ProductAttributeValueResponse[];
   deleted?: boolean;
   deletedAt?: string | null;
   createdAt: string | null;
@@ -99,6 +102,11 @@ export interface ProductFilterRequest {
   supplierId?: number | null;
   status?: string | null;
   keyword?: string | null;
+  attributes?: string | null;
+  sortBy?: string | null;
+  sortDir?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
   page?: number;
   size?: number;
 }

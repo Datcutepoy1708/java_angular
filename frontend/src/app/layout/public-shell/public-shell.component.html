@@ -1,7 +1,232 @@
-<div class="public-shell">
-  <!-- Storefront Header will go here -->
-  <main class="public-main">
+<div class="storefront-layout">
+  <!-- ── Top Announcement Bar ──────────────────────────────────────── -->
+  <div class="top-announcement-bar">
+    <div class="container top-bar-content">
+      <div class="top-bar-left">
+        <span class="info-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="top-icon">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          Hotline: <strong>1800 6868</strong> (8:00 - 21:30)
+        </span>
+        <span class="info-divider">|</span>
+        <span class="info-item">Miễn phí giao hàng đơn từ 500K</span>
+      </div>
+      <div class="top-bar-right">
+        <span class="info-item">Cam kết 100% hàng chính hãng</span>
+        <span class="info-divider">|</span>
+        <a routerLink="/admin" class="top-link">Kênh Quản trị viên</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Header ──────────────────────────────────────────────── -->
+  <header class="main-header">
+    <div class="container header-container">
+      <!-- Logo -->
+      <a routerLink="/" class="brand-logo-link" (click)="closeMegaMenu()">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="logo-svg">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">TECH STORE</span>
+          <span class="logo-sub">Computer & Components</span>
+        </div>
+      </a>
+
+      <!-- Category Mega Menu Button -->
+      <div class="mega-menu-trigger-wrap">
+        <button
+          type="button"
+          class="category-btn"
+          [class.active]="isMegaMenuOpen()"
+          (click)="toggleMegaMenu()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-icon">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+          <span>Danh mục</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron-icon" [class.rotated]="isMegaMenuOpen()">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search Bar -->
+      <form class="header-search-form" (ngSubmit)="onSearchSubmit()">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            class="header-search-input"
+            name="searchQuery"
+            [(ngModel)]="searchQuery"
+            placeholder="Bạn cần tìm Laptop, CPU, RAM, RTX 4090, Bàn phím cơ..."
+          />
+          <button type="submit" class="search-submit-btn" aria-label="Tìm kiếm">
+            Tìm kiếm
+          </button>
+        </div>
+      </form>
+
+      <!-- Actions (Cart & User) -->
+      <div class="header-actions">
+        <!-- Cart -->
+        <a routerLink="/products" class="header-action-btn cart-btn" title="Giỏ hàng">
+          <div class="icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            @if (cartCount() > 0) {
+              <span class="cart-badge">{{ cartCount() }}</span>
+            }
+          </div>
+          <span class="action-label">Giỏ hàng</span>
+        </a>
+
+        <!-- Auth -->
+        @if (authService.currentUser()) {
+          <div class="user-profile-menu">
+            <div class="user-greeting">
+              <span class="greeting-sub">Xin chào,</span>
+              <span class="greeting-name">{{ authService.currentUser()?.fullName || 'Khách hàng' }}</span>
+            </div>
+            <button type="button" class="logout-btn" (click)="logout()" title="Đăng xuất">
+              Đăng xuất
+            </button>
+          </div>
+        } @else {
+          <a routerLink="/auth/login" class="header-action-btn login-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="action-label">Đăng nhập</span>
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Category Mega Menu Dropdown ───────────────────────────────── -->
+  @if (isMegaMenuOpen()) {
+    <div class="mega-menu-backdrop" (click)="closeMegaMenu()"></div>
+    <div class="container mega-menu-container">
+      <div class="mega-menu-panel">
+        <div class="mega-menu-grid">
+          @for (parent of categoriesTree(); track parent.categoryId) {
+            <div class="mega-category-column">
+              <a
+                [routerLink]="['/products']"
+                [queryParams]="{ category: parent.slug }"
+                class="parent-cat-link"
+                (click)="closeMegaMenu()"
+              >
+                @if (parent.iconUrl) {
+                  <img [src]="parent.iconUrl" [alt]="parent.name" loading="lazy" class="cat-icon-thumb" />
+                }
+                <span>{{ parent.name }}</span>
+              </a>
+
+              @if (parent.children && parent.children.length > 0) {
+                <ul class="sub-cat-list">
+                  @for (sub of parent.children; track sub.categoryId) {
+                    <li>
+                      <a
+                        [routerLink]="['/products']"
+                        [queryParams]="{ category: sub.slug }"
+                        class="sub-cat-link"
+                        (click)="closeMegaMenu()"
+                      >
+                        {{ sub.name }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Main Content Outlet ───────────────────────────────────────── -->
+  <main class="storefront-main" (click)="closeMegaMenu()">
     <router-outlet></router-outlet>
   </main>
-  <!-- Storefront Footer will go here -->
+
+  <!-- ── Storefront Footer ─────────────────────────────────────────── -->
+  <footer class="storefront-footer">
+    <div class="container footer-content">
+      <div class="footer-grid">
+        <!-- Col 1: Brand Info -->
+        <div class="footer-col">
+          <div class="footer-brand">
+            <span class="footer-brand-title">TECH STORE</span>
+            <p class="footer-desc">
+              Hệ thống bán lẻ máy tính, laptop gaming, linh kiện PC và phụ kiện công nghệ chính hãng hàng đầu Việt Nam.
+            </p>
+          </div>
+          <div class="footer-contact-info">
+            <p><strong>Hotline:</strong> 1800 6868 (Miễn phí cuộc gọi)</p>
+            <p><strong>Email:</strong> support&#64;techstore.vn</p>
+            <p><strong>Địa chỉ:</strong> 123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội</p>
+          </div>
+        </div>
+
+        <!-- Col 2: Customer Support -->
+        <div class="footer-col">
+          <h4 class="footer-heading">Hỗ trợ khách hàng</h4>
+          <ul class="footer-links">
+            <li><a routerLink="/products">Hướng dẫn mua hàng Online</a></li>
+            <li><a routerLink="/products">Chính sách giao hàng & Lắp đặt</a></li>
+            <li><a routerLink="/products">Chính sách bảo hành & Đổi trả</a></li>
+            <li><a routerLink="/products">Chính sách bảo mật thông tin</a></li>
+            <li><a routerLink="/products">Câu hỏi thường gặp (FAQ)</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Categories -->
+        <div class="footer-col">
+          <h4 class="footer-heading">Danh mục sản phẩm</h4>
+          <ul class="footer-links">
+            <li><a [routerLink]="['/products']" [queryParams]="{ category: 'laptop' }">Laptop & MacBook</a></li>
+            <li><a [routerLink]="['/products']" [queryParams]="{ category: 'may-tinh-de-ban-pc' }">Máy tính để bàn PC</a></li>
+            <li><a [routerLink]="['/products']" [queryParams]="{ category: 'man-hinh-may-tinh' }">Màn hình máy tính</a></li>
+            <li><a [routerLink]="['/products']" [queryParams]="{ category: 'linh-kien-may-tinh' }">Linh kiện máy tính</a></li>
+            <li><a [routerLink]="['/products']" [queryParams]="{ category: 'phu-kien-thiet-bi-ngoai-vi' }">Phụ kiện & Gaming Gear</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Payment Partners -->
+        <div class="footer-col">
+          <h4 class="footer-heading">Phương thức thanh toán</h4>
+          <p class="footer-sub-text">Hỗ trợ đa dạng phương thức thanh toán an toàn, bảo mật tiêu chuẩn quốc tế.</p>
+          <div class="payment-methods-box">
+            <span class="pay-chip">Visa / Master</span>
+            <span class="pay-chip">VNPAY-QR</span>
+            <span class="pay-chip">MoMo</span>
+            <span class="pay-chip">COD Giao hàng</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Copyright Bottom Bar -->
+      <div class="footer-bottom">
+        <p>&copy; 2026 Tech Store — E-commerce Platform for Computers & Components. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
 </div>

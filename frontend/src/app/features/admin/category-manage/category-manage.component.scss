@@ -220,6 +220,39 @@ $radius-sm: 8px;
 
   .td-icon {
     width: 48px;
+    text-align: center;
+
+    .category-icon-thumb {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 2px;
+      border: 1px solid #e2e8f0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: inline-block;
+      vertical-align: middle;
+
+      &:hover {
+        transform: scale(1.12);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    .category-icon-placeholder {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      vertical-align: middle;
+    }
   }
 
   .td-name {

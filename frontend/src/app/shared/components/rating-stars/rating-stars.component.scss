@@ -1,0 +1,49 @@
+$amber: #f59e0b;
+$gray-empty: #cbd5e1;
+$on-surface: #0f172a;
+
+.rating-stars-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .stars-list {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .star-svg {
+    transition: color 0.15s ease;
+
+    &.is-filled {
+      color: $amber;
+    }
+
+    &.is-empty {
+      color: $gray-empty;
+    }
+  }
+
+  .rating-score-text {
+    font-weight: 700;
+    color: $on-surface;
+    line-height: 1;
+  }
+
+  // Size variants
+  &.size-sm {
+    .star-svg { width: 13px; height: 13px; }
+    .rating-score-text { font-size: 0.75rem; }
+  }
+
+  &.size-md {
+    .star-svg { width: 16px; height: 16px; }
+    .rating-score-text { font-size: 0.875rem; }
+  }
+
+  &.size-lg {
+    .star-svg { width: 22px; height: 22px; }
+    .rating-score-text { font-size: 1.125rem; }
+  }
+}

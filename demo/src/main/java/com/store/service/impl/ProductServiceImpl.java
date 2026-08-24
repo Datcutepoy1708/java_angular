@@ -15,6 +15,7 @@ import com.store.exception.DuplicateResourceException;
 import com.store.exception.ResourceNotFoundException;
 import com.store.repository.BrandRepository;
 import com.store.repository.CategoryRepository;
+import com.store.repository.ProductAttributeValueRepository;
 import com.store.repository.ProductRepository;
 import com.store.repository.ProductSpecification;
 import com.store.repository.SupplierRepository;
@@ -45,6 +46,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final SupplierRepository supplierRepository;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -75,7 +77,10 @@ public class ProductServiceImpl implements ProductService {
                 filter.getBrandId(),
                 filter.getSupplierId(),
                 productStatus,
-                filter.getKeyword()
+                filter.getKeyword(),
+                filter.getParsedAttributeFilters(),
+                filter.getMinPrice(),
+                filter.getMaxPrice()
         );
 
         String sortBy = (filter.getSortBy() != null && !filter.getSortBy().isBlank()) ? filter.getSortBy() : "createdAt";
@@ -88,7 +93,7 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<ProductResponse> productPage = productRepository.findAll(spec, pageable)
-                .map(ProductResponse::fromEntity);
+                .map(this::enrichProductResponse);
 
         return PageResponse.of(productPage);
     }
@@ -98,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
     public PageResponse<ProductResponse> getDeletedProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("deletedAt").descending());
         Page<ProductResponse> result = productRepository.findByDeletedAtIsNotNull(pageable)
-                .map(ProductResponse::fromEntity);
+                .map(this::enrichProductResponse);
         return PageResponse.of(result);
     }
 
@@ -109,7 +114,7 @@ public class ProductServiceImpl implements ProductService {
         log.info("Fetching product with id {} from database (cache miss)", id);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-        return ProductResponse.fromEntity(product);
+        return enrichProductResponse(product);
     }
 
     @Override
@@ -119,7 +124,21 @@ public class ProductServiceImpl implements ProductService {
         log.info("Fetching product with slug {} from database (cache miss)", slug);
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with slug: " + slug));
-        return ProductResponse.fromEntity(product);
+        return enrichProductResponse(product);
+    }
+
+    private ProductResponse enrichProductResponse(Product product) {
+        if (product == null) return null;
+        ProductResponse response = ProductResponse.fromEntity(product);
+        List<com.store.entity.product.ProductAttributeValue> pavs = productAttributeValueRepository.findByProductProductId(product.getProductId());
+        if (pavs != null && !pavs.isEmpty()) {
+            response.setSpecifications(
+                    pavs.stream()
+                            .map(com.store.dto.response.attribute.ProductAttributeValueResponse::fromEntity)
+                            .toList()
+            );
+        }
+        return response;
     }
 
     @Override
@@ -227,6 +246,12 @@ public class ProductServiceImpl implements ProductService {
                 ? ProductStatus.fromValue(request.getStatus())
                 : product.getStatus();
 
+        if (product.getCategory() != null && !product.getCategory().getCategoryId().equals(category.getCategoryId())) {
+            log.info("Product id {} category changed from {} to {}. Cleaning up old attribute specifications.",
+                    id, product.getCategory().getCategoryId(), category.getCategoryId());
+            productAttributeValueRepository.deleteByProductId(id);
+        }
+
         product.setCategory(category);
         product.setBrand(brand);
         product.setSupplier(supplier);
@@ -241,7 +266,7 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(status);
 
         Product updatedProduct = productRepository.save(product);
-        return ProductResponse.fromEntity(updatedProduct);
+        return enrichProductResponse(updatedProduct);
     }
 
     @Override

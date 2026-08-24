@@ -1,0 +1,318 @@
+<div class="listing-page-wrap">
+  <div class="container">
+    <!-- ── Breadcrumbs ─────────────────────────────────────────────── -->
+    <nav class="breadcrumbs-nav" aria-label="Breadcrumbs">
+      <a routerLink="/" class="crumb-link">Trang chủ</a>
+      <span class="crumb-separator">/</span>
+      <a routerLink="/products" class="crumb-link">Sản phẩm</a>
+      @if (currentCategorySlug()) {
+        <span class="crumb-separator">/</span>
+        <span class="crumb-current">{{ currentCategoryName() }}</span>
+      }
+      @if (keyword()) {
+        <span class="crumb-separator">/</span>
+        <span class="crumb-current">Tìm kiếm: "{{ keyword() }}"</span>
+      }
+    </nav>
+
+    <!-- ── Main Layout: Sidebar Filter + Product Content ───────────── -->
+    <div class="listing-layout-grid">
+      <!-- ── Sidebar Filters ───────────────────────────────────────── -->
+      <aside class="listing-sidebar">
+        <div class="filter-box-header">
+          <div class="filter-title-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="filter-icon">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            <span class="filter-main-title">Bộ lọc tìm kiếm</span>
+          </div>
+
+          @if (currentCategorySlug() || selectedBrandIds().length > 0 || selectedMinPrice() != null || selectedMaxPrice() != null || buildAttributeQueryString() != null) {
+            <button type="button" class="btn-reset-filters" (click)="resetAllFilters()">
+              Xóa tất cả
+            </button>
+          }
+        </div>
+
+        <!-- Filter Group 1: Categories Tree -->
+        <div class="filter-group">
+          <h4 class="filter-heading">Danh mục</h4>
+          <ul class="filter-cat-tree">
+            <li>
+              <button
+                type="button"
+                class="cat-tree-item"
+                [class.active]="!currentCategorySlug()"
+                (click)="selectCategory(null)"
+              >
+                Tất cả danh mục
+              </button>
+            </li>
+            @for (parent of categoriesTree(); track parent.categoryId) {
+              <li>
+                <button
+                  type="button"
+                  class="cat-tree-item is-parent"
+                  [class.active]="currentCategorySlug() === parent.slug"
+                  (click)="selectCategory(parent.slug)"
+                >
+                  {{ parent.name }}
+                </button>
+
+                @if (parent.children && parent.children.length > 0) {
+                  <ul class="sub-tree-list">
+                    @for (sub of parent.children; track sub.categoryId) {
+                      <li>
+                        <button
+                          type="button"
+                          class="cat-tree-item is-sub"
+                          [class.active]="currentCategorySlug() === sub.slug"
+                          (click)="selectCategory(sub.slug)"
+                        >
+                          {{ sub.name }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Filter Group 2: Brands Filter with Search -->
+        <div class="filter-group">
+          <h4 class="filter-heading">Thương hiệu</h4>
+          
+          <div class="brand-search-box">
+            <input
+              type="text"
+              class="brand-search-input"
+              [(ngModel)]="brandSearchText"
+              placeholder="Tìm thương hiệu..."
+            />
+          </div>
+
+          <div class="brand-checkbox-list">
+            @for (brand of filteredBrands; track brand.brandId) {
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [checked]="selectedBrandIds().includes(brand.brandId)"
+                  (change)="toggleBrand(brand.brandId)"
+                />
+                <span class="brand-name-text">{{ brand.name }}</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- Filter Group 3: Price Range -->
+        <div class="filter-group">
+          <h4 class="filter-heading">Khoảng giá</h4>
+          
+          <div class="price-preset-chips">
+            @for (preset of pricePresets; track preset.label) {
+              <button
+                type="button"
+                class="price-chip-btn"
+                [class.active]="selectedMinPrice() === preset.min && selectedMaxPrice() === preset.max"
+                (click)="selectPricePreset(preset)"
+              >
+                {{ preset.label }}
+              </button>
+            }
+          </div>
+
+          <!-- Custom Price Inputs -->
+          <div class="custom-price-wrap">
+            <span class="custom-price-title">Hoặc nhập khoảng giá (VNĐ):</span>
+            <div class="price-inputs-row">
+              <input
+                type="number"
+                class="price-input"
+                [(ngModel)]="customMinPrice"
+                placeholder="Từ"
+                min="0"
+                step="100000"
+              />
+              <span class="price-sep">-</span>
+              <input
+                type="number"
+                class="price-input"
+                [(ngModel)]="customMaxPrice"
+                placeholder="Đến"
+                min="0"
+                step="100000"
+              />
+            </div>
+            <button
+              type="button"
+              class="btn-apply-price"
+              (click)="applyCustomPrice()"
+              [disabled]="!customMinPrice() && !customMaxPrice()"
+            >
+              Áp dụng
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Group 4+: Dynamic EAV Technical Specifications -->
+        @if (categoryAttributes().length > 0) {
+          @for (attr of categoryAttributes(); track attr.attributeId) {
+            @if (getOptionsForAttribute(attr).length > 0) {
+              <div class="filter-group">
+                <h4 class="filter-heading">
+                  {{ attr.name }}
+                  @if (attr.unit) {
+                    <span class="attr-unit">({{ attr.unit }})</span>
+                  }
+                </h4>
+
+                <div class="attr-checkbox-list">
+                  @for (val of getOptionsForAttribute(attr); track val) {
+                    <label class="checkbox-label">
+                      <input
+                        type="checkbox"
+                        [checked]="isAttributeSelected(attr.attributeId, val)"
+                        (change)="toggleAttributeFilter(attr.attributeId, val)"
+                      />
+                      <span class="custom-checkbox"></span>
+                      <span class="checkbox-text">{{ val }}</span>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+          }
+        }
+      </aside>
+
+      <!-- ── Product Content Area ──────────────────────────────────── -->
+      <main class="listing-main-content">
+        <!-- Toolbar (Header + Sorting + Active Chips) -->
+        <div class="listing-toolbar">
+          <div class="toolbar-top">
+            <div class="results-count">
+              <h2 class="current-category-title">{{ currentCategoryName() }}</h2>
+              <span class="count-badge">({{ totalElements() }} sản phẩm)</span>
+            </div>
+
+            <!-- Sorting Toolbar -->
+            <div class="sort-options-wrap">
+              <span class="sort-label">Sắp xếp theo:</span>
+              <div class="sort-buttons-group">
+                <button
+                  type="button"
+                  class="sort-btn"
+                  [class.active]="sortBy() === 'viewCount,desc'"
+                  (click)="onSortChange('viewCount,desc')"
+                >
+                  Phổ biến
+                </button>
+                <button
+                  type="button"
+                  class="sort-btn"
+                  [class.active]="sortBy() === 'createdAt,desc'"
+                  (click)="onSortChange('createdAt,desc')"
+                >
+                  Mới nhất
+                </button>
+                <button
+                  type="button"
+                  class="sort-btn"
+                  [class.active]="sortBy() === 'price,asc'"
+                  (click)="onSortChange('price,asc')"
+                >
+                  Giá tăng dần
+                </button>
+                <button
+                  type="button"
+                  class="sort-btn"
+                  [class.active]="sortBy() === 'price,desc'"
+                  (click)="onSortChange('price,desc')"
+                >
+                  Giá giảm dần
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Filter Chips -->
+          @if (selectedBrandIds().length > 0 || selectedMinPrice() != null || selectedMaxPrice() != null) {
+            <div class="active-chips-row">
+              <span class="active-chips-label">Đang lọc:</span>
+              
+              @for (brandId of selectedBrandIds(); track brandId) {
+                <span class="filter-chip">
+                  {{ getBrandName(brandId) }}
+                  <button type="button" class="remove-chip-btn" (click)="toggleBrand(brandId)">&times;</button>
+                </span>
+              }
+
+              @if (selectedMinPrice() != null || selectedMaxPrice() != null) {
+                <span class="filter-chip">
+                  @if (selectedMinPrice() != null && selectedMaxPrice() != null) {
+                    {{ selectedMinPrice() | number }}đ - {{ selectedMaxPrice() | number }}đ
+                  } @else if (selectedMinPrice() != null) {
+                    Từ {{ selectedMinPrice() | number }}đ
+                  } @else {
+                    Dưới {{ selectedMaxPrice() | number }}đ
+                  }
+                  <button type="button" class="remove-chip-btn" (click)="selectPricePreset({ label: '', min: selectedMinPrice(), max: selectedMaxPrice() })">&times;</button>
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ── Product Grid ────────────────────────────────────────── -->
+        @if (loading()) {
+          <div class="listing-skeleton-grid">
+            @for (i of [1,2,3,4,5,6,7,8]; track i) {
+              <div class="skeleton-card"></div>
+            }
+          </div>
+        } @else if (products().length === 0) {
+          <!-- Empty State -->
+          <div class="empty-state-box">
+            <div class="empty-icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-svg">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </div>
+            <h3 class="empty-title">Không tìm thấy sản phẩm phù hợp</h3>
+            <p class="empty-desc">
+              Vui lòng thử điều chỉnh lại bộ lọc hoặc tìm kiếm với từ khóa khác.
+            </p>
+            <button type="button" class="btn-clear-empty" (click)="resetAllFilters()">
+              Xóa bộ lọc tìm kiếm
+            </button>
+          </div>
+        } @else {
+          <div class="listing-product-grid">
+            @for (product of products(); track product.productId) {
+              <app-product-card
+                [product]="product"
+                (addToCart)="onAddToCart($event)"
+              />
+            }
+          </div>
+
+          <!-- ── Pagination ──────────────────────────────────────── -->
+          <div class="listing-pagination-wrap">
+            <app-pagination
+              [currentPage]="page()"
+              [pageSize]="size()"
+              [totalElements]="totalElements()"
+              [totalPages]="totalPages()"
+              (pageChanged)="onPageChange($event)"
+            />
+          </div>
+        }
+      </main>
+    </div>
+  </div>
+</div>

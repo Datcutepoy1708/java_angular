@@ -38,9 +38,13 @@ export class ProductService {
     let params = new HttpParams();
     if (filter.categoryId != null) params = params.set('categoryId', filter.categoryId);
     if (filter.brandId != null) params = params.set('brandId', filter.brandId);
-    if (filter.supplierId != null) params = params.set('supplierId', filter.supplierId);
     if (filter.status) params = params.set('status', filter.status);
     if (filter.keyword) params = params.set('keyword', filter.keyword);
+    if (filter.attributes) params = params.set('attributes', filter.attributes);
+    if (filter.minPrice != null) params = params.set('minPrice', filter.minPrice);
+    if (filter.maxPrice != null) params = params.set('maxPrice', filter.maxPrice);
+    if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
+    if (filter.sortDir) params = params.set('sortDir', filter.sortDir);
     params = params.set('page', filter.page ?? 0);
     params = params.set('size', filter.size ?? 10);
     return this.http.get<ApiResponse<PageResponse<ProductResponse>>>(`${this.base}/products`, { params });
@@ -53,6 +57,18 @@ export class ProductService {
 
   getById(id: number): Observable<ApiResponse<ProductResponse>> {
     return this.http.get<ApiResponse<ProductResponse>>(`${this.base}/products/${id}`);
+  }
+
+  getBySlug(slug: string): Observable<ApiResponse<ProductResponse>> {
+    return this.http.get<ApiResponse<ProductResponse>>(`${this.base}/products/slug/${slug}`);
+  }
+
+  getProductById(id: number): Observable<ApiResponse<ProductResponse>> {
+    return this.getById(id);
+  }
+
+  getProductBySlug(slug: string): Observable<ApiResponse<ProductResponse>> {
+    return this.getBySlug(slug);
   }
 
   create(request: ProductRequest): Observable<ApiResponse<ProductResponse>> {

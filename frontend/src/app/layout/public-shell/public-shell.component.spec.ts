@@ -1,0 +1,47 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { PublicShellComponent } from './public-shell.component';
+import { CategoryService } from '../../core/services/category.service';
+import { AuthService } from '../../core/services/auth.service';
+
+describe('PublicShellComponent', () => {
+  let component: PublicShellComponent;
+  let fixture: ComponentFixture<PublicShellComponent>;
+
+  const mockCategoryService = {
+    getTree: () => of({ success: true, message: 'OK', data: [] }),
+  };
+
+  const mockAuthService = {
+    currentUser: () => null,
+    logout: () => {},
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [PublicShellComponent],
+      providers: [
+        provideRouter([]),
+        { provide: CategoryService, useValue: mockCategoryService },
+        { provide: AuthService, useValue: mockAuthService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(PublicShellComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should toggle mega menu state', () => {
+    expect(component.isMegaMenuOpen()).toBe(false);
+    component.toggleMegaMenu();
+    expect(component.isMegaMenuOpen()).toBe(true);
+    component.closeMegaMenu();
+    expect(component.isMegaMenuOpen()).toBe(false);
+  });
+});

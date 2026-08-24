@@ -1,0 +1,222 @@
+<div class="attributes-manage-container">
+  <!-- Header Title -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Quản lý Thuộc tính Kỹ thuật (EAV)</h1>
+      <p class="page-subtitle">
+        Cấu hình bộ thông số kỹ thuật chuyên biệt cho từng danh mục máy tính & linh kiện PC.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!selectedCategoryId()"
+        (click)="openCreateModal()"
+      >
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Thêm thuộc tính
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Main Grid Layout: Category Picker Sidebar + Attributes Table -->
+  <div class="attributes-layout">
+    <!-- Left: Category List -->
+    <div class="category-sidebar">
+      <div class="sidebar-header">
+        <h3>Danh mục sản phẩm</h3>
+        <span class="badge-count">{{ categories().length }}</span>
+      </div>
+
+      <div class="category-list">
+        @for (cat of categories(); track cat.categoryId) {
+          <button
+            type="button"
+            class="category-item"
+            [class.active]="selectedCategoryId() === cat.categoryId"
+            (click)="onSelectCategory(cat.categoryId)"
+          >
+            <span class="cat-name">{{ cat.name }}</span>
+            <span class="cat-slug">{{ cat.slug }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Right: Attributes Table for Selected Category -->
+    <div class="attributes-content">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Đang tải thông số kỹ thuật...</p>
+        </div>
+      } @else {
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Danh sách thông số đã cấu hình</h3>
+            <span class="badge-count">{{ attributes().length }} thuộc tính</span>
+          </div>
+
+          @if (attributes().length === 0) {
+            <div class="empty-state">
+              <p class="empty-title">Chưa có thuộc tính nào cho danh mục này</p>
+              <p class="empty-desc">
+                Bấm nút "Thêm thuộc tính" ở trên để bắt đầu cấu hình bộ thông số kỹ thuật (VD: Socket, Dung lượng VRAM, Bus RAM...).
+              </p>
+            </div>
+          } @else {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Thứ tự</th>
+                  <th>Tên thông số kỹ thuật</th>
+                  <th>Kiểu dữ liệu</th>
+                  <th>Đơn vị đo</th>
+                  <th class="text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (attr of attributes(); track attr.attributeId) {
+                  <tr>
+                    <td class="col-sort">{{ attr.sortOrder }}</td>
+                    <td class="col-name font-medium">{{ attr.name }}</td>
+                    <td class="col-type">
+                      <span class="type-badge" [class.type-num]="attr.dataType === 'number'" [class.type-bool]="attr.dataType === 'boolean'">
+                        {{ attr.dataType }}
+                      </span>
+                    </td>
+                    <td class="col-unit">{{ attr.unit || '—' }}</td>
+                    <td class="col-actions text-right">
+                      <button
+                        type="button"
+                        class="btn-icon btn-edit"
+                        title="Chỉnh sửa"
+                        (click)="openEditModal(attr)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-icon btn-delete"
+                        title="Xóa"
+                        (click)="confirmDelete(attr)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Create / Edit Attribute Modal -->
+  @if (isModalOpen()) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ modalMode() === 'create' ? 'Thêm thuộc tính mới' : 'Chỉnh sửa thuộc tính' }}</h2>
+          <button type="button" class="btn-close" (click)="closeModal()">✕</button>
+        </div>
+
+        <form [formGroup]="attributeForm" (ngSubmit)="saveAttribute()" class="modal-form">
+          <div class="form-group">
+            <label class="form-label" for="attr-name">Tên thông số kỹ thuật <span class="req">*</span></label>
+            <input
+              id="attr-name"
+              type="text"
+              class="form-control"
+              formControlName="name"
+              placeholder="VD: Socket, Dung lượng VRAM, Bus RAM, Số nhân..."
+            />
+            @if (attributeForm.get('name')?.invalid && attributeForm.get('name')?.touched) {
+              <p class="field-error">Tên thông số không được để trống (tối đa 150 ký tự).</p>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="attr-type">Kiểu dữ liệu <span class="req">*</span></label>
+              <select id="attr-type" class="form-control" formControlName="dataType">
+                <option value="text">Văn bản (Text / Chuỗi)</option>
+                <option value="number">Số nguyên / Số thực (Number)</option>
+                <option value="boolean">Đúng / Sai (Boolean)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="attr-unit">Đơn vị đo (Optional)</label>
+              <input
+                id="attr-unit"
+                type="text"
+                class="form-control"
+                formControlName="unit"
+                placeholder="VD: GHz, GB, W, MHz, inch, kg..."
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="attr-sort">Thứ tự hiển thị</label>
+            <input
+              id="attr-sort"
+              type="number"
+              class="form-control"
+              formControlName="sortOrder"
+              min="0"
+            />
+          </div>
+
+          @if (errorMessage()) {
+            <div class="alert alert-danger">{{ errorMessage() }}</div>
+          }
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">
+              {{ saving() ? 'Đang lưu...' : (modalMode() === 'create' ? 'Thêm mới' : 'Lưu thay đổi') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Confirm Delete Dialog -->
+  <app-confirm-dialog
+    [isOpen]="isConfirmOpen()"
+    title="Xác nhận xóa thuộc tính"
+    [message]="'Bạn có chắc chắn muốn xóa thuộc tính \'' + (deletingAttribute()?.name || '') + '\'? Toàn bộ giá trị thông số kỹ thuật này trên các sản phẩm sẽ bị xóa.'"
+    confirmText="Xác nhận xóa"
+    cancelText="Hủy"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()"
+  ></app-confirm-dialog>
+</div>

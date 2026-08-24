@@ -42,11 +42,15 @@ export class RegisterComponent {
       }),
       phone: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.pattern(/^[0-9+ ]{8,15}$/)]
+        validators: [Validators.pattern(/^$|^(0[35789])[0-9]{8}$/)]
       }),
       password: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(8)]
+        validators: [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.pattern(/^[\x21-\x7E]+$/)
+        ]
       }),
       confirmPassword: new FormControl('', {
         nonNullable: true,
@@ -113,8 +117,9 @@ export class RegisterComponent {
     this.successMessage.set(null);
 
     const { fullName, email, phone, password } = this.registerForm.getRawValue();
+    const cleanPhone = phone && phone.trim() ? phone.trim() : undefined;
 
-    this.authService.register({ fullName, email, phone: phone || undefined, password }).subscribe({
+    this.authService.register({ fullName, email, phone: cleanPhone, password }).subscribe({
       next: (response) => {
         this.isLoading.set(false);
         if (response.success) {
@@ -128,6 +133,9 @@ export class RegisterComponent {
         this.isLoading.set(false);
         if (error.status === 409 || error.error?.message?.includes('tồn tại') || error.error?.message?.includes('already exists')) {
           this.errorMessage.set('Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.');
+        } else if (error.error?.data && typeof error.error.data === 'object') {
+          const validationMsgs = Object.values(error.error.data).join('. ');
+          this.errorMessage.set(validationMsgs || error.error?.message || 'Thông tin đăng ký không hợp lệ.');
         } else {
           this.errorMessage.set(
             error.error?.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin và thử lại.'

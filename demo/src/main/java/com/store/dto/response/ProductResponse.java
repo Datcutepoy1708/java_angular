@@ -42,6 +42,7 @@ public class ProductResponse implements Serializable {
     private String mainImageUrl;
     private java.util.List<ProductImageResponse> images;
     private java.util.List<ProductVariantResponse> variants;
+    private java.util.List<com.store.dto.response.attribute.ProductAttributeValueResponse> specifications;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;

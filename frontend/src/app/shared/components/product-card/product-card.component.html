@@ -1,0 +1,64 @@
+@let p = product();
+@let priceInfo = getDisplayPrice(p);
+
+<div class="product-card">
+  <!-- Discount Badge -->
+  @if (priceInfo.discountPercent) {
+    <div class="discount-badge">-{{ priceInfo.discountPercent }}%</div>
+  }
+
+  <!-- Product Image Container -->
+  <a [routerLink]="['/products', p.slug]" class="card-image-wrap">
+    <img
+      [src]="getMainImageUrl(p)"
+      [alt]="p.name"
+      loading="lazy"
+      class="card-img"
+    />
+  </a>
+
+  <!-- Card Body -->
+  <div class="card-body">
+    <!-- Brand Name & Warranty Badge -->
+    <div class="card-meta">
+      <span class="brand-tag">{{ p.brandName || 'Chính hãng' }}</span>
+      @if (p.warrantyMonths) {
+        <span class="warranty-tag">BH {{ p.warrantyMonths }}T</span>
+      }
+    </div>
+
+    <!-- Product Title -->
+    <h3 class="card-title">
+      <a [routerLink]="['/products', p.slug]" [title]="p.name">
+        {{ p.name }}
+      </a>
+    </h3>
+
+    <!-- Price Section -->
+    <div class="card-price-row">
+      <div class="price-stack">
+        @if (priceInfo.salePrice) {
+          <span class="price-current">{{ formatCurrency(priceInfo.salePrice) }}</span>
+          <span class="price-original">{{ formatCurrency(priceInfo.price) }}</span>
+        } @else {
+          <span class="price-current">{{ formatCurrency(priceInfo.price) }}</span>
+        }
+      </div>
+
+      <!-- Quick Add to Cart Button -->
+      <button
+        type="button"
+        class="quick-cart-btn"
+        (click)="onAddToCartClick($event)"
+        title="Thêm vào giỏ hàng"
+        aria-label="Thêm vào giỏ hàng"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cart-icon-svg">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

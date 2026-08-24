@@ -55,6 +55,9 @@ class ProductServiceTest {
     @Mock
     private SupplierRepository supplierRepository;
 
+    @Mock
+    private com.store.repository.ProductAttributeValueRepository productAttributeValueRepository;
+
     @InjectMocks
     private ProductServiceImpl productService;
 

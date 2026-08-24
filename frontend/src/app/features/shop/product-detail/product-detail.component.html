@@ -1,0 +1,323 @@
+<div class="product-detail-page">
+  <div class="container">
+    @if (loading()) {
+      <div class="detail-loading-skeleton">
+        <div class="skeleton-gallery"></div>
+        <div class="skeleton-info"></div>
+      </div>
+    } @else if (!product()) {
+      <div class="product-not-found">
+        <h2>Không tìm thấy sản phẩm</h2>
+        <p>Sản phẩm này có thể đã bị ngừng kinh doanh hoặc đường dẫn không chính xác.</p>
+        <a routerLink="/products" class="btn-back-home">Quay lại danh sách sản phẩm</a>
+      </div>
+    } @else {
+      @let p = product()!;
+      @let v = selectedVariant();
+
+      <!-- ── Breadcrumbs ───────────────────────────────────────────── -->
+      <nav class="breadcrumbs-nav" aria-label="Breadcrumbs">
+        <a routerLink="/" class="crumb-link">Trang chủ</a>
+        <span class="crumb-separator">/</span>
+        <a routerLink="/products" class="crumb-link">Sản phẩm</a>
+        @if (p.categoryName) {
+          <span class="crumb-separator">/</span>
+          <a [routerLink]="['/products']" [queryParams]="{ category: p.categoryId }" class="crumb-link">
+            {{ p.categoryName }}
+          </a>
+        }
+        <span class="crumb-separator">/</span>
+        <span class="crumb-current">{{ p.name }}</span>
+      </nav>
+
+      <!-- ── Top Product Overview Section ──────────────────────────── -->
+      <div class="product-overview-grid">
+        <!-- ── Left Column: Gallery Images ─────────────────────────── -->
+        <div class="gallery-column">
+          <div class="main-image-box">
+            @if (p.images && p.images.length > 0) {
+              <img
+                [src]="p.images[activeImageIndex()]?.imageUrl || p.images[0].imageUrl"
+                [alt]="p.name"
+                class="main-product-img"
+              />
+            } @else {
+              <img src="assets/placeholder-product.png" [alt]="p.name" class="main-product-img" />
+            }
+
+            @if (discountPercent) {
+              <div class="gallery-discount-pill">-{{ discountPercent }}%</div>
+            }
+          </div>
+
+          <!-- Thumbnail Carousel/Strip -->
+          @if (p.images && p.images.length > 1) {
+            <div class="thumbnail-strip">
+              @for (img of p.images; track img.imageId; let i = $index) {
+                <button
+                  type="button"
+                  class="thumb-btn"
+                  [class.active]="activeImageIndex() === i"
+                  (click)="selectImage(i)"
+                  [attr.aria-label]="'Ảnh ' + (i + 1)"
+                >
+                  <img [src]="img.imageUrl" [alt]="img.altText || p.name" loading="lazy" class="thumb-img" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ── Right Column: Info & Purchase ────────────────────────── -->
+        <div class="info-column">
+          <!-- Brand & Category -->
+          <div class="brand-row">
+            <span class="brand-badge">{{ p.brandName || 'Chính hãng' }}</span>
+            <span class="sku-text">Mã SKU: {{ v ? v.skuVariant : p.sku }}</span>
+          </div>
+
+          <!-- Product Title (H1) -->
+          <h1 class="product-main-title">{{ p.name }}</h1>
+
+          <!-- Stock & Warranty Status -->
+          <div class="status-row">
+            <span class="stock-status-chip">
+              <span class="status-dot"></span>
+              Sẵn sàng giao hàng
+            </span>
+            @if (p.warrantyMonths) {
+              <span class="warranty-chip">Bảo hành chính hãng {{ p.warrantyMonths }} tháng</span>
+            }
+          </div>
+
+          <!-- Price Box -->
+          <div class="price-box">
+            <div class="price-main-stack">
+              <span class="current-price-tag">{{ formatCurrency(currentPrice) }}</span>
+              @if (originalPrice) {
+                <span class="original-price-tag">{{ formatCurrency(originalPrice) }}</span>
+              }
+            </div>
+
+            @if (savingsAmount) {
+              <div class="savings-pill">
+                Tiết kiệm {{ formatCurrency(savingsAmount) }} (-{{ discountPercent }}%)
+              </div>
+            }
+          </div>
+
+          <!-- ── Variant Selector (Options) ────────────────────────── -->
+          @if (p.variants && p.variants.length > 0) {
+            <div class="variants-selection-group">
+              <span class="variant-label">
+                Chọn phiên bản / Cấu hình: <strong>{{ v?.variantName }}</strong>
+              </span>
+
+              <div class="variant-chips-list">
+                @for (variant of p.variants; track variant.variantId) {
+                  <button
+                    type="button"
+                    class="variant-chip-btn"
+                    [class.active]="v?.variantId === variant.variantId"
+                    (click)="selectVariant(variant)"
+                  >
+                    <span class="v-name">{{ variant.variantName }}</span>
+                    <span class="v-price">{{ formatCurrency(variant.salePrice || variant.price) }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Short Description -->
+          @if (p.shortDesc) {
+            <p class="short-desc-text">{{ p.shortDesc }}</p>
+          }
+
+          <!-- ── Quantity & Action Buttons ─────────────────────────── -->
+          <div class="purchase-actions-box">
+            <div class="quantity-counter-wrap">
+              <span class="qty-label">Số lượng:</span>
+              <div class="counter-box">
+                <button type="button" class="counter-btn" (click)="decreaseQuantity()" [disabled]="quantity() <= 1">-</button>
+                <span class="quantity-value">{{ quantity() }}</span>
+                <button type="button" class="counter-btn" (click)="increaseQuantity()">+</button>
+              </div>
+            </div>
+
+            <div class="action-buttons-row">
+              <button type="button" class="btn-add-cart" (click)="addToCart()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-cart-svg">
+                  <circle cx="9" cy="21" r="1"/>
+                  <circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+                Thêm vào giỏ hàng
+              </button>
+
+              <button type="button" class="btn-buy-now" (click)="buyNow()">
+                Mua ngay
+              </button>
+            </div>
+
+            @if (cartFeatureNotice()) {
+              <div class="cart-notice-banner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Tính năng <strong>Giỏ hàng & Đặt hàng trực tuyến</strong> đang được xây dựng (Phase 5). Quý khách vui lòng liên hệ hotline <strong>1800 6868</strong> để đặt hàng ngay!</span>
+              </div>
+            }
+          </div>
+
+          <!-- ── Guarantees Box ────────────────────────────────────── -->
+          <div class="guarantees-box">
+            <div class="guarantee-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="g-icon">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span>100% Hàng chính hãng phân phối ủy quyền</span>
+            </div>
+            <div class="guarantee-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="g-icon">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              <span>1 Đổi 1 trong 30 ngày nếu lỗi từ nhà sản xuất</span>
+            </div>
+            <div class="guarantee-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="g-icon">
+                <rect x="1" y="3" width="15" height="13"/>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+              </svg>
+              <span>Miễn phí giao hàng toàn quốc</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Bottom Content Tabs (Mô tả / Thông số / Đánh giá) ──────── -->
+      <section class="product-tabs-section">
+        <div class="tabs-header-bar">
+          <button
+            type="button"
+            class="tab-nav-btn"
+            [class.active]="activeTab() === 'desc'"
+            (click)="activeTab.set('desc')"
+          >
+            Mô tả sản phẩm
+          </button>
+          <button
+            type="button"
+            class="tab-nav-btn"
+            [class.active]="activeTab() === 'specs'"
+            (click)="activeTab.set('specs')"
+          >
+            Thông số kỹ thuật
+          </button>
+          <button
+            type="button"
+            class="tab-nav-btn"
+            [class.active]="activeTab() === 'reviews'"
+            (click)="activeTab.set('reviews')"
+          >
+            Đánh giá & Nhận xét
+          </button>
+        </div>
+
+        <div class="tab-body-card">
+          <!-- Tab 1: Description -->
+          @if (activeTab() === 'desc') {
+            <div class="desc-tab-pane">
+              @if (p.description) {
+                <div class="rich-html-content" [innerHTML]="p.description"></div>
+              } @else {
+                <p>Đang cập nhật bài viết mô tả chi tiết cho sản phẩm này.</p>
+              }
+            </div>
+          }
+
+          <!-- Tab 2: Technical Specifications -->
+          @if (activeTab() === 'specs') {
+            <div class="specs-tab-pane">
+              <table class="specs-table">
+                <tbody>
+                  <tr>
+                    <td class="spec-name">Thương hiệu</td>
+                    <td class="spec-val">{{ p.brandName || 'Chính hãng' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-name">Danh mục</td>
+                    <td class="spec-val">{{ p.categoryName || 'Máy tính & Linh kiện' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-name">Mã SKU sản phẩm</td>
+                    <td class="spec-val">{{ v ? (v.skuVariant || p.sku) : p.sku }}</td>
+                  </tr>
+                  <tr>
+                    <td class="spec-name">Thời gian bảo hành</td>
+                    <td class="spec-val">{{ p.warrantyMonths ? p.warrantyMonths + ' Tháng' : '12 Tháng chính hãng' }}</td>
+                  </tr>
+
+                  <!-- Dynamic EAV Specifications -->
+                  @if (p.specifications && p.specifications.length > 0) {
+                    @for (spec of p.specifications; track spec.attributeId) {
+                      <tr>
+                        <td class="spec-name">{{ spec.attributeName }}</td>
+                        <td class="spec-val">
+                          <strong>{{ spec.value }}</strong>{{ spec.unit ? ' ' + spec.unit : '' }}
+                        </td>
+                      </tr>
+                    }
+                  }
+
+                  <tr>
+                    <td class="spec-name">Tình trạng máy</td>
+                    <td class="spec-val">Mới 100% nguyên seal hộp chính hãng</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- Tab 3: Reviews (Authentic Empty State - Phase 7 Ready) -->
+          @if (activeTab() === 'reviews') {
+            <div class="reviews-tab-pane">
+              <div class="reviews-empty-state">
+                <div class="review-empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="chat-svg">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <h4 class="empty-review-title">Chưa có đánh giá nào cho sản phẩm này</h4>
+                <p class="empty-review-desc">
+                  Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét thực tế về sản phẩm <strong>{{ p.name }}</strong>!
+                </p>
+                <button type="button" class="btn-write-review" (click)="activeTab.set('reviews')">
+                  Viết nhận xét của bạn
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- ── Related Products Section ──────────────────────────────── -->
+      @if (relatedProducts().length > 0) {
+        <section class="related-products-section">
+          <h2 class="related-heading">Sản phẩm cùng danh mục</h2>
+          <div class="related-grid">
+            @for (item of relatedProducts(); track item.productId) {
+              <app-product-card [product]="item" />
+            }
+          </div>
+        </section>
+      }
+    }
+  </div>
+</div>

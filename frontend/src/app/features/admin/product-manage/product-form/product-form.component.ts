@@ -17,6 +17,8 @@ import { catchError, tap } from 'rxjs/operators';
 import { ProductService } from '../../../../core/services/product.service';
 import { CategoryService } from '../../../../core/services/category.service';
 import { BrandService } from '../../../../core/services/brand.service';
+import { UploadService } from '../../../../core/services/upload.service';
+import { AttributeService } from '../../../../core/services/attribute.service';
 import {
   ImageFormItem,
   ImageType,
@@ -29,6 +31,7 @@ import {
 } from '../../../../core/models/product.model';
 import { CategoryResponse } from '../../../../core/models/category.model';
 import { BrandResponse } from '../../../../core/models/brand.model';
+import { AttributeResponse, ProductAttributeValueRequest } from '../../../../core/models/attribute.model';
 
 @Component({
   selector: 'app-product-form',
@@ -41,6 +44,8 @@ export class ProductFormComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly categoryService = inject(CategoryService);
   private readonly brandService = inject(BrandService);
+  private readonly uploadService = inject(UploadService);
+  private readonly attributeService = inject(AttributeService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -48,6 +53,17 @@ export class ProductFormComponent implements OnInit {
   // ── Mode & IDs ────────────────────────────────────────────────
   readonly isEditMode = signal(false);
   readonly productId = signal<number | null>(null);
+
+  // ── EAV Specifications State ─────────────────────────────────
+  readonly availableAttributes = signal<AttributeResponse[]>([]);
+  readonly attributeValues = signal<{ [attributeId: number]: string }>({});
+  readonly loadingSpecs = signal(false);
+
+  // ── Upload State ──────────────────────────────────────────────
+  readonly uploadMode = signal<'file' | 'url'>('file');
+  readonly isUploading = signal(false);
+  readonly uploadError = signal<string | null>(null);
+  readonly isDragging = signal(false);
 
   // ── Dropdown Options ──────────────────────────────────────────
   readonly categories = signal<CategoryResponse[]>([]);
@@ -92,6 +108,17 @@ export class ProductFormComponent implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────
   ngOnInit(): void {
     this.loadDropdowns();
+
+    // Listen to category change to dynamically load attributes
+    this.form.get('categoryId')?.valueChanges.subscribe((catId) => {
+      if (catId) {
+        this.loadCategoryAttributes(Number(catId), !this.loading());
+      } else {
+        this.availableAttributes.set([]);
+        this.attributeValues.set({});
+      }
+    });
+
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.isEditMode.set(true);
@@ -114,6 +141,35 @@ export class ProductFormComponent implements OnInit {
     });
   }
 
+  loadCategoryAttributes(categoryId: number, resetValues = true): void {
+    this.loadingSpecs.set(true);
+    if (resetValues) {
+      this.attributeValues.set({});
+    }
+    this.attributeService.getByCategory(categoryId).subscribe({
+      next: (res) => {
+        this.loadingSpecs.set(false);
+        if (res.success && res.data) {
+          this.availableAttributes.set(res.data);
+        } else {
+          this.availableAttributes.set([]);
+        }
+      },
+      error: () => {
+        this.loadingSpecs.set(false);
+        this.availableAttributes.set([]);
+      }
+    });
+  }
+
+  onSpecChange(attributeId: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.attributeValues.update((current) => ({
+      ...current,
+      [attributeId]: input.value
+    }));
+  }
+
   loadProductData(id: number): void {
     this.loading.set(true);
     this.productService.getById(id).subscribe({
@@ -129,6 +185,30 @@ export class ProductFormComponent implements OnInit {
           warrantyMonths: p.warrantyMonths ?? 0,
           status: p.status,
         });
+
+        if (p.categoryId) {
+          this.loadCategoryAttributes(p.categoryId, false);
+        }
+
+        if (p.specifications && p.specifications.length > 0) {
+          const valMap: { [attrId: number]: string } = {};
+          for (const spec of p.specifications) {
+            valMap[spec.attributeId] = spec.value;
+          }
+          this.attributeValues.set(valMap);
+        } else {
+          this.attributeService.getProductAttributes(id).subscribe({
+            next: (specRes) => {
+              if (specRes.success && specRes.data) {
+                const valMap: { [attrId: number]: string } = {};
+                for (const spec of specRes.data) {
+                  valMap[spec.attributeId] = spec.value;
+                }
+                this.attributeValues.set(valMap);
+              }
+            }
+          });
+        }
 
         // Map variants
         if (p.variants && p.variants.length > 0) {
@@ -251,6 +331,101 @@ export class ProductFormComponent implements OnInit {
   onImageAltInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.newImageAlt.set(input.value);
+  }
+
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.uploadFiles(input.files);
+      input.value = ''; // Reset input
+    }
+  }
+
+  onDragOverZone(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(true);
+  }
+
+  onDragLeaveZone(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+    if (event.dataTransfer && event.dataTransfer.files.length > 0) {
+      this.uploadFiles(event.dataTransfer.files);
+    }
+  }
+
+  uploadFiles(files: FileList | File[]): void {
+    if (!files || files.length === 0) return;
+
+    this.uploadError.set(null);
+    this.isUploading.set(true);
+
+    const validFiles: File[] = [];
+    const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > maxSizeBytes) {
+        this.uploadError.set(`File "${file.name}" vượt quá dung lượng tối đa 5MB`);
+        continue;
+      }
+      if (!file.type.startsWith('image/')) {
+        this.uploadError.set(`File "${file.name}" không phải định dạng ảnh`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      this.isUploading.set(false);
+      return;
+    }
+
+    const uploadObservables = validFiles.map((file) =>
+      this.uploadService.uploadImage(file).pipe(
+        catchError((err) => {
+          console.error(`Lỗi tải file ${file.name}:`, err);
+          return of(null);
+        })
+      )
+    );
+
+    forkJoin(uploadObservables).subscribe({
+      next: (urls) => {
+        urls.forEach((url, idx) => {
+          if (url) {
+            const currentImages = this.images();
+            const isFirst = currentImages.length === 0;
+            this.images.update((list) => [
+              ...list,
+              {
+                imageId: null,
+                request: {
+                  imageUrl: url,
+                  imageType: isFirst ? 'MAIN' : 'GALLERY',
+                  altText: validFiles[idx]?.name ? validFiles[idx].name.replace(/\.[^/.]+$/, '') : null,
+                  sortOrder: list.length,
+                },
+                saveStatus: 'pending',
+              },
+            ]);
+          }
+        });
+        this.isUploading.set(false);
+      },
+      error: () => {
+        this.uploadError.set('Có lỗi xảy ra khi tải ảnh lên máy chủ');
+        this.isUploading.set(false);
+      },
+    });
   }
 
   addImage(): void {
@@ -448,9 +623,25 @@ export class ProductFormComponent implements OnInit {
       );
     });
 
+    const specRequests: ProductAttributeValueRequest[] = [];
+    const currentVals = this.attributeValues();
+    for (const attr of this.availableAttributes()) {
+      const val = currentVals[attr.attributeId];
+      if (val != null && val.trim().length > 0) {
+        specRequests.push({
+          attributeId: attr.attributeId,
+          value: val.trim()
+        });
+      }
+    }
+    const specs$ = this.attributeService.saveProductAttributes(productId, { attributes: specRequests }).pipe(
+      catchError(() => of(null))
+    );
+
     forkJoin({
       variants: forkJoin(variantObs.length ? variantObs : [of(null)]),
       images: forkJoin(imageObs.length ? imageObs : [of(null)]),
+      specs: specs$,
     }).subscribe({
       next: () => {
         const savedImageIds = this.images()

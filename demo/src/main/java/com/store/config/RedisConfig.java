@@ -54,6 +54,7 @@ public class RedisConfig implements CachingConfigurer {
         configs.put("productDetail", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         configs.put("categories", defaultConfig.entryTtl(Duration.ofHours(2)));
         configs.put("brands", defaultConfig.entryTtl(Duration.ofHours(2)));
+        configs.put("categoryAttributes", defaultConfig.entryTtl(Duration.ofHours(2)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(defaultConfig)

@@ -46,4 +46,14 @@ describe('App Routes', () => {
     await router.navigateByUrl('/auth/register');
     expect(location.path()).toBe('/auth/register');
   });
+
+  it('should navigate to Storefront home route /', async () => {
+    await router.navigateByUrl('/');
+    expect(location.path()).toBe('');
+  });
+
+  it('should navigate to Storefront products listing /products', async () => {
+    await router.navigateByUrl('/products');
+    expect(location.path()).toBe('/products');
+  });
 });

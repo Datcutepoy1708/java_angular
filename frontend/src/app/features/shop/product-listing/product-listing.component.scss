@@ -1,0 +1,560 @@
+$primary: #2563eb;
+$primary-dark: #1d4ed8;
+$primary-light: #eff6ff;
+$accent-amber: #f59e0b;
+$on-surface: #0f172a;
+$on-surface-variant: #64748b;
+$surface: #ffffff;
+$surface-subtle: #f8fafc;
+$border: #e2e8f0;
+$radius: 10px;
+
+.listing-page-wrap {
+  padding: 16px 0 40px 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+// ── Breadcrumbs ───────────────────────────────────────────────────
+.breadcrumbs-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+
+  .crumb-link {
+    color: $on-surface-variant;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $primary;
+    }
+  }
+
+  .crumb-separator {
+    color: #cbd5e1;
+  }
+
+  .crumb-current {
+    color: $on-surface;
+    font-weight: 600;
+  }
+}
+
+// ── Layout Grid (Sidebar + Main) ──────────────────────────────────
+.listing-layout-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+// ── Sidebar Filters ───────────────────────────────────────────────
+.listing-sidebar {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 86px;
+}
+
+.filter-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid $border;
+
+  .filter-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .filter-icon {
+      width: 18px;
+      height: 18px;
+      color: $primary;
+    }
+
+    .filter-main-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: $on-surface;
+    }
+  }
+
+  .btn-reset-filters {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #dc2626;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .filter-heading {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+}
+
+// Category Tree Filter
+.filter-cat-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .cat-tree-item {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 0.825rem;
+    color: $on-surface-variant;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: $surface-subtle;
+      color: $on-surface;
+    }
+
+    &.active {
+      background: $primary-light;
+      color: $primary;
+      font-weight: 700;
+    }
+
+    &.is-parent {
+      font-weight: 600;
+      color: $on-surface;
+    }
+  }
+
+  .sub-tree-list {
+    list-style: none;
+    padding-left: 14px;
+    margin: 2px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 1.5px solid #f1f5f9;
+
+    .cat-tree-item.is-sub {
+      font-size: 0.78rem;
+      padding: 4px 6px;
+    }
+  }
+}
+
+// Brand Filter with Search
+.brand-search-box {
+  .brand-search-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid $border;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    background: $surface-subtle;
+    outline: none;
+
+    &:focus {
+      border-color: $primary;
+      background: $surface;
+    }
+  }
+}
+
+.brand-checkbox-list,
+.attr-checkbox-list {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: $on-surface-variant;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: $primary;
+    }
+
+    &:hover {
+      color: $on-surface;
+    }
+  }
+}
+
+.attr-unit {
+  font-size: 0.75rem;
+  color: $primary;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+// Price Range Filter
+.price-preset-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+
+  .price-chip-btn {
+    padding: 6px 4px;
+    border-radius: 6px;
+    border: 1px solid $border;
+    background: $surface-subtle;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: $on-surface-variant;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+
+    &:hover {
+      border-color: #cbd5e1;
+      color: $on-surface;
+    }
+
+    &.active {
+      background: $primary-light;
+      border-color: $primary;
+      color: $primary;
+      font-weight: 700;
+    }
+  }
+}
+
+.custom-price-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed $border;
+
+  .custom-price-title {
+    font-size: 0.72rem;
+    color: $on-surface-variant;
+  }
+
+  .price-inputs-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .price-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid $border;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      outline: none;
+
+      &:focus {
+        border-color: $primary;
+      }
+    }
+
+    .price-sep {
+      color: #94a3b8;
+    }
+  }
+
+  .btn-apply-price {
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    background: $primary;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background: $primary-dark;
+    }
+  }
+}
+
+// ── Main Content Area ─────────────────────────────────────────────
+.listing-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// Listing Toolbar
+.listing-toolbar {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 16px 20px;
+
+  .toolbar-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .results-count {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+
+    .current-category-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: $on-surface;
+      margin: 0;
+    }
+
+    .count-badge {
+      font-size: 0.825rem;
+      color: $on-surface-variant;
+      font-weight: 500;
+    }
+  }
+
+  .sort-options-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .sort-label {
+      font-size: 0.8rem;
+      color: $on-surface-variant;
+    }
+
+    .sort-buttons-group {
+      display: flex;
+      gap: 4px;
+      background: $surface-subtle;
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid $border;
+    }
+
+    .sort-btn {
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: $on-surface-variant;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: $on-surface;
+      }
+
+      &.active {
+        background: $surface;
+        color: $primary;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+    }
+  }
+
+  .active-chips-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+
+    .active-chips-label {
+      font-size: 0.75rem;
+      color: $on-surface-variant;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: $primary-light;
+      border: 1px solid #bfdbfe;
+      color: $primary;
+      font-size: 0.75rem;
+      font-weight: 600;
+
+      .remove-chip-btn {
+        background: none;
+        border: none;
+        color: $primary;
+        font-size: 1rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+      }
+    }
+  }
+}
+
+// Product Grid Layout
+.listing-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.listing-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  .skeleton-card {
+    height: 320px;
+    border-radius: $radius;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// Empty State
+.empty-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  text-align: center;
+
+  .empty-icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: $surface-subtle;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: #94a3b8;
+
+    .empty-svg {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .empty-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0 0 6px 0;
+  }
+
+  .empty-desc {
+    font-size: 0.85rem;
+    color: $on-surface-variant;
+    max-width: 400px;
+    margin: 0 0 20px 0;
+  }
+
+  .btn-clear-empty {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    background: $primary;
+    color: #ffffff;
+    font-size: 0.825rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: $primary-dark;
+    }
+  }
+}
+
+.listing-pagination-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+// ── Responsive ────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .listing-layout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-sidebar {
+    position: static;
+  }
+
+  .listing-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

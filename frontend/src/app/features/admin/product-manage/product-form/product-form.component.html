@@ -320,6 +320,69 @@
             }
           </div>
         </div>
+
+        <!-- Card 3: Specifications (EAV) -->
+        <div class="card form-section">
+          <div class="section-header-row">
+            <div>
+              <h3 class="section-title">Thông số kỹ thuật chi tiết (EAV Specifications)</h3>
+              <p class="section-desc">Bộ thông số kỹ thuật chuyên sâu theo danh mục (tự động cập nhật khi đổi danh mục)</p>
+            </div>
+            @if (availableAttributes().length > 0) {
+              <span class="badge-count">{{ availableAttributes().length }} thông số</span>
+            }
+          </div>
+
+          <div class="section-body">
+            @if (!form.get('categoryId')?.value) {
+              <div class="empty-hint">
+                Vui lòng chọn <strong>Danh mục sản phẩm</strong> ở phần Thông tin cơ bản để tải bộ thông số kỹ thuật tương ứng.
+              </div>
+            } @else if (loadingSpecs()) {
+              <div class="empty-hint">Đang tải bộ thông số kỹ thuật...</div>
+            } @else if (availableAttributes().length === 0) {
+              <div class="empty-hint">
+                Danh mục này chưa cấu hình bộ thông số kỹ thuật nào. Bạn có thể cấu hình thêm tại mục <strong>Attributes (EAV)</strong> trong menu Quản trị.
+              </div>
+            } @else {
+              <div class="specs-grid">
+                @for (attr of availableAttributes(); track attr.attributeId) {
+                  <div class="form-group">
+                    <label class="form-label" [for]="'spec-' + attr.attributeId">
+                      {{ attr.name }}
+                      @if (attr.unit) {
+                        <span class="spec-unit">({{ attr.unit }})</span>
+                      }
+                      <span class="type-tag">{{ attr.dataType }}</span>
+                    </label>
+
+                    @if (attr.dataType === 'boolean') {
+                      <select
+                        [id]="'spec-' + attr.attributeId"
+                        class="form-control"
+                        [value]="attributeValues()[attr.attributeId] || ''"
+                        (change)="onSpecChange(attr.attributeId, $event)"
+                      >
+                        <option value="">— Chưa xác định —</option>
+                        <option value="Có">Có (Yes)</option>
+                        <option value="Không">Không (No)</option>
+                      </select>
+                    } @else {
+                      <input
+                        [id]="'spec-' + attr.attributeId"
+                        [type]="attr.dataType === 'number' ? 'number' : 'text'"
+                        class="form-control"
+                        [value]="attributeValues()[attr.attributeId] || ''"
+                        (input)="onSpecChange(attr.attributeId, $event)"
+                        [placeholder]="'Nhập ' + attr.name.toLowerCase() + (attr.unit ? ' (' + attr.unit + ')' : '')"
+                      />
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
       </div>
 
       <!-- ═══════════════════════════════════════
@@ -374,26 +437,104 @@
 
           <div class="section-body">
             @if (imageTab() === 'active') {
-              <!-- Add new image input -->
-              <div class="add-image-box">
-                <input
-                  type="url"
-                  class="form-control form-control--sm"
-                  [value]="newImageUrl()"
-                  (input)="onImageUrlInput($event)"
-                  placeholder="Nhập đường dẫn link ảnh (https://...)"
-                />
-                <input
-                  type="text"
-                  class="form-control form-control--sm"
-                  [value]="newImageAlt()"
-                  (input)="onImageAltInput($event)"
-                  placeholder="Mô tả alt (tùy chọn)"
-                />
-                <button type="button" class="btn btn-ghost btn-sm" (click)="addImage()" [disabled]="!newImageUrl().trim()">
-                  + Thêm ảnh
+              <!-- Upload Mode Switcher -->
+              <div class="upload-mode-toggle">
+                <button
+                  type="button"
+                  class="mode-toggle-btn"
+                  [class.active]="uploadMode() === 'file'"
+                  (click)="uploadMode.set('file')"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-svg">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  Tải ảnh từ máy tính (Chọn nhiều ảnh)
+                </button>
+                <button
+                  type="button"
+                  class="mode-toggle-btn"
+                  [class.active]="uploadMode() === 'url'"
+                  (click)="uploadMode.set('url')"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-svg">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                  Dán link URL ảnh
                 </button>
               </div>
+
+              <!-- Mode 1: Local File Upload Dropzone -->
+              @if (uploadMode() === 'file') {
+                <div
+                  class="upload-dropzone"
+                  [class.dragging]="isDragging()"
+                  (dragover)="onDragOverZone($event)"
+                  (dragleave)="onDragLeaveZone($event)"
+                  (drop)="onFileDrop($event)"
+                  (click)="fileInput.click()"
+                >
+                  <input
+                    #fileInput
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                    (change)="onFilesSelected($event)"
+                    style="display: none"
+                  />
+                  <div class="dropzone-content">
+                    <div class="dropzone-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-cloud">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </div>
+                    <div class="dropzone-text">
+                      <strong>Bấm để chọn file từ máy tính</strong> hoặc kéo thả ảnh vào đây
+                    </div>
+                    <div class="dropzone-hint">
+                      Hỗ trợ chọn nhiều ảnh cùng lúc (PNG, JPG, WEBP, SVG tối đa 5MB/file)
+                    </div>
+                  </div>
+
+                  @if (isUploading()) {
+                    <div class="upload-overlay">
+                      <div class="spinner-sm"></div>
+                      <span>Đang tải ảnh lên máy chủ...</span>
+                    </div>
+                  }
+                </div>
+
+                @if (uploadError()) {
+                  <div class="upload-error-msg">
+                    ⚠️ {{ uploadError() }}
+                  </div>
+                }
+              } @else {
+                <!-- Mode 2: Direct URL Input -->
+                <div class="add-image-box">
+                  <input
+                    type="url"
+                    class="form-control form-control--sm"
+                    [value]="newImageUrl()"
+                    (input)="onImageUrlInput($event)"
+                    placeholder="Nhập đường dẫn link ảnh (https://...)"
+                  />
+                  <input
+                    type="text"
+                    class="form-control form-control--sm"
+                    [value]="newImageAlt()"
+                    (input)="onImageAltInput($event)"
+                    placeholder="Mô tả alt (tùy chọn)"
+                  />
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="addImage()" [disabled]="!newImageUrl().trim()">
+                    + Thêm ảnh
+                  </button>
+                </div>
+              }
 
               <!-- Gallery Grid (Drag and Drop) -->
               @if (images().length === 0) {
