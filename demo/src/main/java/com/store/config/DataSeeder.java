@@ -13,6 +13,7 @@ import com.store.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,8 @@ import java.util.*;
 
 @Slf4j
 @Component
-@Profile("!prod")
+@Profile("seed-once")
+@ConditionalOnProperty(name = "app.seeder.enabled", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
