@@ -81,10 +81,30 @@
 
           <!-- Stock & Warranty Status -->
           <div class="status-row">
-            <span class="stock-status-chip">
-              <span class="status-dot"></span>
-              Sẵn sàng giao hàng
-            </span>
+            @if (variantStock(); as stock) {
+              @if (stock.totalAvailableQty > 10) {
+                <span class="stock-status-chip">
+                  <span class="status-dot"></span>
+                  Còn hàng ({{ stock.totalAvailableQty }} sản phẩm tại 3 chi nhánh)
+                </span>
+              } @else if (stock.totalAvailableQty > 0) {
+                <span class="stock-status-chip chip-warning">
+                  <span class="status-dot dot-warning"></span>
+                  Chỉ còn {{ stock.totalAvailableQty }} sản phẩm cuối cùng!
+                </span>
+              } @else {
+                <span class="stock-status-chip chip-danger">
+                  <span class="status-dot dot-danger"></span>
+                  Tạm hết hàng
+                </span>
+              }
+            } @else {
+              <span class="stock-status-chip">
+                <span class="status-dot"></span>
+                Đang kiểm tra tồn kho...
+              </span>
+            }
+
             @if (p.warrantyMonths) {
               <span class="warranty-chip">Bảo hành chính hãng {{ p.warrantyMonths }} tháng</span>
             }
@@ -139,24 +159,32 @@
             <div class="quantity-counter-wrap">
               <span class="qty-label">Số lượng:</span>
               <div class="counter-box">
-                <button type="button" class="counter-btn" (click)="decreaseQuantity()" [disabled]="quantity() <= 1">-</button>
+                <button type="button" class="counter-btn" (click)="decreaseQuantity()" [disabled]="quantity() <= 1 || (variantStock() && !variantStock()!.inStock)">-</button>
                 <span class="quantity-value">{{ quantity() }}</span>
-                <button type="button" class="counter-btn" (click)="increaseQuantity()">+</button>
+                <button type="button" class="counter-btn" (click)="increaseQuantity()" [disabled]="variantStock() && !variantStock()!.inStock">+</button>
               </div>
             </div>
 
             <div class="action-buttons-row">
-              <button type="button" class="btn-add-cart" (click)="addToCart()">
+              <button
+                type="button"
+                class="btn-add-cart"
+                [disabled]="variantStock() && !variantStock()!.inStock"
+                (click)="addToCart()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-cart-svg">
                   <circle cx="9" cy="21" r="1"/>
                   <circle cx="20" cy="21" r="1"/>
                   <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
                 </svg>
-                Thêm vào giỏ hàng
+                <span>{{ variantStock() && !variantStock()!.inStock ? 'Tạm hết hàng' : 'Thêm vào giỏ hàng' }}</span>
               </button>
 
-              <button type="button" class="btn-buy-now" (click)="buyNow()">
-                Mua ngay
+              <button
+                type="button"
+                class="btn-buy-now"
+                [disabled]="variantStock() && !variantStock()!.inStock"
+                (click)="buyNow()">
+                <span>{{ variantStock() && !variantStock()!.inStock ? 'Tạm hết hàng' : 'Mua ngay' }}</span>
               </button>
             </div>
 

@@ -1,0 +1,666 @@
+<div class="inventory-container">
+  <!-- Top Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Quản lý Tồn kho & Chi nhánh</h1>
+      <p class="page-subtitle">Theo dõi số lượng tồn kho thời gian thực, điều chuyển kho và lập phiếu nhập hàng.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openImportModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Lập phiếu nhập kho</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Metrics Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-info">
+        <span class="metric-label">Tổng mặt hàng theo dõi</span>
+        <span class="metric-value">{{ metrics().totalTrackedItems | number }}</span>
+      </div>
+      <div class="metric-icon icon-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      </div>
+    </div>
+
+    <div class="metric-card" (click)="onStatusFilter('LOW_STOCK')" role="button" tabindex="0">
+      <div class="metric-info">
+        <span class="metric-label">Sản phẩm sắp hết hàng (&le; 10)</span>
+        <span class="metric-value text-warning">{{ metrics().lowStockItemsCount | number }}</span>
+      </div>
+      <div class="metric-icon icon-warning">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+    </div>
+
+    <div class="metric-card" (click)="onStatusFilter('OUT_OF_STOCK')" role="button" tabindex="0">
+      <div class="metric-info">
+        <span class="metric-label">Sản phẩm hết hàng (0)</span>
+        <span class="metric-value text-danger">{{ metrics().outOfStockItemsCount | number }}</span>
+      </div>
+      <div class="metric-icon icon-danger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-info">
+        <span class="metric-label">Tổng tồn kho vật lý</span>
+        <span class="metric-value text-success">{{ metrics().totalPhysicalQuantity | number }}</span>
+      </div>
+      <div class="metric-icon icon-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-header">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'stock'"
+      (click)="onTabChange('stock')">
+      <span>Tổng quan Tồn kho</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'logs'"
+      (click)="onTabChange('logs')">
+      <span>Nhật ký Biến động Kho</span>
+    </button>
+  </div>
+
+  <!-- ==================== TAB 1: STOCK OVERVIEW ==================== -->
+  @if (activeTab() === 'stock') {
+    <div class="card main-card">
+      <!-- Toolbar & Filters -->
+      <div class="toolbar">
+        <div class="search-box">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Tìm theo tên sản phẩm, biến thể, SKU..."
+            [value]="searchKeyword()"
+            (input)="onSearch($event)">
+        </div>
+
+        <div class="filter-group">
+          <!-- Warehouse Dropdown -->
+          <select
+            class="form-select"
+            [value]="selectedWarehouseId() || ''"
+            (change)="onWarehouseFilter($any($event.target).value ? +$any($event.target).value : null)">
+            <option value="">Tất cả kho hàng (3 kho)</option>
+            @for (w of warehouses(); track w.warehouseId) {
+              <option [value]="w.warehouseId">{{ w.name }}</option>
+            }
+          </select>
+
+          <!-- Status Filter Buttons -->
+          <div class="status-pills">
+            <button
+              class="pill-btn"
+              [class.active]="selectedStockStatus() === 'ALL'"
+              (click)="onStatusFilter('ALL')">
+              Tất cả
+            </button>
+            <button
+              class="pill-btn"
+              [class.active]="selectedStockStatus() === 'IN_STOCK'"
+              (click)="onStatusFilter('IN_STOCK')">
+              Còn hàng
+            </button>
+            <button
+              class="pill-btn pill-warning"
+              [class.active]="selectedStockStatus() === 'LOW_STOCK'"
+              (click)="onStatusFilter('LOW_STOCK')">
+              Sắp hết (&le; 10)
+            </button>
+            <button
+              class="pill-btn pill-danger"
+              [class.active]="selectedStockStatus() === 'OUT_OF_STOCK'"
+              (click)="onStatusFilter('OUT_OF_STOCK')">
+              Hết hàng
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Content -->
+      @if (loading()) {
+        <div class="state-container">
+          <div class="spinner"></div>
+          <p>Đang tải dữ liệu tồn kho thời gian thực...</p>
+        </div>
+      } @else if (inventoryItems().length === 0) {
+        <div class="state-container empty">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+          <h3>Không tìm thấy bản ghi tồn kho nào</h3>
+          <p>Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Ảnh</th>
+                <th>Sản phẩm & Biến thể</th>
+                <th>SKU</th>
+                <th>Kho lưu trữ</th>
+                <th class="text-right">Tồn thực tế</th>
+                <th class="text-right">Đang giữ</th>
+                <th class="text-right">Khả dụng</th>
+                <th class="text-center">Trạng thái</th>
+                <th class="text-right" style="width: 170px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of inventoryItems(); track item.inventoryId) {
+                <tr>
+                  <td>
+                    <div class="product-thumb">
+                      @if (item.productThumbnail) {
+                        <img [src]="item.productThumbnail" [alt]="item.productName" loading="lazy">
+                      } @else {
+                        <div class="no-thumb">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                            <circle cx="9" cy="9" r="2"/>
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                          </svg>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <div class="product-name">{{ item.productName }}</div>
+                    <div class="variant-name">{{ item.variantName }}</div>
+                  </td>
+                  <td>
+                    <span class="sku-tag">{{ item.skuVariant }}</span>
+                  </td>
+                  <td>
+                    <span class="warehouse-name">{{ item.warehouseName }}</span>
+                  </td>
+                  <td class="text-right font-medium">
+                    {{ item.quantity | number }}
+                  </td>
+                  <td class="text-right text-muted">
+                    {{ item.reservedQty | number }}
+                  </td>
+                  <td class="text-right">
+                    <span class="available-number" [class.text-danger]="item.availableQty <= 0" [class.text-warning]="item.availableQty > 0 && item.availableQty <= 10">
+                      {{ item.availableQty | number }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    @if (item.stockStatus === 'IN_STOCK') {
+                      <span class="status-badge badge-success">Còn hàng</span>
+                    } @else if (item.stockStatus === 'LOW_STOCK') {
+                      <span class="status-badge badge-warning">Sắp hết (&le; 10)</span>
+                    } @else {
+                      <span class="status-badge badge-danger">Hết hàng</span>
+                    }
+                  </td>
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button
+                        class="btn-action btn-adjust"
+                        title="Điều chỉnh kiểm kê"
+                        (click)="openAdjustModal(item)">
+                        <span>Điều chỉnh</span>
+                      </button>
+                      <button
+                        class="btn-action btn-transfer"
+                        title="Chuyển kho"
+                        (click)="openTransferModal(item)">
+                        <span>Chuyển kho</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          [totalElements]="totalElements()"
+          [pageSize]="pageSize()"
+          (pageChanged)="onPageChange($event)">
+        </app-pagination>
+      }
+    </div>
+  }
+
+  <!-- ==================== TAB 2: AUDIT LOGS ==================== -->
+  @if (activeTab() === 'logs') {
+    <div class="card main-card">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Tìm theo sản phẩm, SKU, ghi chú..."
+            [value]="logsSearchKeyword()"
+            (input)="onLogsSearch($event)">
+        </div>
+
+        <div class="filter-group">
+          <select
+            class="form-select"
+            [value]="logsWarehouseFilter() || ''"
+            (change)="onLogsWarehouseFilter($any($event.target).value ? +$any($event.target).value : null)">
+            <option value="">Tất cả kho hàng</option>
+            @for (w of warehouses(); track w.warehouseId) {
+              <option [value]="w.warehouseId">{{ w.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (logsLoading()) {
+        <div class="state-container">
+          <div class="spinner"></div>
+          <p>Đang tải nhật ký kiểm toán kho...</p>
+        </div>
+      } @else if (logs().length === 0) {
+        <div class="state-container empty">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <h3>Chưa có nhật ký biến động kho nào</h3>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Thời gian</th>
+                <th>Sản phẩm & Biến thể</th>
+                <th>SKU</th>
+                <th>Kho</th>
+                <th class="text-center">Loại biến động</th>
+                <th class="text-right">Biến động</th>
+                <th>Người thực hiện</th>
+                <th>Ghi chú / Tham chiếu</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of logs(); track log.logId) {
+                <tr>
+                  <td class="text-muted text-sm">
+                    {{ log.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                  </td>
+                  <td>
+                    <div class="product-name">{{ log.productName }}</div>
+                    <div class="variant-name">{{ log.variantName }}</div>
+                  </td>
+                  <td>
+                    <span class="sku-tag">{{ log.skuVariant }}</span>
+                  </td>
+                  <td>
+                    <span class="warehouse-name">{{ log.warehouseName }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="change-badge" [ngClass]="getChangeTypeClass(log.changeType)">
+                      {{ getChangeTypeLabel(log.changeType) }}
+                    </span>
+                  </td>
+                  <td class="text-right font-semibold" [class.text-success]="log.quantityChange > 0" [class.text-danger]="log.quantityChange < 0">
+                    {{ log.quantityChange > 0 ? '+' : '' }}{{ log.quantityChange | number }}
+                  </td>
+                  <td>
+                    <span class="user-tag">{{ log.createdByUserName || 'Hệ thống' }}</span>
+                  </td>
+                  <td>
+                    <span class="log-note">{{ log.note || '—' }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <app-pagination
+          [currentPage]="logsPage()"
+          [totalPages]="logsTotalPages()"
+          [totalElements]="logsTotalElements()"
+          [pageSize]="logsPageSize()"
+          (pageChanged)="onLogsPageChange($event)">
+        </app-pagination>
+      }
+    </div>
+  }
+
+  <!-- ==================== ADJUST STOCK MODAL ==================== -->
+  @if (isAdjustModalOpen()) {
+    <div class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title">Điều chỉnh Tồn kho (Kiểm kê)</h2>
+          <button class="btn-close" (click)="closeAdjustModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        @if (activeInventoryItem(); as item) {
+          <div class="item-summary-box">
+            <div class="summary-row">
+              <span class="summary-label">Sản phẩm:</span>
+              <span class="summary-val font-semibold">{{ item.productName }} ({{ item.variantName }})</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Kho lưu trữ:</span>
+              <span class="summary-val">{{ item.warehouseName }}</span>
+            </div>
+            <div class="summary-pills">
+              <div class="stock-pill">
+                <span>Tồn thực tế:</span>
+                <strong>{{ item.quantity | number }}</strong>
+              </div>
+              <div class="stock-pill">
+                <span>Đang giữ:</span>
+                <strong>{{ item.reservedQty | number }}</strong>
+              </div>
+              <div class="stock-pill pill-highlight">
+                <span>Khả dụng:</span>
+                <strong>{{ item.availableQty | number }}</strong>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger">{{ errorMessage() }}</div>
+        }
+
+        <form [formGroup]="adjustForm" (ngSubmit)="submitAdjust()">
+          <div class="form-group">
+            <label class="form-label" for="qtyChange">Số lượng thay đổi (+ để tăng, - để giảm) <span class="required">*</span></label>
+            <input
+              id="qtyChange"
+              type="number"
+              class="form-control"
+              placeholder="Ví dụ: 5 hoặc -2"
+              formControlName="quantityChange">
+            <span class="form-hint">Nhập số dương khi nhập bù dư, nhập số âm khi phát hiện thất thoát/hỏng hóc.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reasonCat">Lý do kiểm kê <span class="required">*</span></label>
+            <select id="reasonCat" class="form-select" formControlName="reasonCategory">
+              <option value="Kiểm kê định kỳ">Kiểm kê định kỳ</option>
+              <option value="Hàng hỏng hóc / Lỗi kỹ thuật">Hàng hỏng hóc / Lỗi kỹ thuật</option>
+              <option value="Thất thoát / Hao hụt">Thất thoát / Hao hụt</option>
+              <option value="Bù trừ sai lệch nhập kho">Bù trừ sai lệch nhập kho</option>
+              <option value="Lý do khác">Lý do khác</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="customReason">Ghi chú chi tiết</label>
+            <input
+              id="customReason"
+              type="text"
+              class="form-control"
+              placeholder="Ghi rõ biên bản kiểm kê, mã phiếu..."
+              formControlName="customReason">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeAdjustModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving() || adjustForm.invalid">
+              @if (saving()) {
+                <span>Đang lưu...</span>
+              } @else {
+                <span>Xác nhận điều chỉnh</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== TRANSFER STOCK MODAL ==================== -->
+  @if (isTransferModalOpen()) {
+    <div class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title">Chuyển hàng Liên chi nhánh</h2>
+          <button class="btn-close" (click)="closeTransferModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="transferForm" (ngSubmit)="submitTransfer()">
+          @if (activeInventoryItem(); as item) {
+            <div class="item-summary-box">
+              <div class="summary-row">
+                <span class="summary-label">Sản phẩm:</span>
+                <span class="summary-val font-semibold">{{ item.productName }} ({{ item.variantName }})</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Tồn khả dụng kho nguồn:</span>
+                <span class="summary-val text-success font-semibold">{{ item.availableQty | number }} sản phẩm</span>
+              </div>
+            </div>
+          }
+
+          @if (errorMessage()) {
+            <div class="alert alert-danger">{{ errorMessage() }}</div>
+          }
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="fromWh">Kho xuất (Nguồn) <span class="required">*</span></label>
+              <select id="fromWh" class="form-select" formControlName="fromWarehouseId">
+                @for (w of warehouses(); track w.warehouseId) {
+                  <option [value]="w.warehouseId">{{ w.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="toWh">Kho nhập (Đích) <span class="required">*</span></label>
+              <select id="toWh" class="form-select" formControlName="toWarehouseId">
+                @for (w of warehouses(); track w.warehouseId) {
+                  <option [value]="w.warehouseId">{{ w.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="transferQty">Số lượng chuyển <span class="required">*</span></label>
+            <input
+              id="transferQty"
+              type="number"
+              class="form-control"
+              min="1"
+              formControlName="quantity">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="transferNote">Ghi chú điều phối</label>
+            <input
+              id="transferNote"
+              type="text"
+              class="form-control"
+              placeholder="Ví dụ: Bổ sung hàng cho chi nhánh miền Nam"
+              formControlName="note">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeTransferModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving() || transferForm.invalid">
+              @if (saving()) {
+                <span>Đang xử lý chuyển kho...</span>
+              } @else {
+                <span>Xác nhận chuyển kho</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== IMPORT STOCK MODAL ==================== -->
+  @if (isImportModalOpen()) {
+    <div class="modal-overlay">
+      <div class="modal-card modal-large">
+        <div class="modal-header">
+          <h2 class="modal-title">Lập Phiếu Nhập kho từ Nhà Cung Cấp</h2>
+          <button class="btn-close" (click)="closeImportModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="importForm" (ngSubmit)="submitImport()">
+          @if (errorMessage()) {
+            <div class="alert alert-danger">{{ errorMessage() }}</div>
+          }
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="importWh">Kho nhập đích <span class="required">*</span></label>
+              <select id="importWh" class="form-select" formControlName="warehouseId">
+                @for (w of warehouses(); track w.warehouseId) {
+                  <option [value]="w.warehouseId">{{ w.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="importNote">Ghi chú phiếu nhập</label>
+              <input
+                id="importNote"
+                type="text"
+                class="form-control"
+                placeholder="Số hóa đơn, số lô hàng..."
+                formControlName="note">
+            </div>
+          </div>
+
+          <div class="items-section">
+            <div class="section-title-bar">
+              <h3 class="section-title">Danh sách mặt hàng nhập</h3>
+              <button type="button" class="btn btn-sm btn-secondary" (click)="addImportItem()">
+                + Thêm mặt hàng
+              </button>
+            </div>
+
+            <div formArrayName="items" class="import-items-list">
+              @for (item of importItemsArray.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="import-item-card">
+                  <div class="item-card-header">
+                    <span class="item-index-badge">Mặt hàng #{{ i + 1 }}</span>
+                    <button
+                      type="button"
+                      class="btn-delete-item"
+                      title="Xóa mặt hàng này"
+                      [disabled]="importItemsArray.length <= 1"
+                      (click)="removeImportItem(i)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                      <span>Xóa</span>
+                    </button>
+                  </div>
+
+                  <div class="form-group mb-2">
+                    <label class="form-label text-xs">Biến thể sản phẩm <span class="required">*</span></label>
+                    <select class="form-select select-variant" formControlName="variantId">
+                      <option [ngValue]="null">-- Chọn biến thể sản phẩm cần nhập --</option>
+                      @for (p of productsList(); track p.productId) {
+                        <optgroup [label]="p.name">
+                          @for (v of p.variants; track v.variantId) {
+                            <option [value]="v.variantId">{{ p.name }} - {{ v.variantName }} ({{ v.skuVariant }})</option>
+                          }
+                        </optgroup>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-row mb-0">
+                    <div class="form-group">
+                      <label class="form-label text-xs">Số lượng nhập <span class="required">*</span></label>
+                      <input type="number" min="1" class="form-control" placeholder="Nhập số lượng (VD: 10)" formControlName="quantity">
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label text-xs">Đơn giá nhập (VNĐ)</label>
+                      <input type="number" min="0" class="form-control" placeholder="Tùy chọn (VD: 15.000.000)" formControlName="costPrice">
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeImportModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving() || importForm.invalid">
+              @if (saving()) {
+                <span>Đang xử lý nhập kho...</span>
+              } @else {
+                <span>Xác nhận nhập kho</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

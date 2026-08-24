@@ -81,6 +81,11 @@ export const routes: Routes = [
             path: 'products/:id/edit',
             loadComponent: () =>
               import('./features/admin/product-manage/product-form/product-form.component').then((m) => m.ProductFormComponent)
+          },
+          {
+            path: 'inventory',
+            loadComponent: () =>
+              import('./features/admin/inventory-manage/inventory-manage.component').then((m) => m.InventoryManageComponent)
           }
         ]
       }

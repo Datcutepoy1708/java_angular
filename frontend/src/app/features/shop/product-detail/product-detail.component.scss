@@ -201,6 +201,26 @@ $radius: 12px;
       border-radius: 50%;
       background: #16a34a;
     }
+
+    &.chip-warning {
+      color: #d97706;
+      background: #fffbeb;
+      border-color: #fde68a;
+
+      .status-dot.dot-warning {
+        background: #d97706;
+      }
+    }
+
+    &.chip-danger {
+      color: #dc2626;
+      background: #fef2f2;
+      border-color: #fecaca;
+
+      .status-dot.dot-danger {
+        background: #dc2626;
+      }
+    }
   }
 
   .warranty-chip {
@@ -403,9 +423,17 @@ $radius: 12px;
     height: 18px;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: $primary;
     color: #ffffff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #94a3b8;
   }
 }
 
@@ -420,8 +448,15 @@ $radius: 12px;
   cursor: pointer;
   transition: background 0.15s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: $primary-dark;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #e2e8f0;
+    color: #94a3b8;
   }
 }
 

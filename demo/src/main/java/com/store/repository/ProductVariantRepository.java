@@ -11,6 +11,8 @@ import java.util.Optional;
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
 
+    List<ProductVariant> findByProduct_ProductId(Long productId);
+
     // Active only (deleted_at IS NULL)
     List<ProductVariant> findByProduct_ProductIdAndDeletedAtIsNullOrderByPriceAsc(Long productId);
 

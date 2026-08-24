@@ -8,10 +8,12 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../../core/services/product.service';
+import { InventoryService } from '../../../core/services/inventory.service';
 import {
   ProductResponse,
   ProductVariantResponse,
 } from '../../../core/models/product.model';
+import { VariantStockSummary } from '../../../core/models/inventory.model';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 
 @Component({
@@ -24,12 +26,14 @@ import { ProductCardComponent } from '../../../shared/components/product-card/pr
 })
 export class ProductDetailComponent implements OnInit {
   private readonly productService = inject(ProductService);
+  private readonly inventoryService = inject(InventoryService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   // ── Data Signals ───────────────────────────────────────────────
   readonly product = signal<ProductResponse | null>(null);
   readonly selectedVariant = signal<ProductVariantResponse | null>(null);
+  readonly variantStock = signal<VariantStockSummary | null>(null);
   readonly activeImageIndex = signal<number>(0);
   readonly quantity = signal<number>(1);
   readonly activeTab = signal<'desc' | 'specs' | 'reviews'>('desc');
@@ -63,9 +67,12 @@ export class ProductDetailComponent implements OnInit {
         // Select default variant (first active variant or first variant)
         if (prod.variants && prod.variants.length > 0) {
           const activeVars = prod.variants.filter((v) => v.status === 'active');
-          this.selectedVariant.set(activeVars.length > 0 ? activeVars[0] : prod.variants[0]);
+          const defaultVar = activeVars.length > 0 ? activeVars[0] : prod.variants[0];
+          this.selectedVariant.set(defaultVar);
+          this.loadVariantStock(defaultVar.variantId);
         } else {
           this.selectedVariant.set(null);
+          this.variantStock.set(null);
         }
 
         this.loading.set(false);
@@ -82,6 +89,19 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
+  loadVariantStock(variantId: number): void {
+    this.inventoryService.getVariantStockSummary(variantId).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.variantStock.set(res.data);
+        }
+      },
+      error: () => {
+        this.variantStock.set(null);
+      }
+    });
+  }
+
   loadRelatedProducts(categoryId: number, excludeId: number): void {
     this.productService.getProducts({ categoryId, size: 5 }).subscribe({
       next: (res) => {
@@ -93,6 +113,7 @@ export class ProductDetailComponent implements OnInit {
 
   selectVariant(variant: ProductVariantResponse): void {
     this.selectedVariant.set(variant);
+    this.loadVariantStock(variant.variantId);
   }
 
   selectImage(index: number): void {
