@@ -9,6 +9,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../../core/services/product.service';
 import { InventoryService } from '../../../core/services/inventory.service';
+import { CartService } from '../../../core/services/cart.service';
 import {
   ProductResponse,
   ProductVariantResponse,
@@ -27,6 +28,7 @@ import { ProductCardComponent } from '../../../shared/components/product-card/pr
 export class ProductDetailComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly inventoryService = inject(InventoryService);
+  private readonly cartService = inject(CartService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -167,18 +169,21 @@ export class ProductDetailComponent implements OnInit {
     }).format(val);
   }
 
-  // ── UI States ──────────────────────────────────────────────────
-  readonly cartFeatureNotice = signal<boolean>(false);
-
   addToCart(): void {
-    // TODO (Phase 5): Wire to CartService.addToCart({ variantId, quantity })
-    this.cartFeatureNotice.set(true);
-    setTimeout(() => this.cartFeatureNotice.set(false), 4000);
+    const v = this.selectedVariant();
+    if (v) {
+      this.cartService.addToCart(v.variantId, this.quantity()).subscribe();
+    }
   }
 
   buyNow(): void {
-    // TODO (Phase 5): Wire to CartService and navigate to /checkout
-    this.cartFeatureNotice.set(true);
-    setTimeout(() => this.cartFeatureNotice.set(false), 4000);
+    const v = this.selectedVariant();
+    if (v) {
+      this.cartService.addToCart(v.variantId, this.quantity()).subscribe((success) => {
+        if (success) {
+          this.router.navigate(['/cart']);
+        }
+      });
+    }
   }
 }

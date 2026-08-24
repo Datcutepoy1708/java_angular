@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ProductDetailComponent } from './product-detail.component';
 import { ProductService } from '../../../core/services/product.service';
+import { CartService } from '../../../core/services/cart.service';
 
 describe('ProductDetailComponent', () => {
   let component: ProductDetailComponent;
@@ -44,12 +45,18 @@ describe('ProductDetailComponent', () => {
       }),
   };
 
+  const mockCartService = {
+    addToCart: vi.fn().mockReturnValue(of(true)),
+    showToast: vi.fn(),
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProductDetailComponent],
       providers: [
         provideRouter([]),
         { provide: ProductService, useValue: mockProductService },
+        { provide: CartService, useValue: mockCartService },
       ],
     }).compileComponents();
 
@@ -72,9 +79,9 @@ describe('ProductDetailComponent', () => {
     expect(component.quantity()).toBe(1);
   });
 
-  it('should toggle cartFeatureNotice when clicking addToCart', () => {
-    expect(component.cartFeatureNotice()).toBe(false);
+  it('should call CartService.addToCart when clicking addToCart', () => {
+    component.loadProduct('laptop-asus-rog-strix');
     component.addToCart();
-    expect(component.cartFeatureNotice()).toBe(true);
+    expect(mockCartService.addToCart).toHaveBeenCalledWith(1, 1);
   });
 });

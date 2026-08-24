@@ -1,0 +1,249 @@
+<div class="cart-page-wrapper">
+  <div class="container">
+    <!-- ── Breadcrumbs ─────────────────────────────────────────────── -->
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a routerLink="/" class="crumb-link">Trang chủ</a>
+      <span class="crumb-sep">/</span>
+      <span class="crumb-current">Giỏ hàng</span>
+    </nav>
+
+    @if (isLoading() && cart().items.length === 0) {
+      <div class="state-container">
+        <div class="spinner"></div>
+        <p>Đang tải giỏ hàng của bạn...</p>
+      </div>
+    } @else if (cart().items.length === 0) {
+      <!-- ── Empty Cart State ──────────────────────────────────────── -->
+      <div class="empty-cart-card">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-svg">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        </div>
+        <h2 class="empty-title">Giỏ hàng của bạn đang trống</h2>
+        <p class="empty-desc">
+          Bạn chưa chọn sản phẩm nào. Hãy khám phá hàng ngàn linh kiện máy tính và laptop công nghệ đỉnh cao ngay bây giờ!
+        </p>
+        <a routerLink="/products" class="btn btn-primary btn-explore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          <span>Tiếp tục mua sắm</span>
+        </a>
+      </div>
+    } @else {
+      <!-- ── Main Cart Grid ────────────────────────────────────────── -->
+      <div class="cart-grid">
+        <!-- ── Left Column: Items List ─────────────────────────────── -->
+        <div class="cart-items-column">
+          <div class="items-header-bar">
+            <h1 class="page-title">
+              Giỏ hàng của bạn
+              <span class="items-count-tag">{{ totalQuantity() }} sản phẩm</span>
+            </h1>
+            <button type="button" class="btn-clear-all" (click)="clearCart()" title="Xóa toàn bộ">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="trash-icon">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Xóa tất cả</span>
+            </button>
+          </div>
+
+          <div class="items-list">
+            @for (item of cart().items; track item.variantId) {
+              <div class="cart-item-card" [class.item-warning]="!item.isAvailable || item.isExceededStock">
+                <!-- Thumbnail -->
+                <a [routerLink]="['/products', item.productSlug]" class="item-thumb-link">
+                  @if (item.imageUrl) {
+                    <img [src]="item.imageUrl" [alt]="item.productName" class="item-thumb-img" loading="lazy" />
+                  } @else {
+                    <div class="item-thumb-placeholder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                      </svg>
+                    </div>
+                  }
+                </a>
+
+                <!-- Details -->
+                <div class="item-main-info">
+                  <a [routerLink]="['/products', item.productSlug]" class="item-title">
+                    {{ item.productName }}
+                  </a>
+                  <div class="item-variant-spec">
+                    <span class="spec-name">{{ item.variantName }}</span>
+                    <span class="spec-divider">•</span>
+                    <span class="spec-sku">SKU: {{ item.skuVariant }}</span>
+                  </div>
+
+                  <!-- Stock Status Pill -->
+                  @if (!item.isAvailable) {
+                    <div class="stock-alert alert-out">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <span>Sản phẩm này hiện đang tạm hết hàng!</span>
+                    </div>
+                  } @else if (item.isExceededStock) {
+                    <div class="stock-alert alert-exceeded">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <span>Kho chỉ còn {{ item.availableQty }} sản phẩm. Vui lòng giảm số lượng!</span>
+                    </div>
+                  }
+
+                  <!-- Price & Controls Mobile/Desktop -->
+                  <div class="item-bottom-row">
+                    <div class="price-wrap">
+                      <span class="unit-price">{{ formatCurrency(item.price) }}</span>
+                      @if (item.originalPrice && item.originalPrice > item.price) {
+                        <span class="original-price">{{ formatCurrency(item.originalPrice) }}</span>
+                      }
+                    </div>
+
+                    <!-- Quantity Stepper -->
+                    <div class="stepper-wrap">
+                      <button
+                        type="button"
+                        class="stepper-btn"
+                        (click)="decreaseQuantity(item)"
+                        title="Giảm số lượng">
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        class="stepper-input"
+                        [value]="item.quantity"
+                        min="1"
+                        (change)="onQuantityInput(item, $event)" />
+                      <button
+                        type="button"
+                        class="stepper-btn"
+                        (click)="increaseQuantity(item)"
+                        title="Tăng số lượng">
+                        +
+                      </button>
+                    </div>
+
+                    <!-- Line Subtotal -->
+                    <div class="subtotal-wrap">
+                      <span class="subtotal-label">Thành tiền:</span>
+                      <span class="subtotal-amount">{{ formatCurrency(item.subtotal) }}</span>
+                    </div>
+
+                    <!-- Remove Item Button -->
+                    <button
+                      type="button"
+                      class="btn-remove-item"
+                      (click)="removeItem(item)"
+                      title="Xóa mặt hàng này">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="remove-icon">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="cart-bottom-actions">
+            <a routerLink="/products" class="btn-back-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              <span>Tiếp tục mua thêm sản phẩm khác</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- ── Right Column: Order Summary Card ─────────────────────── -->
+        <div class="cart-summary-column">
+          <div class="summary-card">
+            <h2 class="summary-title">Tóm tắt đơn hàng</h2>
+
+            <div class="summary-rows-list">
+              <div class="summary-row">
+                <span class="row-label">Tạm tính:</span>
+                <span class="row-val font-semibold">{{ formatCurrency(originalTotalAmount()) }}</span>
+              </div>
+
+              @if (savingsAmount() > 0) {
+                <div class="summary-row row-discount">
+                  <span class="row-label">Giảm giá trực tiếp:</span>
+                  <span class="row-val">-{{ formatCurrency(savingsAmount()) }}</span>
+                </div>
+              }
+
+              <div class="summary-row">
+                <span class="row-label">Phí vận chuyển:</span>
+                <span class="row-val text-success font-semibold">Miễn phí toàn quốc</span>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="summary-row row-total">
+                <div class="total-label-wrap">
+                  <span class="total-label">Tổng thanh toán:</span>
+                  <span class="total-vat-hint">(Đã bao gồm thuế VAT)</span>
+                </div>
+                <span class="total-amount">{{ formatCurrency(totalAmount()) }}</span>
+              </div>
+            </div>
+
+            <!-- Checkout Button -->
+            <button
+              type="button"
+              class="btn btn-checkout"
+              (click)="proceedToCheckout()">
+              <span>Tiến hành đặt hàng</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+
+            <!-- Guarantees -->
+            <div class="summary-guarantees">
+              <div class="s-guarantee-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>Bảo hành chính hãng tại tất cả trung tâm</span>
+              </div>
+              <div class="s-guarantee-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                <span>Hỗ trợ 1 đổi 1 trong 30 ngày nếu có lỗi NSX</span>
+              </div>
+              <div class="s-guarantee-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="1" y="3" width="15" height="13"/>
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                  <circle cx="5.5" cy="18.5" r="2.5"/>
+                  <circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+                <span>Giao hàng hỏa tốc trong 2h tại HN & TP.HCM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

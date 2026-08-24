@@ -53,6 +53,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long>, Jpa
     @Query("SELECT COALESCE(SUM(i.quantity - i.reservedQty), 0) FROM Inventory i WHERE i.variant.variantId = :variantId")
     Long sumAvailableStockByVariantId(@Param("variantId") Long variantId);
 
+    @Query("SELECT i.variant.variantId AS variantId, COALESCE(SUM(i.quantity - i.reservedQty), 0L) AS availableQty " +
+           "FROM Inventory i WHERE i.variant.variantId IN :variantIds " +
+           "GROUP BY i.variant.variantId")
+    List<VariantStockSummaryProjection> findAvailableStockByVariantIds(@Param("variantIds") java.util.Collection<Long> variantIds);
+
     @Query("SELECT COALESCE(SUM(i.quantity), 0) FROM Inventory i WHERE i.variant.variantId = :variantId")
     Long sumTotalQuantityByVariantId(@Param("variantId") Long variantId);
 

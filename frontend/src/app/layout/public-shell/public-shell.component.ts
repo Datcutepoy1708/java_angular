@@ -9,6 +9,7 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../core/services/category.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CartService } from '../../core/services/cart.service';
 import { CategoryResponse } from '../../core/models/category.model';
 
 @Component({
@@ -22,14 +23,15 @@ import { CategoryResponse } from '../../core/models/category.model';
 export class PublicShellComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   readonly authService = inject(AuthService);
+  readonly cartService = inject(CartService);
   private readonly router = inject(Router);
 
   // State
   readonly categoriesTree = signal<CategoryResponse[]>([]);
   readonly searchQuery = signal('');
   readonly isMegaMenuOpen = signal(false);
-  // TODO (Phase 5 - Cart): Connect cartCount to CartService.cartTotalItems$
-  readonly cartCount = signal(0);
+  readonly cartCount = this.cartService.totalQuantity;
+  readonly toastMessage = this.cartService.toastMessage;
 
   ngOnInit(): void {
     // Fetch category tree exactly ONCE when shell initializes

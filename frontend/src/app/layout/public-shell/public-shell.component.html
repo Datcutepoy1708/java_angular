@@ -81,7 +81,7 @@
       <!-- Actions (Cart & User) -->
       <div class="header-actions">
         <!-- Cart -->
-        <a routerLink="/products" class="header-action-btn cart-btn" title="Giỏ hàng">
+        <a routerLink="/cart" class="header-action-btn cart-btn" title="Xem giỏ hàng">
           <div class="icon-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon">
               <circle cx="9" cy="21" r="1"/>
@@ -117,6 +117,16 @@
         }
       </div>
     </div>
+
+    <!-- Global Toast Alert -->
+    @if (toastMessage(); as toast) {
+      <div class="global-toast" [class]="'toast-' + toast.type">
+        <div class="toast-content">
+          <span>{{ toast.text }}</span>
+        </div>
+        <button type="button" class="toast-close" (click)="cartService.clearToast()">&times;</button>
+      </div>
+    }
   </header>
 
   <!-- ── Category Mega Menu Dropdown ───────────────────────────────── -->

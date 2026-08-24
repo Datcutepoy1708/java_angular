@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { PublicShellComponent } from './public-shell.component';
 import { CategoryService } from '../../core/services/category.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CartService } from '../../core/services/cart.service';
 
 describe('PublicShellComponent', () => {
   let component: PublicShellComponent;
@@ -18,6 +19,12 @@ describe('PublicShellComponent', () => {
     logout: () => {},
   };
 
+  const mockCartService = {
+    totalQuantity: () => 0,
+    toastMessage: () => null,
+    clearToast: () => {},
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PublicShellComponent],
@@ -25,6 +32,7 @@ describe('PublicShellComponent', () => {
         provideRouter([]),
         { provide: CategoryService, useValue: mockCategoryService },
         { provide: AuthService, useValue: mockAuthService },
+        { provide: CartService, useValue: mockCartService },
       ],
     }).compileComponents();
 
