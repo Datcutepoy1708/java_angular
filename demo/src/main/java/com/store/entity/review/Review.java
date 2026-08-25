@@ -64,6 +64,7 @@ public class Review {
     @Builder.Default
     private Boolean isVerifiedPurchase = false;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "enum('pending','approved','hidden')")
     @Builder.Default
     private ReviewStatus status = ReviewStatus.APPROVED;

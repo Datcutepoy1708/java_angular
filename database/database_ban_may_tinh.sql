@@ -421,7 +421,7 @@ DROP TABLE IF EXISTS `news_categories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `news_categories` (
-  `news_cat_id` bigint NOT NULL AUTO_INCREMENT,
+  `news_cat_id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `slug` varchar(180) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -459,21 +459,21 @@ CREATE TABLE `news` (
   `news_id` bigint NOT NULL AUTO_INCREMENT,
   `title` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `slug` varchar(280) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `news_cat_id` bigint DEFAULT NULL,
-  `user_id` bigint DEFAULT NULL,
+  `news_cat_id` int DEFAULT NULL,
+  `author_id` bigint DEFAULT NULL,
   `thumbnail_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `summary` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `view_count` int NOT NULL DEFAULT '0',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
+  `status` enum('draft','published','hidden') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
   `published_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`news_id`),
   UNIQUE KEY `uk_news_slug` (`slug`),
   KEY `fk_news_cat` (`news_cat_id`),
-  KEY `fk_news_author` (`user_id`),
-  CONSTRAINT `fk_news_author` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  KEY `fk_news_author` (`author_id`),
+  CONSTRAINT `fk_news_author` FOREIGN KEY (`author_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_news_cat` FOREIGN KEY (`news_cat_id`) REFERENCES `news_categories` (`news_cat_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -484,7 +484,7 @@ CREATE TABLE `news` (
 
 LOCK TABLES `news` WRITE;
 /*!40000 ALTER TABLE `news` DISABLE KEYS */;
-INSERT INTO `news` VALUES 
+INSERT INTO `news` (`news_id`, `title`, `slug`, `news_cat_id`, `author_id`, `thumbnail_url`, `summary`, `content`, `view_count`, `status`, `published_at`, `created_at`, `updated_at`) VALUES 
 (1,'Đánh giá chi tiết NVIDIA GeForce RTX 4070 Super: \"Ông vua\" đồ họa 2K và Gaming đỉnh cao 2026','danh-gia-nvidia-geforce-rtx-4070-super-ong-vua-do-hoa-2k',1,1,'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1000&auto=format&fit=crop','GeForce RTX 4070 Super mang đến bước nhảy vọt về hiệu năng nhờ kiến trúc Ada Lovelace, 12GB VRAM GDDR6X cùng DLSS 3.5 Frame Generation, cân mượt mọi tựa game AAA ở độ phân giải 2K 144Hz.','<h2>Tổng quan về NVIDIA GeForce RTX 4070 Super</h2><p>Kể từ khi ra mắt, dòng sản phẩm RTX 40-Series Super của NVIDIA đã nhanh chóng định hình lại phân khúc card màn hình tầm trung - cận cao cấp. Trong đó, <strong>RTX 4070 Super</strong> là cái tên nổi bật nhất nhờ mức hiệu năng tiệm cận với RTX 4070 Ti nhưng sở hữu mức giá hấp dẫn hơn đáng kể.</p><h3>1. Thông số kỹ thuật ấn tượng</h3><ul><li><strong>Số nhân CUDA:</strong> 7.168 nhân.</li><li><strong>Xung nhịp Boost:</strong> Lên đến 2.475 MHz.</li><li><strong>Bộ nhớ VRAM:</strong> 12GB GDDR6X tốc độ 21 Gbps, bus 192-bit.</li><li><strong>Mức tiêu thụ điện năng (TDP):</strong> 220W.</li></ul>',1420,'published',NOW(),NOW(),NOW()),
 (2,'So sánh Intel Core Gen 14th vs AMD Ryzen 9000 Series: Đâu là CPU tối ưu nhất cho Gaming và Render?','so-sanh-intel-gen-14-vs-amd-ryzen-9000-series',3,1,'https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=1000&auto=format&fit=crop','Cuộc chạm trán nảy lửa giữa kiến trúc Raptor Lake Refresh của Intel và Zen 5 của AMD. Phân tích chi tiết mức tiêu thụ điện năng, nhiệt độ và hiệu năng đơn nhân/đa nhân thực tế.','<h2>Cuộc đua vi xử lý năm 2026: Intel hay AMD?</h2><p>Thị trường CPU máy tính để bàn chứng kiến sự cạnh tranh quyết liệt giữa dòng chip <strong>Intel Core Gen 14th</strong> và đối thủ <strong>AMD Ryzen 9000 Series</strong>.</p>',980,'published',NOW(),NOW(),NOW()),
 (3,'Tư vấn cấu hình Build PC Gaming & Đồ họa tầm giá 20 - 25 triệu đồng: Cân mượt game AAA và thiết kế 4K','tu-van-cau-hinh-pc-gaming-do-hoa-20-25-trieu',4,1,'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=1000&auto=format&fit=crop','Bật mí danh sách linh kiện cân đối nhất phân khúc 20-25 triệu: CPU Intel Core i5-13400F, Card đồ họa RTX 4060 8GB, 32GB RAM DDR5 và nguồn 650W chuẩn Bronze.','<h2>Phân khúc 20 - 25 triệu: Cấu hình chuẩn cho mọi nhu cầu</h2><p>Với ngân sách từ 20 đến 25 triệu đồng, người dùng hoàn toàn có thể xây dựng một bộ case PC thế hệ mới chạy nền tảng RAM DDR5.</p>',2150,'published',NOW(),NOW(),NOW()),
@@ -711,12 +711,15 @@ CREATE TABLE `product_reviews` (
   `review_id` bigint NOT NULL AUTO_INCREMENT,
   `product_id` bigint NOT NULL,
   `user_id` bigint NOT NULL,
-  `order_item_id` bigint DEFAULT NULL,
-  `rating` tinyint NOT NULL,
+  `rating` int NOT NULL,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `comment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `status` enum('pending','approved','hidden') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `is_verified_purchase` tinyint(1) NOT NULL DEFAULT '0',
+  `status` enum('pending','approved','hidden') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'approved',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`review_id`),
+  UNIQUE KEY `uq_user_product_review` (`user_id`,`product_id`),
   KEY `product_id` (`product_id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `product_reviews_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,

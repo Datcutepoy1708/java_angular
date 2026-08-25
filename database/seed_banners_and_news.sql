@@ -33,7 +33,7 @@ INSERT INTO `news_categories` (`news_cat_id`, `name`, `slug`, `description`, `so
 -- ------------------------------------------------------------------------------
 -- 3. NEWS ARTICLES (Bài viết công nghệ chất lượng cao)
 -- ------------------------------------------------------------------------------
-INSERT INTO `news` (`news_id`, `title`, `slug`, `news_cat_id`, `user_id`, `thumbnail_url`, `summary`, `content`, `view_count`, `status`, `published_at`, `created_at`, `updated_at`) VALUES
+INSERT INTO `news` (`news_id`, `title`, `slug`, `news_cat_id`, `author_id`, `thumbnail_url`, `summary`, `content`, `view_count`, `status`, `published_at`, `created_at`, `updated_at`) VALUES
 (1,
  'Đánh giá chi tiết NVIDIA GeForce RTX 4070 Super: "Ông vua" đồ họa 2K và Gaming đỉnh cao 2026',
  'danh-gia-nvidia-geforce-rtx-4070-super-ong-vua-do-hoa-2k',
