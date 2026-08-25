@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../core/services/category.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
+import { SettingService } from '../../core/services/setting.service';
 import { CategoryResponse } from '../../core/models/category.model';
 
 @Component({
@@ -22,6 +23,7 @@ import { CategoryResponse } from '../../core/models/category.model';
 })
 export class PublicShellComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
+  private readonly settingService = inject(SettingService);
   readonly authService = inject(AuthService);
   readonly cartService = inject(CartService);
   private readonly router = inject(Router);
@@ -32,9 +34,15 @@ export class PublicShellComponent implements OnInit {
   readonly isMegaMenuOpen = signal(false);
   readonly cartCount = this.cartService.totalQuantity;
   readonly toastMessage = this.cartService.toastMessage;
+  readonly publicSettings = this.settingService.publicSettings;
 
   ngOnInit(): void {
-    // Fetch category tree exactly ONCE when shell initializes
+    // 1. Fetch public system settings (Footer, Branding, Maintenance Mode)
+    this.settingService.loadPublicSettings().subscribe({
+      error: err => console.error('Error fetching public settings:', err),
+    });
+
+    // 2. Fetch category tree exactly ONCE when shell initializes
     this.categoryService.getTree().subscribe({
       next: (res: { data: CategoryResponse[] }) => {
         this.categoriesTree.set(res.data);

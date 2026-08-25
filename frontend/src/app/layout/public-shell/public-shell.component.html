@@ -179,10 +179,31 @@
     </div>
   }
 
-  <!-- ── Main Content Outlet ───────────────────────────────────────── -->
-  <main class="storefront-main" (click)="closeMegaMenu()">
-    <router-outlet></router-outlet>
-  </main>
+  <!-- ── Main Content Outlet & Maintenance Mode ─────────────────── -->
+  @if (publicSettings().maintenanceMode) {
+    <div class="storefront-maintenance-screen">
+      <div class="maintenance-card">
+        <div class="maintenance-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </div>
+        <h1 class="maintenance-headline">Hệ Thống Đang Nâng Cấp & Bảo Trì</h1>
+        <p class="maintenance-paragraph">
+          Website đang trong thời gian bảo trì hạ tầng máy chủ và tối ưu hóa hệ thống dữ liệu.
+          Các tính năng mua hàng và giỏ hàng tạm thời dừng tiếp nhận yêu cầu.
+        </p>
+        <div class="maintenance-hotline-box">
+          <p>Cần hỗ trợ khẩn cấp? Xin vui lòng liên hệ hotline tư vấn:</p>
+          <span class="hotline-badge">{{ publicSettings().storeHotline || '1800 6868' }}</span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <main class="storefront-main" (click)="closeMegaMenu()">
+      <router-outlet></router-outlet>
+    </main>
+  }
 
   <!-- ── Storefront Footer ─────────────────────────────────────────── -->
   <footer class="storefront-footer">
@@ -191,16 +212,47 @@
         <!-- Col 1: Brand Info -->
         <div class="footer-col">
           <div class="footer-brand">
-            <span class="footer-brand-title">COMPLEXUS</span>
+            <span class="footer-brand-title">{{ publicSettings().footerBrandTitle || 'COMPLEXUS' }}</span>
             <p class="footer-desc">
-              Hệ thống bán lẻ máy tính, laptop gaming, linh kiện PC và phụ kiện công nghệ chính hãng hàng đầu Việt Nam.
+              {{ publicSettings().footerDescription || 'Hệ thống bán lẻ máy tính, laptop gaming, linh kiện PC và phụ kiện công nghệ chính hãng hàng đầu Việt Nam.' }}
             </p>
           </div>
           <div class="footer-contact-info">
-            <p><strong>Hotline:</strong> 1800 6868 (Miễn phí cuộc gọi)</p>
-            <p><strong>Email:</strong> support&#64;complexus.vn</p>
-            <p><strong>Địa chỉ:</strong> 123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội</p>
+            <p><strong>Hotline:</strong> {{ publicSettings().footerHotline || '1800 6868 (Miễn phí cuộc gọi)' }}</p>
+            <p><strong>Email:</strong> {{ publicSettings().footerEmail || 'support@complexus.vn' }}</p>
+            <p><strong>Địa chỉ:</strong> {{ publicSettings().footerAddress || '123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội' }}</p>
           </div>
+
+          <!-- Social Links -->
+          @if (publicSettings().footerFacebookUrl || publicSettings().footerYoutubeUrl || publicSettings().footerTiktokUrl) {
+            <div class="footer-social-links">
+              @if (publicSettings().footerFacebookUrl) {
+                <a [href]="publicSettings().footerFacebookUrl" target="_blank" rel="noopener noreferrer" class="social-link" title="Facebook">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                  </svg>
+                  <span>Facebook</span>
+                </a>
+              }
+              @if (publicSettings().footerYoutubeUrl) {
+                <a [href]="publicSettings().footerYoutubeUrl" target="_blank" rel="noopener noreferrer" class="social-link" title="YouTube">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+                    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+                  </svg>
+                  <span>YouTube</span>
+                </a>
+              }
+              @if (publicSettings().footerTiktokUrl) {
+                <a [href]="publicSettings().footerTiktokUrl" target="_blank" rel="noopener noreferrer" class="social-link" title="TikTok">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+                  </svg>
+                  <span>TikTok</span>
+                </a>
+              }
+            </div>
+          }
         </div>
 
         <!-- Col 2: Customer Support & News -->
@@ -235,14 +287,22 @@
             <span class="pay-chip">Visa / Master</span>
             <span class="pay-chip">VNPAY-QR</span>
             <span class="pay-chip">MoMo</span>
-            <span class="pay-chip">COD Giao hàng</span>
+            @if (publicSettings().enableCod) {
+              <span class="pay-chip">COD Giao hàng</span>
+            }
+            @if (publicSettings().enableBankTransfer) {
+              <span class="pay-chip">Chuyển khoản</span>
+            }
           </div>
         </div>
       </div>
 
       <!-- Copyright Bottom Bar -->
       <div class="footer-bottom">
-        <p>&copy; 2026 Complexus — E-commerce Platform for Computers & Components. All rights reserved.</p>
+        <p>{{ publicSettings().footerCopyright || '© 2026 Complexus — E-commerce Platform for Computers & Components. All rights reserved.' }}</p>
+        @if (publicSettings().footerBusinessLicense) {
+          <p class="footer-license-text">{{ publicSettings().footerBusinessLicense }}</p>
+        }
       </div>
     </div>
   </footer>

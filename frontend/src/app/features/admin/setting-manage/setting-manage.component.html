@@ -1,0 +1,433 @@
+<div class="setting-manage-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Cài đặt Hệ thống & Cửa hàng</h1>
+      <p class="page-subtitle">Cấu hình thông tin thương hiệu, chân trang Footer, chính sách giao hàng, SEO và chế độ bảo trì.</p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-outline-danger"
+        (click)="showResetModal.set(true)"
+        [disabled]="loading() || saving()"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Khôi phục mặc định
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="saveSettings()"
+        [disabled]="loading() || saving()"
+      >
+        @if (saving()) {
+          <span class="spinner-small"></span>
+          Đang lưu...
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Lưu tất cả thay đổi
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Global Toast -->
+  @if (toast(); as t) {
+    <div class="toast-alert" [class]="'toast-' + t.type">
+      <span>{{ t.message }}</span>
+      <button type="button" class="toast-close-btn" (click)="toast.set(null)">&times;</button>
+    </div>
+  }
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'general'"
+      (click)="setTab('general')"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Thông tin Cửa hàng
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'footer'"
+      (click)="setTab('footer')"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <line x1="3" y1="15" x2="21" y2="15"/>
+      </svg>
+      Chân trang (Footer)
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'orderShipping'"
+      (click)="setTab('orderShipping')"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13"/>
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      Đơn hàng & Giao vận
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'seo'"
+      (click)="setTab('seo')"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+      SEO & Meta Tags
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'systemNotification'"
+      (click)="setTab('systemNotification')"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Hệ thống & Bảo trì
+    </button>
+  </div>
+
+  <!-- Loading Skeleton -->
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Đang nạp cấu hình hệ thống...</p>
+    </div>
+  } @else {
+    <!-- Form Content -->
+    <form [formGroup]="settingForm" class="setting-form">
+      <!-- ── TAB 1: GENERAL ─────────────────────────────────────────── -->
+      @if (activeTab() === 'general') {
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">Thông tin Cửa hàng & Thương hiệu</h2>
+            <p class="panel-desc">Thông tin chung hiển thị trên thanh đầu trang, tiêu đề hóa đơn và các phương tiện liên lạc.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label class="form-label required">Tên cửa hàng / Doanh nghiệp</label>
+              <input type="text" class="form-control" formControlName="STORE_NAME" placeholder="Ví dụ: Complexus Computer & Technology" />
+              @if (settingForm.get('STORE_NAME')?.touched && settingForm.get('STORE_NAME')?.invalid) {
+                <span class="form-error">Tên cửa hàng không được để trống</span>
+              }
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Slogan / Khẩu hiệu thương hiệu</label>
+              <input type="text" class="form-control" formControlName="STORE_SLOGAN" placeholder="Ví dụ: Đỉnh cao công nghệ PC Gaming & Linh kiện chính hãng" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Hotline mua hàng / Tư vấn</label>
+              <input type="text" class="form-control" formControlName="STORE_HOTLINE" placeholder="1800 6868" />
+              @if (settingForm.get('STORE_HOTLINE')?.touched && settingForm.get('STORE_HOTLINE')?.invalid) {
+                <span class="form-error">Hotline không được để trống</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Email liên hệ chính thức</label>
+              <input type="email" class="form-control" formControlName="STORE_EMAIL" placeholder="support@complexus.vn" />
+              @if (settingForm.get('STORE_EMAIL')?.touched && settingForm.get('STORE_EMAIL')?.invalid) {
+                <span class="form-error">Email không hợp lệ hoặc để trống</span>
+              }
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Địa chỉ Showroom / Trụ sở chính</label>
+              <input type="text" class="form-control" formControlName="STORE_ADDRESS" placeholder="Số 123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Khung giờ mở cửa phục vụ</label>
+              <input type="text" class="form-control" formControlName="STORE_WORKING_HOURS" placeholder="08:00 - 21:30 (Thứ 2 - Chủ Nhật)" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── TAB 2: FOOTER ──────────────────────────────────────────── -->
+      @if (activeTab() === 'footer') {
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">Cấu hình Nội dung Chân trang (Footer)</h2>
+            <p class="panel-desc">Tùy biến toàn diện các cột thông tin, bản quyền, số điện thoại CSKH và mạng xã hội ở chân trang Storefront.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label class="form-label required">Tiêu đề thương hiệu Footer</label>
+              <input type="text" class="form-control" formControlName="FOOTER_BRAND_TITLE" placeholder="COMPLEXUS" />
+              @if (settingForm.get('FOOTER_BRAND_TITLE')?.touched && settingForm.get('FOOTER_BRAND_TITLE')?.invalid) {
+                <span class="form-error">Tiêu đề Footer không được để trống</span>
+              }
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Đoạn giới thiệu ngắn ở Chân trang</label>
+              <textarea class="form-control" rows="3" formControlName="FOOTER_DESCRIPTION" placeholder="Hệ thống bán lẻ máy tính, laptop gaming, linh kiện PC và phụ kiện công nghệ chính hãng hàng đầu Việt Nam."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Hotline CSKH / Hỗ trợ kỹ thuật</label>
+              <input type="text" class="form-control" formControlName="FOOTER_HOTLINE" placeholder="1800 6868 (Miễn phí cuộc gọi, 8:00 - 21:30)" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email tiếp nhận hỗ trợ Footer</label>
+              <input type="email" class="form-control" formControlName="FOOTER_EMAIL" placeholder="support@complexus.vn" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Địa chỉ trụ sở hiển thị ở Footer</label>
+              <input type="text" class="form-control" formControlName="FOOTER_ADDRESS" placeholder="123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Dòng chữ Bản quyền chân trang (Copyright)</label>
+              <input type="text" class="form-control" formControlName="FOOTER_COPYRIGHT" placeholder="© 2026 Complexus — E-commerce Platform for Computers & Components. All rights reserved." />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Giấy phép ĐKKD / Mã số thuế / Chứng nhận Bộ Công Thương</label>
+              <input type="text" class="form-control" formControlName="FOOTER_BUSINESS_LICENSE" placeholder="GPKD số: 0109876543 do Sở KH & ĐT TP. Hà Nội cấp ngày 15/01/2020." />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Liên kết Facebook Fanpage</label>
+              <input type="url" class="form-control" formControlName="FOOTER_FACEBOOK_URL" placeholder="https://facebook.com/complexus.tech" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Liên kết Kênh YouTube</label>
+              <input type="url" class="form-control" formControlName="FOOTER_YOUTUBE_URL" placeholder="https://youtube.com/@complexus_tech" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Liên kết Kênh TikTok</label>
+              <input type="url" class="form-control" formControlName="FOOTER_TIKTOK_URL" placeholder="https://tiktok.com/@complexus_tech" />
+            </div>
+          </div>
+
+          <!-- Live Preview Box -->
+          <div class="preview-box">
+            <h3 class="preview-title">Xem trước Trực quan Giao diện Chân trang (Live Preview)</h3>
+            <div class="preview-footer-card">
+              <div class="preview-col">
+                <span class="preview-brand">{{ settingForm.get('FOOTER_BRAND_TITLE')?.value || 'COMPLEXUS' }}</span>
+                <p class="preview-desc">{{ settingForm.get('FOOTER_DESCRIPTION')?.value || 'Mô tả tóm tắt doanh nghiệp...' }}</p>
+                <div class="preview-contact">
+                  <p><strong>Hotline:</strong> {{ settingForm.get('FOOTER_HOTLINE')?.value || '1800 6868' }}</p>
+                  <p><strong>Email:</strong> {{ settingForm.get('FOOTER_EMAIL')?.value || 'support@complexus.vn' }}</p>
+                  <p><strong>Địa chỉ:</strong> {{ settingForm.get('FOOTER_ADDRESS')?.value || '123 Đường Công Nghệ...' }}</p>
+                </div>
+              </div>
+              <div class="preview-bottom">
+                <p>{{ settingForm.get('FOOTER_COPYRIGHT')?.value || '© 2026 Complexus. All rights reserved.' }}</p>
+                <small class="preview-license">{{ settingForm.get('FOOTER_BUSINESS_LICENSE')?.value }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── TAB 3: ORDERS & SHIPPING ───────────────────────────────── -->
+      @if (activeTab() === 'orderShipping') {
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">Chính sách Giao vận & Phương thức Thanh toán</h2>
+            <p class="panel-desc">Cấu hình ngưỡng miễn phí ship, phí giao hàng tiêu chuẩn và kích hoạt các phương thức thanh toán.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label required">Ngưỡng Miễn phí Vận chuyển (VNĐ)</label>
+              <input type="number" min="0" class="form-control" formControlName="FREE_SHIPPING_THRESHOLD" placeholder="5000000" />
+              <span class="form-hint">Đơn hàng đạt từ mức giá trị này trở lên sẽ được áp dụng miễn phí vận chuyển 0đ.</span>
+              @if (settingForm.get('FREE_SHIPPING_THRESHOLD')?.touched && settingForm.get('FREE_SHIPPING_THRESHOLD')?.invalid) {
+                <span class="form-error">Phải là số nguyên dương hợp lệ (>= 0)</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Phí Giao hàng Mặc định (VNĐ)</label>
+              <input type="number" min="0" class="form-control" formControlName="DEFAULT_SHIPPING_FEE" placeholder="35000" />
+              <span class="form-hint">Mức phí vận chuyển tiêu chuẩn cho đơn hàng chưa đạt ngưỡng Freeship.</span>
+              @if (settingForm.get('DEFAULT_SHIPPING_FEE')?.touched && settingForm.get('DEFAULT_SHIPPING_FEE')?.invalid) {
+                <span class="form-error">Phải là số nguyên dương hợp lệ (>= 0)</span>
+              }
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label required">Thời gian Tự hủy Đơn hàng Chưa thanh toán (Giờ)</label>
+              <input type="number" min="1" class="form-control" formControlName="ORDER_AUTO_CANCEL_HOURS" placeholder="24" />
+              <span class="form-hint">Hệ thống sẽ tự động hoàn trả tồn kho sau số giờ này nếu khách hàng không hoàn tất thanh toán.</span>
+            </div>
+
+            <div class="form-group col-span-2 toggle-group">
+              <div class="toggle-item">
+                <label class="switch">
+                  <input type="checkbox" formControlName="ENABLE_COD" />
+                  <span class="slider"></span>
+                </label>
+                <div class="toggle-label-box">
+                  <span class="toggle-title">Thanh toán khi nhận hàng (COD)</span>
+                  <span class="toggle-desc">Cho phép khách hàng thanh toán tiền mặt trực tiếp cho bưu tá khi nhận kiện hàng.</span>
+                </div>
+              </div>
+
+              <div class="toggle-item">
+                <label class="switch">
+                  <input type="checkbox" formControlName="ENABLE_BANK_TRANSFER" />
+                  <span class="slider"></span>
+                </label>
+                <div class="toggle-label-box">
+                  <span class="toggle-title">Chuyển khoản Ngân hàng / Quét mã QR</span>
+                  <span class="toggle-desc">Hiển thị thông tin tài khoản ngân hàng và mã QR thanh toán tự động tại trang Checkout.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── TAB 4: SEO ─────────────────────────────────────────────── -->
+      @if (activeTab() === 'seo') {
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">Tối ưu hóa Tìm kiếm (SEO) & Thẻ Meta</h2>
+            <p class="panel-desc">Cấu hình tiêu đề trang chủ và đoạn trích mô tả mặc định cho máy chủ tìm kiếm Google và chia sẻ mạng xã hội.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label class="form-label">Meta Title Trang chủ Mặc định</label>
+              <input type="text" class="form-control" formControlName="META_TITLE" placeholder="Complexus - Siêu thị Máy tính, Laptop Gaming & Linh kiện PC Chính Hãng" />
+              <span class="form-hint">Khuyến nghị độ dài từ 50 - 65 ký tự để hiển thị tốt nhất trên kết quả tìm kiếm Google.</span>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label">Meta Description Trang chủ</label>
+              <textarea class="form-control" rows="4" formControlName="META_DESCRIPTION" placeholder="Chuyên cung cấp máy tính để bàn, laptop gaming, card màn hình VGA RTX 40-series, CPU Intel Gen 14, AMD Ryzen chính hãng giá tốt nhất."></textarea>
+              <span class="form-hint">Khuyến nghị độ dài từ 120 - 160 ký tự tóm tắt ngắn gọn các sản phẩm và dịch vụ nổi bật.</span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── TAB 5: SYSTEM & MAINTENANCE ────────────────────────────── -->
+      @if (activeTab() === 'systemNotification') {
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">Cấu hình Hệ thống & Chế độ Bảo trì</h2>
+            <p class="panel-desc">Thiết lập ngưỡng cảnh báo tồn kho và kích hoạt chế độ bảo trì hạ tầng khẩn cấp.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label class="form-label required">Ngưỡng Tồn kho Tối thiểu để Phát Cảnh báo (Số lượng)</label>
+              <input type="number" min="1" class="form-control" formControlName="LOW_STOCK_THRESHOLD" placeholder="5" />
+              <span class="form-hint">Khi số lượng khả dụng của biến thể sản phẩm nhỏ hơn hoặc bằng mức này, sản phẩm sẽ được gắn nhãn Cảnh báo sắp hết hàng.</span>
+            </div>
+
+            <!-- Maintenance Mode Box -->
+            <div class="form-group col-span-2 maintenance-box" [class.active-maintenance]="settingForm.get('MAINTENANCE_MODE')?.value">
+              <div class="maintenance-header">
+                <div class="maintenance-title-group">
+                  <div class="badge-danger-indicator">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <span class="maintenance-title">Chế độ Bảo trì Toàn diện (Maintenance Mode)</span>
+                    <p class="maintenance-desc">
+                      Khi bật, toàn bộ giao diện Storefront công khai sẽ chuyển sang màn hình bảo trì và Backend sẽ chặn cứng các request mua sắm (HTTP 503).
+                      <strong>Khu vực Quản trị Admin và trang Đăng nhập luôn luôn được giữ mở an toàn.</strong>
+                    </p>
+                  </div>
+                </div>
+
+                <label class="switch switch-danger">
+                  <input type="checkbox" formControlName="MAINTENANCE_MODE" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              @if (settingForm.get('MAINTENANCE_MODE')?.value) {
+                <div class="maintenance-alert-banner">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <span>CẢNH BÁO: Chế độ bảo trì đang được chọn kích hoạt. Khi bấm "Lưu tất cả thay đổi", khách hàng sẽ không thể đặt hàng cho đến khi bạn tắt lại cờ này.</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </form>
+  }
+
+  <!-- ── Modal Confirm Reset ───────────────────────────────────────── -->
+  @if (showResetModal()) {
+    <div class="modal-backdrop" (click)="showResetModal.set(false)">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Xác nhận Khôi phục Mặc định</h3>
+          <button type="button" class="modal-close" (click)="showResetModal.set(false)">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Bạn có chắc chắn muốn khôi phục toàn bộ thông tin cài đặt hệ thống về giá trị gốc của nhà phát triển không?</p>
+          <p class="modal-warning">Mọi cấu hình hotline, chân trang, SEO và chính sách giao vận tùy chỉnh hiện tại sẽ được thay thế bằng dữ liệu gốc.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="showResetModal.set(false)" [disabled]="saving()">Hủy bỏ</button>
+          <button type="button" class="btn btn-danger" (click)="confirmReset()" [disabled]="saving()">
+            @if (saving()) {
+              Đang khôi phục...
+            } @else {
+              Đồng ý khôi phục
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

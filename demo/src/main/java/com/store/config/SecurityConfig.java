@@ -3,6 +3,7 @@ package com.store.config;
 import com.store.security.CustomAccessDeniedHandler;
 import com.store.security.JwtAuthenticationEntryPoint;
 import com.store.security.JwtAuthenticationFilter;
+import com.store.security.MaintenanceModeFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final MaintenanceModeFilter maintenanceModeFilter;
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final CustomAccessDeniedHandler accessDeniedHandler;
 
@@ -59,6 +61,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/attributes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/banners/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/news/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/settings/public").permitAll()
+                        // Admin Settings endpoints
+                        .requestMatchers("/api/v1/settings/**").hasRole("ADMIN")
                         // Static uploads public read
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // Upload API (Restricted to ADMIN/STAFF)
@@ -80,6 +85,7 @@ public class SecurityConfig {
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(maintenanceModeFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

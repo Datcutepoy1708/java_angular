@@ -971,6 +971,62 @@ INSERT INTO `suppliers` VALUES (1,'Công ty Cổ phần Thế Giới Số (Digiw
 UNLOCK TABLES;
 
 --
+-- Table structure for table `system_settings`
+--
+
+DROP TABLE IF EXISTS `system_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_settings` (
+  `setting_id` bigint NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `setting_group` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_public` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`setting_id`),
+  UNIQUE KEY `uk_setting_key` (`setting_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `system_settings`
+--
+
+LOCK TABLES `system_settings` WRITE;
+/*!40000 ALTER TABLE `system_settings` DISABLE KEYS */;
+INSERT INTO `system_settings` (`setting_id`, `setting_key`, `setting_value`, `setting_group`, `description`, `is_public`, `created_at`, `updated_at`) VALUES 
+(1, 'STORE_NAME', 'Complexus Computer & Technology', 'GENERAL', 'Tên thương hiệu và doanh nghiệp', 1, NOW(), NOW()),
+(2, 'STORE_SLOGAN', 'Đỉnh cao công nghệ PC Gaming & Linh kiện chính hãng', 'GENERAL', 'Khẩu hiệu thương hiệu', 1, NOW(), NOW()),
+(3, 'STORE_HOTLINE', '1800 6868', 'GENERAL', 'Số hotline chính mua hàng & tư vấn', 1, NOW(), NOW()),
+(4, 'STORE_EMAIL', 'support@complexus.vn', 'GENERAL', 'Email liên hệ chính thức', 1, NOW(), NOW()),
+(5, 'STORE_ADDRESS', 'Số 123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội', 'GENERAL', 'Địa chỉ showroom / văn phòng chính', 1, NOW(), NOW()),
+(6, 'STORE_WORKING_HOURS', '08:00 - 21:30 (Thứ 2 - Chủ Nhật)', 'GENERAL', 'Khung giờ mở cửa phục vụ showroom', 1, NOW(), NOW()),
+(7, 'FOOTER_BRAND_TITLE', 'COMPLEXUS', 'FOOTER', 'Tiêu đề thương hiệu ở cột chân trang', 1, NOW(), NOW()),
+(8, 'FOOTER_DESCRIPTION', 'Hệ thống bán lẻ máy tính, laptop gaming, linh kiện PC và phụ kiện công nghệ chính hãng hàng đầu Việt Nam.', 'FOOTER', 'Đoạn giới thiệu ngắn ở chân trang', 1, NOW(), NOW()),
+(9, 'FOOTER_HOTLINE', '1800 6868 (Miễn phí cuộc gọi, 8:00 - 21:30)', 'FOOTER', 'Hotline CSKH hiển thị ở Footer', 1, NOW(), NOW()),
+(10, 'FOOTER_EMAIL', 'support@complexus.vn', 'FOOTER', 'Email tiếp nhận hỗ trợ Footer', 1, NOW(), NOW()),
+(11, 'FOOTER_ADDRESS', '123 Đường Công Nghệ, Quận Cầu Giấy, Hà Nội', 'FOOTER', 'Địa chỉ trụ sở chính hiển thị ở Footer', 1, NOW(), NOW()),
+(12, 'FOOTER_COPYRIGHT', '© 2026 Complexus — E-commerce Platform for Computers & Components. All rights reserved.', 'FOOTER', 'Dòng chữ bản quyền chân trang', 1, NOW(), NOW()),
+(13, 'FOOTER_BUSINESS_LICENSE', 'GPKD số: 0109876543 do Sở KH & ĐT TP. Hà Nội cấp ngày 15/01/2020.', 'FOOTER', 'Thông tin Giấy phép ĐKKD / MST', 1, NOW(), NOW()),
+(14, 'FOOTER_FACEBOOK_URL', 'https://facebook.com/complexus.tech', 'FOOTER', 'Liên kết Fanpage Facebook', 1, NOW(), NOW()),
+(15, 'FOOTER_YOUTUBE_URL', 'https://youtube.com/@complexus_tech', 'FOOTER', 'Liên kết Kênh YouTube chính thức', 1, NOW(), NOW()),
+(16, 'FOOTER_TIKTOK_URL', 'https://tiktok.com/@complexus_tech', 'FOOTER', 'Liên kết Kênh TikTok chính thức', 1, NOW(), NOW()),
+(17, 'FREE_SHIPPING_THRESHOLD', '5000000', 'ORDER_SHIPPING', 'Ngưỡng giá trị đơn hàng miễn phí giao hàng (VNĐ)', 1, NOW(), NOW()),
+(18, 'DEFAULT_SHIPPING_FEE', '35000', 'ORDER_SHIPPING', 'Phí giao hàng tiêu chuẩn mặc định (VNĐ)', 1, NOW(), NOW()),
+(19, 'ORDER_AUTO_CANCEL_HOURS', '24', 'ORDER_SHIPPING', 'Thời gian tự hủy đơn chưa thanh toán (giờ)', 0, NOW(), NOW()),
+(20, 'ENABLE_COD', 'true', 'ORDER_SHIPPING', 'Cho phép thanh toán khi nhận hàng (COD)', 1, NOW(), NOW()),
+(21, 'ENABLE_BANK_TRANSFER', 'true', 'ORDER_SHIPPING', 'Cho phép thanh toán chuyển khoản qua ngân hàng', 1, NOW(), NOW()),
+(22, 'META_TITLE', 'Complexus - Siêu thị Máy tính, Laptop Gaming & Linh kiện PC Chính Hãng', 'SEO', 'Tiêu đề SEO trang chủ mặc định', 1, NOW(), NOW()),
+(23, 'META_DESCRIPTION', 'Chuyên cung cấp máy tính để bàn, laptop gaming, card màn hình VGA RTX 40-series, CPU Intel Gen 14, AMD Ryzen chính hãng giá tốt nhất.', 'SEO', 'Mô tả SEO tóm tắt website', 1, NOW(), NOW()),
+(24, 'LOW_STOCK_THRESHOLD', '5', 'SYSTEM_NOTIFICATION', 'Ngưỡng tồn kho tối thiểu phát cảnh báo', 0, NOW(), NOW()),
+(25, 'MAINTENANCE_MODE', 'false', 'SYSTEM_NOTIFICATION', 'Chế độ bảo trì hệ thống toàn diện', 1, NOW(), NOW());
+/*!40000 ALTER TABLE `system_settings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user_roles`
 --
 

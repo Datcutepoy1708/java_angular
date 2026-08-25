@@ -111,6 +111,11 @@ export const routes: Routes = [
             path: 'reviews',
             loadComponent: () =>
               import('./features/admin/review-manage/review-manage.component').then((m) => m.ReviewManageComponent)
+          },
+          {
+            path: 'settings',
+            loadComponent: () =>
+              import('./features/admin/setting-manage/setting-manage.component').then((m) => m.SettingManageComponent)
           }
         ]
       }
