@@ -72,4 +72,17 @@ export class PublicShellComponent implements OnInit {
     this.authService.logout();
     this.router.navigate(['/']);
   }
+
+  formatCategoryIcon(url: string | null | undefined, slug?: string): string {
+    if (url && url.trim()) return url;
+    if (slug) return `/assets/categories/${slug}.png`;
+    return '/assets/categories/laptop.png';
+  }
+
+  handleImageError(event: Event, fallbackUrl: string): void {
+    const target = event.target as HTMLImageElement;
+    if (target && target.src !== fallbackUrl) {
+      target.src = fallbackUrl;
+    }
+  }
 }

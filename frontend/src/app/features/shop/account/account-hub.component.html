@@ -1,0 +1,591 @@
+<div class="account-container">
+
+  <!-- ── Breadcrumbs ── -->
+  <div class="account-breadcrumb">
+    <a routerLink="/">Trang chủ</a>
+    <span>/</span>
+    <span class="current">Tài khoản của tôi</span>
+  </div>
+
+  <div class="account-layout">
+
+    <!-- ── Left Sidebar Navigation ── -->
+    <aside class="account-sidebar">
+      <div class="user-brief">
+        <div class="brief-avatar">
+          @if (avatarUrl()) {
+            <img [src]="avatarUrl()" alt="Avatar" />
+          } @else {
+            <div class="brief-avatar-placeholder">{{ fullName().slice(0, 1) || 'U' }}</div>
+          }
+        </div>
+        <div class="brief-info">
+          <span class="brief-name" [title]="fullName() || 'Khách hàng'">{{ fullName() || 'Khách hàng' }}</span>
+          <span class="brief-email" [title]="profile()?.email || ''">{{ profile()?.email }}</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item" [class.active]="activeTab() === 'profile'" (click)="setTab('profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Hồ sơ cá nhân
+        </button>
+
+        <button class="nav-item" [class.active]="activeTab() === 'orders'" (click)="setTab('orders')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4ZM3 6h18M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          Đơn mua của tôi
+        </button>
+
+        <button class="nav-item" [class.active]="activeTab() === 'addresses'" (click)="setTab('addresses')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          Sổ địa chỉ nhận hàng
+        </button>
+
+        <button class="nav-item" [class.active]="activeTab() === 'password'" (click)="setTab('password')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Đổi mật khẩu
+        </button>
+
+        <button class="nav-item logout-item" (click)="authService.logout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Đăng xuất
+        </button>
+      </nav>
+    </aside>
+
+    <!-- ── Right Main Content Area ── -->
+    <main class="account-content">
+
+      <!-- Alerts -->
+      @if (successMessage()) {
+        <div class="alert alert-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span>{{ successMessage() }}</span>
+        </div>
+      }
+      @if (errorMessage()) {
+        <div class="alert alert-danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- TAB 1: PROFILE MANAGEMENT                      -->
+      <!-- ══════════════════════════════════════════════ -->
+      @if (activeTab() === 'profile') {
+        <div class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">Hồ Sơ Của Tôi</h2>
+            <p class="section-desc">Quản lý thông tin hồ sơ cá nhân và bảo mật tài khoản</p>
+          </div>
+
+          <div class="profile-layout">
+            <!-- Left Form Fields -->
+            <div class="profile-form-area">
+              <div class="form-row">
+                <label class="form-label">Email đăng nhập</label>
+                <div class="form-readonly-wrap">
+                  <span class="email-text">{{ profile()?.email }}</span>
+                  <span class="verified-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="badge-icon">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Đã xác thực
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">Họ và tên <span class="req">*</span></label>
+                <input type="text" [ngModel]="fullName()" (ngModelChange)="fullName.set($event)" class="form-input" placeholder="Nhập họ và tên của bạn" />
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">Số điện thoại</label>
+                <input type="tel" [ngModel]="phone()" (ngModelChange)="phone.set($event)" class="form-input" placeholder="Ví dụ: 0987654321" />
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">Giới tính</label>
+                <div class="gender-segmented">
+                  <button type="button" class="segment-btn" [class.active]="gender() === 'MALE'" (click)="gender.set('MALE')">
+                    Nam
+                  </button>
+                  <button type="button" class="segment-btn" [class.active]="gender() === 'FEMALE'" (click)="gender.set('FEMALE')">
+                    Nữ
+                  </button>
+                  <button type="button" class="segment-btn" [class.active]="gender() === 'OTHER'" (click)="gender.set('OTHER')">
+                    Khác
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">Ngày sinh</label>
+                <input type="date" [ngModel]="birthDate()" (ngModelChange)="birthDate.set($event)" class="form-input date-input" />
+              </div>
+
+              <div class="form-actions">
+                <button class="btn-primary" (click)="saveProfile()" [disabled]="isLoading()">
+                  @if (isLoading()) {
+                    <span class="btn-spinner"></span> Đang lưu...
+                  } @else {
+                    Lưu Thay Đổi
+                  }
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Avatar Uploader -->
+            <div class="profile-avatar-area">
+              <div class="avatar-card">
+                <div class="avatar-box">
+                  @if (avatarUrl()) {
+                    <img [src]="avatarUrl()" alt="Avatar" class="avatar-preview" />
+                  } @else {
+                    <div class="avatar-placeholder-lg">{{ fullName().slice(0, 1) || 'U' }}</div>
+                  }
+                  @if (isUploadingAvatar()) {
+                    <div class="avatar-loading-overlay">
+                      <span class="btn-spinner"></span>
+                    </div>
+                  }
+                </div>
+                <label class="btn-upload" [class.disabled]="isUploadingAvatar()">
+                  <input type="file" (change)="onAvatarSelected($event)" accept="image/jpeg,image/png,image/webp" class="file-hidden" [disabled]="isUploadingAvatar()" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="upload-icon">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                  </svg>
+                  {{ isUploadingAvatar() ? 'Đang tải lên...' : 'Chọn Ảnh Mới' }}
+                </label>
+                <div class="upload-hint">
+                  <span>Kích thước tối đa: <strong>2MB</strong></span>
+                  <span>Định dạng: JPG, PNG, WEBP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- TAB 2: CHANGE PASSWORD                         -->
+      <!-- ══════════════════════════════════════════════ -->
+      @if (activeTab() === 'password') {
+        <div class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">Đổi Mật Khẩu</h2>
+            <p class="section-desc">Để bảo mật tài khoản, vui lòng thiết lập mật khẩu mạnh và không chia sẻ cho người khác</p>
+          </div>
+
+          <div class="password-form-area">
+            <div class="form-row">
+              <label class="form-label">Mật khẩu hiện tại <span class="req">*</span></label>
+              <div class="input-password-wrap">
+                <input [type]="showOldPassword() ? 'text' : 'password'" [ngModel]="oldPassword()" (ngModelChange)="oldPassword.set($event)" class="form-input" placeholder="Nhập mật khẩu hiện tại của bạn" />
+                <button type="button" class="btn-toggle-eye" (click)="showOldPassword.set(!showOldPassword())" title="Ẩn/Hiện mật khẩu">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon">
+                    @if (showOldPassword()) {
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    } @else {
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    }
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label class="form-label">Mật khẩu mới <span class="req">*</span></label>
+              <div class="input-password-wrap">
+                <input [type]="showNewPassword() ? 'text' : 'password'" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)" class="form-input" placeholder="Tối thiểu 6 ký tự" />
+                <button type="button" class="btn-toggle-eye" (click)="showNewPassword.set(!showNewPassword())" title="Ẩn/Hiện mật khẩu">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon">
+                    @if (showNewPassword()) {
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    } @else {
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    }
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label class="form-label">Xác nhận mật khẩu mới <span class="req">*</span></label>
+              <div class="input-password-wrap">
+                <input [type]="showConfirmPassword() ? 'text' : 'password'" [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" class="form-input" placeholder="Nhập lại mật khẩu mới" />
+                <button type="button" class="btn-toggle-eye" (click)="showConfirmPassword.set(!showConfirmPassword())" title="Ẩn/Hiện mật khẩu">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon">
+                    @if (showConfirmPassword()) {
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    } @else {
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    }
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn-primary" (click)="changePassword()" [disabled]="isLoading()">
+                @if (isLoading()) {
+                  <span class="btn-spinner"></span> Đang xử lý...
+                } @else {
+                  Xác Nhận Đổi Mật Khẩu
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- TAB 3: ADDRESS BOOK                            -->
+      <!-- ══════════════════════════════════════════════ -->
+      @if (activeTab() === 'addresses') {
+        <div class="card-section">
+          <div class="section-header-flex">
+            <div>
+              <h2 class="section-title">Địa Chỉ Nhận Hàng Của Tôi</h2>
+              <p class="section-desc">Quản lý các địa chỉ giao hàng để đặt hàng nhanh chóng và thuận tiện hơn</p>
+            </div>
+            <button class="btn-add-address" (click)="openAddAddressModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Thêm Địa Chỉ Mới
+            </button>
+          </div>
+
+          @if (addresses().length === 0) {
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <p>Bạn chưa lưu địa chỉ nhận hàng nào trong sổ địa chỉ.</p>
+              <button class="btn-primary" (click)="openAddAddressModal()">Thêm địa chỉ ngay</button>
+            </div>
+          } @else {
+            <div class="address-list">
+              @for (addr of addresses(); track addr.addressId) {
+                <div class="address-item" [class.address-item--default]="addr.isDefault">
+                  <div class="address-main">
+                    <div class="addr-row-top">
+                      <strong class="addr-name">{{ addr.receiverName }}</strong>
+                      <span class="addr-divider">|</span>
+                      <span class="addr-phone">{{ addr.phone }}</span>
+                      @if (addr.isDefault) {
+                        <span class="default-badge">Mặc định</span>
+                      }
+                    </div>
+                    <div class="addr-text">{{ addr.detailAddress }}</div>
+                    <div class="addr-sub">{{ addr.ward }}, {{ addr.district }}, {{ addr.province }}</div>
+                  </div>
+
+                  <div class="address-actions">
+                    <div class="action-links">
+                      <button class="btn-link" (click)="openEditAddressModal(addr)">Chỉnh sửa</button>
+                      @if (!addr.isDefault) {
+                        <button class="btn-link btn-danger" (click)="deleteAddress(addr.addressId)">Xóa</button>
+                      }
+                    </div>
+                    @if (!addr.isDefault) {
+                      <button class="btn-set-default" (click)="setDefaultAddress(addr.addressId)">Thiết lập mặc định</button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- TAB 4: MY ORDERS                               -->
+      <!-- ══════════════════════════════════════════════ -->
+      @if (activeTab() === 'orders') {
+        <div class="card-section">
+          <div class="section-header">
+            <h2 class="section-title">Đơn Mua Của Tôi</h2>
+            <p class="section-desc">Theo dõi tiến độ xử lý và lịch sử các đơn đặt hàng của bạn</p>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="order-filter-pills">
+            <button class="filter-pill" [class.active]="orderStatusFilter() === 'ALL'" (click)="orderStatusFilter.set('ALL')">Tất cả</button>
+            <button class="filter-pill" [class.active]="orderStatusFilter() === 'pending'" (click)="orderStatusFilter.set('pending')">Chờ xác nhận</button>
+            <button class="filter-pill" [class.active]="orderStatusFilter() === 'shipping'" (click)="orderStatusFilter.set('shipping')">Đang giao</button>
+            <button class="filter-pill" [class.active]="orderStatusFilter() === 'completed'" (click)="orderStatusFilter.set('completed')">Hoàn thành</button>
+            <button class="filter-pill" [class.active]="orderStatusFilter() === 'cancelled'" (click)="orderStatusFilter.set('cancelled')">Đã hủy</button>
+          </div>
+
+          @if (getFilteredOrders().length === 0) {
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <p>Chưa có đơn hàng nào trong mục này.</p>
+              <a routerLink="/products" class="btn-primary">Mua sắm ngay</a>
+            </div>
+          } @else {
+            <div class="order-cards-list">
+              @for (order of getFilteredOrders(); track order.orderId) {
+                <div class="order-card-box">
+                  <div class="order-box-header">
+                    <div class="header-left">
+                      <span class="order-code">Mã đơn: <strong>{{ order.orderCode }}</strong></span>
+                      <span class="order-date">{{ order.createdAt | date:'HH:mm dd/MM/yyyy' }}</span>
+                    </div>
+                    <div class="header-right">
+                      <span class="status-badge" [class]="'status-badge--' + getStatusClass(order.orderStatus)">
+                        {{ getStatusLabel(order.orderStatus) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Order Items List Preview -->
+                  <div class="order-items-preview">
+                    @for (item of order.items; track item.orderItemId) {
+                      <div class="order-item-row">
+                        <div class="item-thumb">
+                          @if (item.imageUrl) {
+                            <img [src]="item.imageUrl" alt="Product" />
+                          } @else {
+                            <div class="item-thumb-placeholder">PC</div>
+                          }
+                        </div>
+                        <div class="item-details">
+                          <span class="item-name">{{ item.productName }}</span>
+                          <span class="item-variant">{{ item.variantName }}</span>
+                          <span class="item-qty">x{{ item.quantity }}</span>
+                        </div>
+                        <div class="item-price">
+                          {{ formatCurrency(item.subtotal) }}
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Order Card Footer -->
+                  <div class="order-box-footer">
+                    <div class="footer-total">
+                      Thành tiền: <strong class="total-price">{{ formatCurrency(order.totalAmount) }}</strong>
+                    </div>
+                    <div class="footer-actions">
+                      <button class="btn-secondary" (click)="viewOrderDetail(order)">Xem chi tiết</button>
+                      @if (order.orderStatus === 'pending' || order.orderStatus === 'confirmed') {
+                        <button class="btn-cancel" (click)="openCancelModal(order)">Hủy đơn</button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- MODAL: ADD / EDIT ADDRESS                      -->
+  <!-- ══════════════════════════════════════════════ -->
+  @if (isAddressModalOpen()) {
+    <div class="modal-overlay" (click)="closeAddressModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ editingAddressId() ? 'Cập Nhật Địa Chỉ' : 'Thêm Địa Chỉ Mới' }}</h3>
+          <button class="modal-close" (click)="closeAddressModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-grid-2">
+            <div class="modal-row">
+              <label class="form-label">Tên người nhận <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="addressForm().receiverName" class="form-input" placeholder="Họ và tên người nhận" />
+            </div>
+
+            <div class="modal-row">
+              <label class="form-label">Số điện thoại <span class="req">*</span></label>
+              <input type="tel" [(ngModel)]="addressForm().phone" class="form-input" placeholder="Số điện thoại nhận hàng" />
+            </div>
+          </div>
+
+          <div class="modal-grid-3">
+            <div class="modal-row">
+              <label class="form-label">Tỉnh / TP <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="addressForm().province" class="form-input" placeholder="Hà Nội" />
+            </div>
+            <div class="modal-row">
+              <label class="form-label">Quận / Huyện <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="addressForm().district" class="form-input" placeholder="Cầu Giấy" />
+            </div>
+            <div class="modal-row">
+              <label class="form-label">Phường / Xã <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="addressForm().ward" class="form-input" placeholder="Dịch Vọng" />
+            </div>
+          </div>
+
+          <div class="modal-row">
+            <label class="form-label">Địa chỉ chi tiết <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="addressForm().detailAddress" class="form-input" placeholder="Số nhà, tên đường, tòa nhà..." />
+          </div>
+
+          <div class="modal-row checkbox-row">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="addressForm().isDefault" />
+              <span>Đặt làm địa chỉ nhận hàng mặc định</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" (click)="closeAddressModal()">Trở lại</button>
+          <button class="btn-primary" (click)="saveAddress()">Hoàn thành</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- MODAL: ORDER DETAILS                           -->
+  <!-- ══════════════════════════════════════════════ -->
+  @if (isOrderDetailModalOpen() && selectedOrderDetail(); as order) {
+    <div class="modal-overlay" (click)="closeOrderDetailModal()">
+      <div class="modal-card modal-card-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Chi Tiết Đơn Hàng #{{ order.orderCode }}</h3>
+          <button class="modal-close" (click)="closeOrderDetailModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-section">
+            <h4 class="sub-heading">Thông tin người nhận</h4>
+            <p><strong>Người nhận:</strong> {{ order.receiverName }} | <strong>SĐT:</strong> {{ order.receiverPhone }}</p>
+            <p><strong>Địa chỉ giao:</strong> {{ order.shippingAddress }}</p>
+            @if (order.note) {
+              <p><strong>Ghi chú:</strong> {{ order.note }}</p>
+            }
+          </div>
+
+          <div class="detail-section">
+            <h4 class="sub-heading">Danh sách sản phẩm</h4>
+            <div class="order-items-preview">
+              @for (item of order.items; track item.orderItemId) {
+                <div class="order-item-row">
+                  <div class="item-details">
+                    <span class="item-name">{{ item.productName }}</span>
+                    <span class="item-variant">{{ item.variantName }}</span>
+                    <span class="item-qty">Số lượng: {{ item.quantity }} x {{ formatCurrency(item.priceSnapshot) }}</span>
+                  </div>
+                  <div class="item-price">
+                    {{ formatCurrency(item.subtotal) }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="detail-section summary-box">
+            <div class="sum-line">
+              <span>Tạm tính:</span>
+              <span>{{ formatCurrency(order.subtotal) }}</span>
+            </div>
+            @if (order.discountAmount > 0) {
+              <div class="sum-line text-discount">
+                <span>Giảm giá ({{ order.discountCode }}):</span>
+                <span>-{{ formatCurrency(order.discountAmount) }}</span>
+              </div>
+            }
+            <div class="sum-line">
+              <span>Phí vận chuyển:</span>
+              <span>{{ formatCurrency(order.shippingFee) }}</span>
+            </div>
+            <div class="sum-line total-line">
+              <strong>Tổng thanh toán:</strong>
+              <strong class="total-price">{{ formatCurrency(order.totalAmount) }}</strong>
+            </div>
+            <div class="sum-line">
+              <span>Phương thức thanh toán:</span>
+              <span>{{ order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản / Cổng thanh toán' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-primary" (click)="closeOrderDetailModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- MODAL: CANCEL ORDER REASON                     -->
+  <!-- ══════════════════════════════════════════════ -->
+  @if (isCancelModalOpen()) {
+    <div class="modal-overlay" (click)="closeCancelModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Hủy Đơn Hàng #{{ orderToCancel()?.orderCode }}</h3>
+          <button class="modal-close" (click)="closeCancelModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <p class="warning-text">Bạn có chắc chắn muốn hủy đơn hàng này? Thao tác này không thể hoàn tác.</p>
+          <div class="modal-row">
+            <label class="form-label">Lý do hủy đơn (tùy chọn):</label>
+            <select [(ngModel)]="cancelReason" class="form-input select-input">
+              <option value="Muốn thay đổi địa chỉ giao hàng">Muốn thay đổi địa chỉ giao hàng</option>
+              <option value="Muốn đổi sang sản phẩm khác">Muốn đổi sang sản phẩm khác</option>
+              <option value="Tìm thấy giá tốt hơn ở nơi khác">Tìm thấy giá tốt hơn ở nơi khác</option>
+              <option value="Không còn nhu cầu mua nữa">Không còn nhu cầu mua nữa</option>
+              <option value="Lý do khác">Lý do khác</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" (click)="closeCancelModal()">Quay lại</button>
+          <button class="btn-danger-modal" (click)="confirmCancelOrder()">Xác Nhận Hủy Đơn</button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

@@ -163,7 +163,7 @@
                 <!-- Icon -->
                 <td class="td-icon">
                   @if (node.category.iconUrl) {
-                    <img [src]="node.category.iconUrl" [alt]="node.category.name" class="category-icon-thumb" />
+                    <img [src]="node.category.iconUrl" [alt]="node.category.name" class="category-icon-thumb" (error)="handleIconError($event, node.category.slug)" />
                   } @else {
                     <div class="category-icon-placeholder">{{ node.category.name[0] }}</div>
                   }

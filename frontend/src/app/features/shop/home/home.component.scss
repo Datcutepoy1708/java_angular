@@ -28,6 +28,7 @@ $radius: 12px;
   padding-top: 12px;
 }
 
+.section-header,
 .section-heading {
   display: flex;
   align-items: center;
@@ -44,23 +45,56 @@ $radius: 12px;
     margin: 0;
   }
 
-  .section-sub-text {
+  .section-sub-text,
+  .section-subtitle {
     font-size: 0.85rem;
     color: $on-surface-variant;
+    margin: 0;
   }
 
   .view-all-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.85rem;
     font-weight: 600;
     color: $primary;
     text-decoration: none;
     transition: all 0.15s ease;
 
+    .arrow-svg {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      min-height: 16px;
+      max-width: 16px;
+      max-height: 16px;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
     &:hover {
       color: $primary-dark;
-      padding-left: 3px;
+      .arrow-svg {
+        transform: translateX(3px);
+      }
     }
   }
+}
+
+.arrow-svg,
+.arrow-icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 // ── 1. Hero Section ───────────────────────────────────────────────
@@ -406,33 +440,53 @@ $radius: 12px;
 }
 
 // ── 4. Best Sellers (Tabs) ────────────────────────────────────────
+.best-seller-tabs,
 .bestseller-tabs {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
+  margin-top: 14px;
+  margin-bottom: 22px;
 
+  .tab-pill,
   .tab-pill-btn {
-    padding: 6px 14px;
+    padding: 8px 18px;
     border-radius: 20px;
     border: 1px solid $border;
     background: $surface;
     color: $on-surface-variant;
-    font-size: 0.825rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.18s ease;
+    outline: none;
 
     &:hover {
       background: $surface-subtle;
       color: $on-surface;
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
     }
 
     &.active {
       background: $primary;
       border-color: $primary;
       color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     }
   }
+}
+
+.loading-hint,
+.empty-hint {
+  text-align: center;
+  padding: 40px 16px;
+  color: $on-surface-variant;
+  font-size: 0.9rem;
+  background: $surface-subtle;
+  border-radius: $radius;
+  border: 1px dashed $border;
+  margin-top: 16px;
 }
 
 // Product Grid Layout
@@ -472,33 +526,37 @@ $radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 18px;
+  padding: 12px 18px;
   background: $surface;
   border: 1px solid $border;
-  border-radius: 8px;
+  border-radius: 10px;
   text-decoration: none;
-  height: 60px;
-  transition: all 0.15s ease;
+  height: 64px;
+  transition: all 0.2s ease;
 
   .brand-logo-img {
-    max-width: 100%;
-    max-height: 32px;
+    max-width: 105px;
+    max-height: 34px;
+    width: auto;
+    height: auto;
     object-fit: contain;
     transition: transform 0.2s ease;
   }
 
   .brand-name-fallback {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: $on-surface-variant;
+    color: $on-surface;
+    letter-spacing: 0.5px;
   }
 
   &:hover {
     border-color: $primary;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.1);
+    transform: translateY(-2px);
 
     .brand-logo-img {
-      transform: scale(1.1);
+      transform: scale(1.08);
     }
   }
 }

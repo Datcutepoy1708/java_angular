@@ -6,6 +6,8 @@ import { CategoryService } from '../../core/services/category.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
 
+import { SettingService } from '../../core/services/setting.service';
+
 describe('PublicShellComponent', () => {
   let component: PublicShellComponent;
   let fixture: ComponentFixture<PublicShellComponent>;
@@ -25,6 +27,35 @@ describe('PublicShellComponent', () => {
     clearToast: () => {},
   };
 
+  const mockSettingService = {
+    publicSettings: () => ({
+      storeName: 'Complexus',
+      footerBrandTitle: 'COMPLEXUS',
+      footerDescription: 'Computer Store',
+      contactPhone: '1800 6868',
+      contactEmail: 'support@complexus.com',
+      storeAddress: 'Hà Nội',
+      freeShippingThreshold: 5000000,
+      defaultShippingFee: 30000,
+      enableCod: true,
+      enableBankTransfer: true,
+      maintenanceMode: false
+    }),
+    loadPublicSettings: () => of({
+      storeName: 'Complexus',
+      footerBrandTitle: 'COMPLEXUS',
+      footerDescription: 'Computer Store',
+      contactPhone: '1800 6868',
+      contactEmail: 'support@complexus.com',
+      storeAddress: 'Hà Nội',
+      freeShippingThreshold: 5000000,
+      defaultShippingFee: 30000,
+      enableCod: true,
+      enableBankTransfer: true,
+      maintenanceMode: false
+    })
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PublicShellComponent],
@@ -33,6 +64,7 @@ describe('PublicShellComponent', () => {
         { provide: CategoryService, useValue: mockCategoryService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: CartService, useValue: mockCartService },
+        { provide: SettingService, useValue: mockSettingService }
       ],
     }).compileComponents();
 

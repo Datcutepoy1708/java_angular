@@ -1,18 +1,75 @@
 <div class="dashboard">
 
+  <!-- ── Header with Analytics Link ── -->
+  <div class="dashboard-topbar">
+    <div>
+      <h1 class="page-title">Bảng điều khiển Tổng quan</h1>
+      <p class="page-subtitle">Theo dõi các chỉ số hoạt động kinh doanh, doanh thu và đơn hàng hôm nay</p>
+    </div>
+    <div class="topbar-actions">
+      <a routerLink="/admin/statistics" class="btn-analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Báo cáo Thống kê Chi tiết
+      </a>
+      <button class="btn-refresh" (click)="loadDashboardData()" title="Tải lại số liệu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
   <!-- ── Stat Cards ── -->
   <div class="stat-grid">
-    @for (stat of stats(); track stat.label; let i = $index) {
-      <div class="stat-card" [class.stat-card--alert]="i === 3">
-        <div class="stat-header">
-          <span class="stat-label">{{ stat.label }}</span>
-        </div>
-        <div class="stat-value">{{ stat.value }}</div>
-        <div class="stat-delta" [class.positive]="stat.positive" [class.negative]="!stat.positive">
-          {{ stat.delta }}
-        </div>
+    <!-- Doanh thu hôm nay -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Doanh thu hôm nay</span>
       </div>
-    }
+      <div class="stat-value">{{ formatCurrency(overview()?.totalRevenue) }}</div>
+      <div class="stat-delta" [class.positive]="(overview()?.revenueGrowthPercent || 0) >= 0" [class.negative]="(overview()?.revenueGrowthPercent || 0) < 0">
+        {{ (overview()?.revenueGrowthPercent || 0) >= 0 ? '+' : '' }}{{ overview()?.revenueGrowthPercent || 0 }}% so với hôm qua
+      </div>
+    </div>
+
+    <!-- Đơn hàng hôm nay -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Đơn hàng hôm nay</span>
+      </div>
+      <div class="stat-value">{{ overview()?.totalOrders || 0 }}</div>
+      <div class="stat-delta" [class.positive]="(overview()?.ordersGrowthPercent || 0) >= 0" [class.negative]="(overview()?.ordersGrowthPercent || 0) < 0">
+        {{ (overview()?.ordersGrowthPercent || 0) >= 0 ? '+' : '' }}{{ overview()?.ordersGrowthPercent || 0 }}% so với hôm qua
+      </div>
+    </div>
+
+    <!-- Khách hàng mới -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Khách hàng mới</span>
+      </div>
+      <div class="stat-value">{{ overview()?.newCustomers || 0 }}</div>
+      <div class="stat-delta" [class.positive]="(overview()?.customerGrowthPercent || 0) >= 0" [class.negative]="(overview()?.customerGrowthPercent || 0) < 0">
+        {{ (overview()?.customerGrowthPercent || 0) >= 0 ? '+' : '' }}{{ overview()?.customerGrowthPercent || 0 }}% so với hôm qua
+      </div>
+    </div>
+
+    <!-- Cảnh báo tồn kho thấp -->
+    <div class="stat-card" [class.stat-card--alert]="(overview()?.lowStockCount || 0) > 0">
+      <div class="stat-header">
+        <span class="stat-label">Cảnh báo tồn kho thấp</span>
+      </div>
+      <div class="stat-value">{{ overview()?.lowStockCount || 0 }}</div>
+      <div class="stat-delta" [class.negative]="(overview()?.lowStockCount || 0) > 0">
+        {{ (overview()?.lowStockCount || 0) > 0 ? 'Cần nhập hàng bổ sung' : 'Tồn kho ổn định' }}
+      </div>
+    </div>
   </div>
 
   <!-- ── Middle row: Chart + Best Sellers ── -->
@@ -21,22 +78,23 @@
     <!-- Revenue chart card -->
     <div class="card chart-card">
       <div class="card-header">
-        <span class="card-title">Doanh thu — 30 ngày qua</span>
+        <span class="card-title">Xu hướng Doanh thu — 30 ngày qua</span>
+        <span class="card-hint">Biểu đồ biến động doanh thu thực tế</span>
       </div>
       <div class="chart-area">
         <svg viewBox="0 0 470 180" preserveAspectRatio="none" class="sparkline" aria-hidden="true">
           <defs>
             <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#2563eb" stop-opacity="0.18"/>
+              <stop offset="0%" stop-color="#2563eb" stop-opacity="0.22"/>
               <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
             </linearGradient>
           </defs>
           <path
-            [attr.d]="chartPath + ' L 440 180 L 30 180 Z'"
+            [attr.d]="chartPath() + ' L 440 180 L 30 180 Z'"
             fill="url(#chartGrad)"
           />
           <path
-            [attr.d]="chartPath"
+            [attr.d]="chartPath()"
             fill="none"
             stroke="#2563eb"
             stroke-width="2.5"
@@ -50,19 +108,23 @@
     <!-- Best sellers card -->
     <div class="card best-sellers-card">
       <div class="card-header">
-        <span class="card-title">Bán chạy nhất</span>
+        <span class="card-title">Top 5 Bán chạy nhất</span>
       </div>
-      <ul class="best-list">
-        @for (item of bestSellers(); track item.rank) {
-          <li class="best-item">
-            <span class="rank-badge">{{ item.rank }}</span>
-            <div class="best-info">
-              <span class="best-name">{{ item.name }}</span>
-              <span class="best-sold">{{ item.sold }} đã bán</span>
-            </div>
-          </li>
-        }
-      </ul>
+      @if (topSellers().length === 0) {
+        <div class="empty-hint">Chưa có dữ liệu bán hàng</div>
+      } @else {
+        <ul class="best-list">
+          @for (item of topSellers(); track item.productId; let rank = $index) {
+            <li class="best-item">
+              <span class="rank-badge" [class.rank-1]="rank === 0" [class.rank-2]="rank === 1" [class.rank-3]="rank === 2">{{ rank + 1 }}</span>
+              <div class="best-info">
+                <span class="best-name" [title]="item.productName">{{ item.productName }}</span>
+                <span class="best-sold">{{ item.totalQuantitySold }} đã bán • {{ formatCurrency(item.totalRevenueGenerated) }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
     </div>
   </div>
 
@@ -70,33 +132,42 @@
   <div class="card orders-card">
     <div class="card-header">
       <span class="card-title">Đơn hàng gần đây</span>
+      <a routerLink="/admin/orders" class="card-link">Xem tất cả đơn hàng &rarr;</a>
     </div>
-    <table class="orders-table">
-      <thead>
-        <tr>
-          <th>Mã đơn</th>
-          <th>Khách hàng</th>
-          <th>Trạng thái</th>
-          <th class="th-right">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (order of recentOrders(); track order.orderId) {
+    @if (recentOrders().length === 0) {
+      <div class="empty-hint">Chưa có đơn hàng nào phát sinh</div>
+    } @else {
+      <table class="orders-table">
+        <thead>
           <tr>
-            <td class="order-id">{{ order.orderId }}</td>
-            <td>{{ order.customer }}</td>
-            <td>
-              <span class="status-badge" [class]="'status-badge--' + getStatusClass(order.status)">
-                {{ getStatusLabel(order.status) }}
-              </span>
-            </td>
-            <td class="td-right">
-              <button class="link-btn">Xem chi tiết</button>
-            </td>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
+            <th>Tổng tiền</th>
+            <th>Ngày đặt</th>
+            <th>Trạng thái</th>
+            <th class="th-right">Thao tác</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (order of recentOrders(); track order.orderId) {
+            <tr>
+              <td class="order-id">{{ order.orderCode }}</td>
+              <td>{{ order.receiverName || ('User #' + order.userId) }}</td>
+              <td class="order-amount">{{ formatCurrency(order.totalAmount) }}</td>
+              <td class="order-date">{{ order.createdAt | date:'HH:mm dd/MM/yyyy' }}</td>
+              <td>
+                <span class="status-badge" [class]="'status-badge--' + getStatusClass(order.orderStatus)">
+                  {{ getStatusLabel(order.orderStatus) }}
+                </span>
+              </td>
+              <td class="td-right">
+                <a [routerLink]="['/admin/orders']" class="link-btn">Xem chi tiết</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
   </div>
 
 </div>

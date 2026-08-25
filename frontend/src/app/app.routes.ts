@@ -116,6 +116,11 @@ export const routes: Routes = [
             path: 'settings',
             loadComponent: () =>
               import('./features/admin/setting-manage/setting-manage.component').then((m) => m.SettingManageComponent)
+          },
+          {
+            path: 'statistics',
+            loadComponent: () =>
+              import('./features/admin/statistics/statistics.component').then((m) => m.StatisticsComponent)
           }
         ]
       }
@@ -164,9 +169,15 @@ export const routes: Routes = [
           import('./features/shop/order-tracking/order-tracking.component').then((m) => m.OrderTrackingComponent),
       },
       {
-        path: 'account/orders',
+        path: 'account',
+        canActivate: [authGuard],
         loadComponent: () =>
-          import('./features/shop/order-history/order-history.component').then((m) => m.OrderHistoryComponent),
+          import('./features/shop/account/account-hub.component').then((m) => m.AccountHubComponent),
+      },
+      {
+        path: 'account/orders',
+        redirectTo: 'account',
+        pathMatch: 'full'
       },
       {
         path: 'news',

@@ -157,7 +157,7 @@
                 </td>
                 <td class="td-logo">
                   @if (brand.logoUrl) {
-                    <img [src]="brand.logoUrl" [alt]="brand.name" class="brand-logo" />
+                    <img [src]="brand.logoUrl" [alt]="brand.name" class="brand-logo" (error)="handleLogoError($event, brand.slug)" />
                   } @else {
                     <div class="logo-placeholder">{{ brand.name[0] }}</div>
                   }

@@ -16,8 +16,6 @@
         <a routerLink="/news" class="top-link">Tin tức công nghệ</a>
         <span class="info-divider">|</span>
         <span class="info-item">Cam kết 100% hàng chính hãng</span>
-        <span class="info-divider">|</span>
-        <a routerLink="/admin" class="top-link">Kênh Quản trị viên</a>
       </div>
     </div>
   </div>
@@ -100,13 +98,15 @@
         <!-- Auth -->
         @if (authService.currentUser()) {
           <div class="user-profile-menu">
-            <div class="user-greeting">
-              <span class="greeting-sub">Xin chào,</span>
-              <span class="greeting-name">{{ authService.currentUser()?.fullName || 'Khách hàng' }}</span>
-            </div>
+            <a routerLink="/account" class="user-greeting-link" title="Quản lý tài khoản">
+              <div class="user-greeting">
+                <span class="greeting-sub">Xin chào,</span>
+                <span class="greeting-name">{{ authService.currentUser()?.fullName || 'Khách hàng' }}</span>
+              </div>
+            </a>
             <div class="user-dropdown-actions">
-              <a routerLink="/account/orders" class="orders-link" title="Xem đơn hàng của tôi">
-                Đơn hàng
+              <a routerLink="/account" class="orders-link" title="Quản lý tài khoản & Đơn mua">
+                Tài khoản
               </a>
               <button type="button" class="logout-btn" (click)="logout()" title="Đăng xuất">
                 Đăng xuất
@@ -150,9 +150,13 @@
                 class="parent-cat-link"
                 (click)="closeMegaMenu()"
               >
-                @if (parent.iconUrl) {
-                  <img [src]="parent.iconUrl" [alt]="parent.name" loading="lazy" class="cat-icon-thumb" />
-                }
+                <img
+                  [src]="formatCategoryIcon(parent.iconUrl, parent.slug)"
+                  [alt]="parent.name"
+                  loading="lazy"
+                  class="cat-icon-thumb"
+                  (error)="handleImageError($event, '/assets/categories/' + parent.slug + '.png')"
+                />
                 <span>{{ parent.name }}</span>
               </a>
 

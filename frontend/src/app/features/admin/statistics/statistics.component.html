@@ -1,0 +1,257 @@
+<div class="statistics-page">
+
+  <!-- ── Topbar & Filter Controls ── -->
+  <div class="stats-topbar">
+    <div>
+      <h1 class="page-title">Báo cáo & Thống kê Phân tích</h1>
+      <p class="page-subtitle">Phân tích chuyên sâu doanh thu, đơn hàng, tăng trưởng và cơ cấu sản phẩm</p>
+    </div>
+    <div class="topbar-actions">
+      @if (refreshMessage()) {
+        <span class="refresh-msg">{{ refreshMessage() }}</span>
+      }
+      <button class="btn-refresh" (click)="refreshCache()" [disabled]="isRefreshing()" title="Xóa cache và tính toán lại">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" [class.spinning]="isRefreshing()">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        Làm mới số liệu
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Period Selector Toolbar ── -->
+  <div class="filter-toolbar">
+    <div class="period-buttons">
+      <button class="period-btn" [class.active]="activePeriod() === 'today'" (click)="applyPeriod('today')">Hôm nay</button>
+      <button class="period-btn" [class.active]="activePeriod() === '7days'" (click)="applyPeriod('7days')">7 ngày qua</button>
+      <button class="period-btn" [class.active]="activePeriod() === '30days'" (click)="applyPeriod('30days')">30 ngày qua</button>
+      <button class="period-btn" [class.active]="activePeriod() === 'month'" (click)="applyPeriod('month')">Tháng này</button>
+      <button class="period-btn" [class.active]="activePeriod() === 'year'" (click)="applyPeriod('year')">Năm nay</button>
+    </div>
+
+    <div class="custom-date-group">
+      <span class="custom-label">Hoặc chọn ngày:</span>
+      <input type="date" [ngModel]="customStartDate()" (ngModelChange)="customStartDate.set($event)" class="date-input" />
+      <span class="date-sep">&rarr;</span>
+      <input type="date" [ngModel]="customEndDate()" (ngModelChange)="customEndDate.set($event)" class="date-input" />
+      <button class="btn-apply" (click)="applyCustomRange()" [disabled]="!customStartDate() || !customEndDate()">Lọc</button>
+    </div>
+  </div>
+
+  <!-- ── KPI Cards Grid ── -->
+  <div class="kpi-grid">
+    <!-- Tổng Doanh Thu -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="kpi-icon">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Tổng Doanh thu</span>
+        <span class="kpi-val">{{ formatCurrency(overview()?.totalRevenue) }}</span>
+        <div class="kpi-delta" [class.positive]="(overview()?.revenueGrowthPercent || 0) >= 0" [class.negative]="(overview()?.revenueGrowthPercent || 0) < 0">
+          {{ (overview()?.revenueGrowthPercent || 0) >= 0 ? '+' : '' }}{{ overview()?.revenueGrowthPercent || 0 }}% so với kỳ trước
+        </div>
+      </div>
+    </div>
+
+    <!-- Tổng Đơn Hàng -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="kpi-icon">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Tổng Đơn hàng</span>
+        <span class="kpi-val">{{ overview()?.totalOrders || 0 }}</span>
+        <div class="kpi-delta" [class.positive]="(overview()?.ordersGrowthPercent || 0) >= 0" [class.negative]="(overview()?.ordersGrowthPercent || 0) < 0">
+          {{ (overview()?.ordersGrowthPercent || 0) >= 0 ? '+' : '' }}{{ overview()?.ordersGrowthPercent || 0 }}% so với kỳ trước
+        </div>
+      </div>
+    </div>
+
+    <!-- Giá Trị Trung Bình / Đơn (AOV) -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="kpi-icon">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Giá trị trung bình / Đơn (AOV)</span>
+        <span class="kpi-val">{{ formatCurrency(overview()?.averageOrderValue) }}</span>
+        <div class="kpi-delta neutral">Hiệu suất đơn hàng</div>
+      </div>
+    </div>
+
+    <!-- Khách Hàng Mới -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="kpi-icon">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Khách hàng Mới</span>
+        <span class="kpi-val">{{ overview()?.newCustomers || 0 }}</span>
+        <div class="kpi-delta" [class.positive]="(overview()?.customerGrowthPercent || 0) >= 0" [class.negative]="(overview()?.customerGrowthPercent || 0) < 0">
+          {{ (overview()?.customerGrowthPercent || 0) >= 0 ? '+' : '' }}{{ overview()?.customerGrowthPercent || 0 }}% so với kỳ trước
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Chart: Revenue & Volume Area Chart ── -->
+  <div class="chart-section-card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Biểu đồ Biến động Doanh thu & Lượng đơn</h2>
+        <span class="card-subtitle">Chi tiết theo từng mốc thời gian trong khoảng chọn</span>
+      </div>
+      @if (hoveredPoint()) {
+        <div class="hovered-badge">
+          <span class="hover-date">{{ hoveredPoint()?.dateLabel }}</span>:
+          <strong>{{ formatCurrency(hoveredPoint()?.revenue) }}</strong> ({{ hoveredPoint()?.orderCount }} đơn)
+        </div>
+      }
+    </div>
+
+    <div class="svg-chart-container">
+      <svg [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight" class="analytics-svg" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="statsAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2563eb" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Grid lines -->
+        <line [attr.x1]="paddingX" [attr.y1]="paddingY" [attr.x2]="chartWidth - paddingX" [attr.y2]="paddingY" stroke="#f1f5f9" stroke-width="1"/>
+        <line [attr.x1]="paddingX" [attr.y1]="chartHeight / 2" [attr.x2]="chartWidth - paddingX" [attr.y2]="chartHeight / 2" stroke="#f1f5f9" stroke-width="1"/>
+        <line [attr.x1]="paddingX" [attr.y1]="chartHeight - paddingY" [attr.x2]="chartWidth - paddingX" [attr.y2]="chartHeight - paddingY" stroke="#e2e8f0" stroke-width="1"/>
+
+        <!-- Area fill -->
+        @if (getSvgAreaPath()) {
+          <path [attr.d]="getSvgAreaPath()" fill="url(#statsAreaGrad)"/>
+        }
+
+        <!-- Line curve -->
+        @if (getSvgPath()) {
+          <path [attr.d]="getSvgPath()" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        }
+
+        <!-- Data points -->
+        @for (pt of getSvgPoints(); track pt.data.dateLabel) {
+          <circle
+            [attr.cx]="pt.x"
+            [attr.cy]="pt.y"
+            r="4.5"
+            class="chart-dot"
+            (mouseenter)="onPointHover(pt)"
+            (mouseleave)="onPointLeave()"
+          />
+        }
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── Two Column Insights: Category Shares & Order Status Breakdown ── -->
+  <div class="insights-grid">
+
+    <!-- Category Revenue Share -->
+    <div class="insight-card">
+      <div class="card-header">
+        <h3 class="card-title">Tỷ trọng Doanh thu theo Danh mục</h3>
+      </div>
+      @if (categoryShares().length === 0) {
+        <div class="empty-hint">Chưa có doanh số trong kỳ</div>
+      } @else {
+        <div class="category-list">
+          @for (cat of categoryShares(); track cat.categoryId) {
+            <div class="cat-item">
+              <div class="cat-header">
+                <span class="cat-name">{{ cat.categoryName }}</span>
+                <span class="cat-val">{{ formatCurrency(cat.revenue) }} ({{ cat.percentageShare }}%)</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="cat.percentageShare"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Order Status Distribution -->
+    <div class="insight-card">
+      <div class="card-header">
+        <h3 class="card-title">Phân bổ Trạng thái Đơn hàng ({{ totalStatusOrders() }} đơn)</h3>
+      </div>
+      <div class="status-list">
+        @for (entry of orderStatusDist() | keyvalue; track entry.key) {
+          <div class="status-item">
+            <div class="status-header">
+              <span class="status-label-name">{{ getStatusLabel(entry.key) }}</span>
+              <span class="status-count-val">{{ entry.value }} đơn ({{ getStatusPercent(entry.value) }}%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [class]="'status-fill--' + entry.key.toLowerCase()" [style.width.%]="getStatusPercent(entry.value)"></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Top 10 Best Selling Products ── -->
+  <div class="top-sellers-card">
+    <div class="card-header">
+      <h3 class="card-title">Top 10 Sản phẩm Bán chạy nhất</h3>
+    </div>
+    @if (topSellers().length === 0) {
+      <div class="empty-hint">Chưa có sản phẩm nào phát sinh doanh số</div>
+    } @else {
+      <div class="table-wrap">
+        <table class="sellers-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Top</th>
+              <th>Sản phẩm</th>
+              <th>Danh mục</th>
+              <th class="th-right">Số lượng bán</th>
+              <th class="th-right">Tổng doanh thu</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of topSellers(); track item.productId; let rank = $index) {
+              <tr>
+                <td>
+                  <span class="rank-badge" [class.rank-1]="rank === 0" [class.rank-2]="rank === 1" [class.rank-3]="rank === 2">
+                    {{ rank + 1 }}
+                  </span>
+                </td>
+                <td class="product-cell">
+                  <span class="product-title">{{ item.productName }}</span>
+                </td>
+                <td><span class="cat-badge">{{ item.categoryName }}</span></td>
+                <td class="td-right"><strong>{{ item.totalQuantitySold }}</strong></td>
+                <td class="td-right revenue-highlight"><strong>{{ formatCurrency(item.totalRevenueGenerated) }}</strong></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+</div>

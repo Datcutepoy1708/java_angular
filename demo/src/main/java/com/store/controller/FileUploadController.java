@@ -40,10 +40,10 @@ public class FileUploadController {
     private final FileSecurityValidator fileSecurityValidator;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Upload an image file",
-            description = "Upload image file (JPG, PNG, WEBP, SVG, GIF up to 5MB). Enforces strict Magic Bytes header validation, UUID renaming, and admin/staff authorization."
+            description = "Upload image file (JPG, PNG, WEBP, SVG, GIF up to 5MB). Enforces strict Magic Bytes header validation, UUID renaming, and authenticated user access."
     )
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadFile(@RequestParam("file") MultipartFile file) {
         // 1. Strict Security Validation (Size, Extension, and Magic Bytes Header Inspection)

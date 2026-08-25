@@ -96,10 +96,11 @@
           >
             <div class="cat-img-box">
               <img
-                [src]="cat.iconUrl || 'http://localhost:8080/uploads/categories/laptop.png'"
+                [src]="formatCategoryIcon(cat.iconUrl, cat.slug)"
                 [alt]="cat.name"
                 loading="lazy"
                 class="cat-img"
+                (error)="handleImageError($event, '/assets/categories/' + cat.slug + '.png')"
               />
             </div>
             <span class="cat-name">{{ cat.name }}</span>
@@ -118,15 +119,13 @@
           <h2 class="section-title">Sản phẩm Khuyến mãi tốt nhất</h2>
           <span class="deals-sub">Ưu đãi giảm giá trực tiếp từ chính hãng</span>
         </div>
-        <a [routerLink]="['/products']" class="view-all-link">Xem toàn bộ ưu đãi &rarr;</a>
+        <a [routerLink]="['/products']" class="view-all-link">Xem tất cả &rarr;</a>
       </div>
 
       @if (loadingDeals()) {
-        <div class="deals-skeleton-grid">
-          @for (i of [1,2,3,4]; track i) {
-            <div class="card-skeleton"></div>
-          }
-        </div>
+        <div class="loading-hint">Đang tải sản phẩm ưu đãi...</div>
+      } @else if (hotDeals().length === 0) {
+        <div class="empty-hint">Hiện chưa có chương trình khuyến mãi nào</div>
       } @else {
         <div class="product-grid">
           @for (product of hotDeals(); track product.productId) {
@@ -140,33 +139,32 @@
     </div>
   </section>
 
-  <!-- ── 4. Best Sellers by Category (Tabbed Section) ──────────────── -->
+  <!-- ── 4. Best Sellers (Sản phẩm bán chạy) ───────────────────────── -->
   <section class="section best-sellers-section">
     <div class="container">
       <div class="section-heading">
-        <h2 class="section-title">Sản phẩm Bán chạy theo Ngành hàng</h2>
-        
-        <!-- Category Filter Tabs -->
-        <div class="bestseller-tabs">
-          @for (tab of bestSellerTabs; track tab.id) {
-            <button
-              type="button"
-              class="tab-pill-btn"
-              [class.active]="activeBestSellerTab() === tab.id"
-              (click)="setTab(tab.id)"
-            >
-              {{ tab.label }}
-            </button>
-          }
-        </div>
+        <h2 class="section-title">Sản phẩm Bán chạy nhất</h2>
+        <span class="section-sub-text">Được khách hàng Complexus tin dùng nhiều nhất tuần qua</span>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="best-seller-tabs">
+        @for (tab of bestSellerTabs; track tab.id) {
+          <button
+            type="button"
+            class="tab-pill"
+            [class.active]="activeBestSellerTab() === tab.id"
+            (click)="setTab(tab.id)"
+          >
+            {{ tab.label }}
+          </button>
+        }
       </div>
 
       @if (loadingBestSellers()) {
-        <div class="deals-skeleton-grid">
-          @for (i of [1,2,3,4,5,6,7,8]; track i) {
-            <div class="card-skeleton"></div>
-          }
-        </div>
+        <div class="loading-hint">Đang tải sản phẩm bán chạy...</div>
+      } @else if (bestSellers().length === 0) {
+        <div class="empty-hint">Không có sản phẩm nào trong danh mục này</div>
       } @else {
         <div class="product-grid">
           @for (product of bestSellers(); track product.productId) {
@@ -196,12 +194,13 @@
             class="brand-card"
             [title]="brand.name + ' - ' + (brand.country || '')"
           >
-            @if (brand.logoUrl) {
+            @if (brand.logoUrl || brand.slug) {
               <img
-                [src]="brand.logoUrl"
+                [src]="formatBrandLogo(brand.logoUrl, brand.slug)"
                 [alt]="brand.name"
                 loading="lazy"
                 class="brand-logo-img"
+                (error)="handleImageError($event, '/assets/brands/' + brand.slug + '.svg')"
               />
             } @else {
               <span class="brand-name-fallback">{{ brand.name }}</span>
@@ -222,8 +221,8 @@
             <p class="section-subtitle">Cập nhật xu hướng phần cứng máy tính và tin tức mới nhất</p>
           </div>
           <a routerLink="/news" class="view-all-link">
-            Xem tất cả tin tức
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
+            <span>Xem tất cả tin tức</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg" width="16" height="16" aria-hidden="true">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </a>

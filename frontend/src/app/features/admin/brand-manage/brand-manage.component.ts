@@ -374,6 +374,14 @@ export class BrandManageComponent implements OnInit {
     this.logoPreview.set(null);
   }
 
+  handleLogoError(event: Event, slug?: string): void {
+    const target = event.target as HTMLImageElement;
+    const fallback = slug ? `/assets/brands/${slug}.svg` : '';
+    if (target && fallback && !target.src.endsWith(fallback)) {
+      target.src = fallback;
+    }
+  }
+
   // ── Save ──────────────────────────────────────────────────────
   save(): void {
     if (this.form.invalid) {

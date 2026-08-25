@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { StatisticsService } from '../../../core/services/statistics.service';
+import { OrderService } from '../../../core/services/order.service';
+import { DashboardOverview, RevenueChartDataPoint, TopSellingProduct } from '../../../core/models/statistics.model';
+import { Order } from '../../../core/models/order.model';
 
 interface StatCard {
   label: string;
@@ -7,57 +13,136 @@ interface StatCard {
   positive: boolean;
 }
 
-interface RecentOrder {
-  orderId: string;
-  customer: string;
-  status: 'Processing' | 'Completed' | 'Pending';
-}
-
-interface BestSeller {
-  rank: number;
-  name: string;
-  sold: number;
-}
-
 @Component({
   selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DashboardComponent {
-  readonly stats = signal<StatCard[]>([
-    { label: 'Doanh thu hôm nay', value: '$4,250.00', delta: '+12% so với hôm qua', positive: true },
-    { label: 'Đơn hàng hôm nay', value: '48', delta: '+5% so với hôm qua', positive: true },
-    { label: 'Khách hàng mới', value: '12', delta: '-2% so với hôm qua', positive: false },
-    { label: 'Cảnh báo tồn kho thấp', value: '5', delta: 'Cần xử lý', positive: false, },
-  ]);
+export class DashboardComponent implements OnInit {
+  private readonly statisticsService = inject(StatisticsService);
+  private readonly orderService = inject(OrderService);
 
-  readonly bestSellers = signal<BestSeller[]>([
-    { rank: 1, name: 'Intel Core i7-14700K', sold: 124 },
-    { rank: 2, name: 'NVIDIA RTX 4070 SUPER', sold: 89 },
-    { rank: 3, name: 'Corsair Dominator RAM', sold: 76 },
-  ]);
+  readonly isLoading = signal<boolean>(true);
+  readonly overview = signal<DashboardOverview | null>(null);
+  readonly topSellers = signal<TopSellingProduct[]>([]);
+  readonly recentOrders = signal<Order[]>([]);
+  readonly revenueTrend = signal<RevenueChartDataPoint[]>([]);
 
-  readonly recentOrders = signal<RecentOrder[]>([
-    { orderId: '#CX-8842', customer: 'Nguyễn Văn An', status: 'Processing' },
-    { orderId: '#CX-8841', customer: 'Trần Thị Bình', status: 'Completed' },
-    { orderId: '#CX-8840', customer: 'Lê Minh Cường', status: 'Pending' },
-  ]);
+  readonly chartPath = signal<string>('M 30 160 L 440 160');
 
-  // SVG path for sparkline chart (decorative, matches mockup curve shape)
-  readonly chartPath = 'M 30 160 C 60 150, 80 130, 110 120 C 140 110, 160 80, 190 70 C 220 60, 240 90, 270 85 C 300 80, 330 30, 360 20 C 390 10, 410 40, 440 35';
+  ngOnInit(): void {
+    this.loadDashboardData();
+  }
+
+  loadDashboardData(): void {
+    this.isLoading.set(true);
+
+    const today = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // 1. Overview KPIs
+    this.statisticsService.getOverview(today, today).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.overview.set(res.data);
+        }
+      },
+      error: (err) => console.error('Failed to load overview', err)
+    });
+
+    // 2. Revenue Trend (30 days)
+    this.statisticsService.getRevenueTrend('day', thirtyDaysAgo, today).subscribe({
+      next: (res) => {
+        if (res.data && res.data.length > 0) {
+          this.revenueTrend.set(res.data);
+          this.generateChartPath(res.data);
+        }
+      },
+      error: (err) => console.error('Failed to load trend', err)
+    });
+
+    // 3. Top Selling
+    this.statisticsService.getTopSelling(5, thirtyDaysAgo, today).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.topSellers.set(res.data);
+        }
+      },
+      error: (err) => console.error('Failed to load top sellers', err)
+    });
+
+    // 4. Recent Orders
+    this.orderService.getAdminOrders({ page: 0, size: 5 }).subscribe({
+      next: (res) => {
+        if (res.data && res.data.content) {
+          this.recentOrders.set(res.data.content);
+        }
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load recent orders', err);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  private generateChartPath(data: RevenueChartDataPoint[]): void {
+    if (!data || data.length === 0) return;
+
+    const width = 440;
+    const height = 140;
+    const paddingX = 30;
+    const paddingY = 20;
+
+    const maxRev = Math.max(...data.map(d => Number(d.revenue) || 0), 1000000);
+    const stepX = (width - paddingX) / Math.max(data.length - 1, 1);
+
+    const points = data.map((d, i) => {
+      const x = paddingX + i * stepX;
+      const normalizedY = (Number(d.revenue) || 0) / maxRev;
+      const y = (height + paddingY) - (normalizedY * height);
+      return { x, y };
+    });
+
+    if (points.length === 1) {
+      this.chartPath.set(`M ${points[0].x} ${points[0].y} L 440 ${points[0].y}`);
+      return;
+    }
+
+    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i];
+      const p1 = points[i + 1];
+      const cpX = (p0.x + p1.x) / 2;
+      d += ` C ${cpX.toFixed(1)} ${p0.y.toFixed(1)}, ${cpX.toFixed(1)} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+    }
+
+    this.chartPath.set(d);
+  }
+
+  formatCurrency(value: number | undefined): string {
+    if (value === undefined || value === null) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  }
 
   getStatusClass(status: string): string {
-    return status.toLowerCase();
+    return status ? status.toLowerCase() : 'pending';
   }
 
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
-      Processing: 'Đang xử lý',
-      Completed: 'Hoàn thành',
-      Pending: 'Chờ xử lý',
+      PENDING: 'Chờ xử lý',
+      CONFIRMED: 'Đã xác nhận',
+      PROCESSING: 'Đang chuẩn bị',
+      SHIPPING: 'Đang giao hàng',
+      DELIVERED: 'Đã giao hàng',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+      REFUNDED: 'Đã hoàn tiền'
     };
-    return map[status] ?? status;
+    return map[status] || status;
   }
 }

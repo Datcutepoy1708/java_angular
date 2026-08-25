@@ -1,9 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { describe, it, expect, vi } from 'vitest';
 import { ProductDetailComponent } from './product-detail.component';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
+import { ReviewService } from '../../../core/services/review.service';
+import { InventoryService } from '../../../core/services/inventory.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 describe('ProductDetailComponent', () => {
   let component: ProductDetailComponent;
@@ -50,6 +54,20 @@ describe('ProductDetailComponent', () => {
     showToast: vi.fn(),
   };
 
+  const mockReviewService = {
+    getProductRatingSummary: () => of({ success: true, data: { averageRating: 5, totalReviews: 0, ratingBreakdown: {} } }),
+    getProductReviews: () => of({ success: true, data: { content: [], totalElements: 0 } })
+  };
+
+  const mockInventoryService = {
+    getVariantStockSummary: () => of({ success: true, data: { totalQuantity: 10, totalReserved: 0, totalAvailable: 10 } })
+  };
+
+  const mockAuthService = {
+    currentUser: () => null,
+    isLoggedIn: () => false
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProductDetailComponent],
@@ -57,6 +75,9 @@ describe('ProductDetailComponent', () => {
         provideRouter([]),
         { provide: ProductService, useValue: mockProductService },
         { provide: CartService, useValue: mockCartService },
+        { provide: ReviewService, useValue: mockReviewService },
+        { provide: InventoryService, useValue: mockInventoryService },
+        { provide: AuthService, useValue: mockAuthService }
       ],
     }).compileComponents();
 

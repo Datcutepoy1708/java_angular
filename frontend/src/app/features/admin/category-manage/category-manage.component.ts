@@ -490,6 +490,14 @@ export class CategoryManageComponent implements OnInit {
     this.form.patchValue({ iconUrl: '' });
   }
 
+  handleIconError(event: Event, slug?: string): void {
+    const target = event.target as HTMLImageElement;
+    const fallback = slug ? `/assets/categories/${slug}.png` : '/assets/categories/laptop.png';
+    if (target && !target.src.endsWith(fallback)) {
+      target.src = fallback;
+    }
+  }
+
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();

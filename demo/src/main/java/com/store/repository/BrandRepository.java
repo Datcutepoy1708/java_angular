@@ -14,8 +14,8 @@ import java.util.Optional;
 @Repository
 public interface BrandRepository extends JpaRepository<Brand, Integer> {
 
-    // Active only (deleted_at IS NULL)
-    @Query("SELECT b FROM Brand b WHERE b.deletedAt IS NULL ORDER BY b.name ASC")
+    // Active only (deleted_at IS NULL and status = ACTIVE)
+    @Query("SELECT b FROM Brand b WHERE b.deletedAt IS NULL AND b.status = com.store.entity.brand.BrandStatus.ACTIVE ORDER BY b.brandId ASC")
     List<Brand> findAllActive();
 
     @Query("SELECT b FROM Brand b WHERE b.deletedAt IS NULL " +

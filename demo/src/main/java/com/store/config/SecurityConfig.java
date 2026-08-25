@@ -66,8 +66,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/settings/**").hasRole("ADMIN")
                         // Static uploads public read
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-                        // Upload API (Restricted to ADMIN/STAFF)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/upload/**").hasAnyRole("ADMIN", "STAFF")
+                        // Upload API (Authenticated users: Admin, Staff, Customer for avatars/reviews)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/upload/**").authenticated()
                         // Auth APIs
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // OpenAPI / Swagger

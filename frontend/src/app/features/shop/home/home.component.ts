@@ -194,7 +194,10 @@ export class HomeComponent implements OnInit {
   loadBrands(): void {
     this.brandService.getAll().subscribe({
       next: (res: { data: BrandResponse[] }) => {
-        this.brands.set(res.data);
+        const cleanBrands = (res.data || []).filter(
+          (b) => b.name && !b.name.startsWith('Brand Cache Test') && !b.deleted
+        );
+        this.brands.set(cleanBrands.slice(0, 18));
       },
     });
   }
@@ -215,5 +218,24 @@ export class HomeComponent implements OnInit {
 
   onAddToCart(product: ProductResponse): void {
     console.log('Thêm sản phẩm vào giỏ hàng:', product.name);
+  }
+
+  formatCategoryIcon(url: string | null | undefined, slug?: string): string {
+    if (url && url.trim()) return url;
+    if (slug) return `/assets/categories/${slug}.png`;
+    return '/assets/categories/laptop.png';
+  }
+
+  formatBrandLogo(url: string | null | undefined, slug?: string): string {
+    if (slug) return `/assets/brands/${slug}.svg`;
+    if (url && url.trim()) return url;
+    return '';
+  }
+
+  handleImageError(event: Event, fallbackUrl: string): void {
+    const target = event.target as HTMLImageElement;
+    if (target && target.src !== fallbackUrl) {
+      target.src = fallbackUrl;
+    }
   }
 }
