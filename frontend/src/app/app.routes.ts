@@ -86,6 +86,11 @@ export const routes: Routes = [
             path: 'inventory',
             loadComponent: () =>
               import('./features/admin/inventory-manage/inventory-manage.component').then((m) => m.InventoryManageComponent)
+          },
+          {
+            path: 'orders',
+            loadComponent: () =>
+              import('./features/admin/order-manage/order-manage.component').then((m) => m.OrderManageComponent)
           }
         ]
       }
@@ -117,6 +122,26 @@ export const routes: Routes = [
         path: 'cart',
         loadComponent: () =>
           import('./features/shop/cart/cart.component').then((m) => m.CartComponent),
+      },
+      {
+        path: 'checkout',
+        loadComponent: () =>
+          import('./features/shop/checkout/checkout.component').then((m) => m.CheckoutComponent),
+      },
+      {
+        path: 'order-success/:orderCode',
+        loadComponent: () =>
+          import('./features/shop/order-success/order-success.component').then((m) => m.OrderSuccessComponent),
+      },
+      {
+        path: 'orders/:orderCode',
+        loadComponent: () =>
+          import('./features/shop/order-tracking/order-tracking.component').then((m) => m.OrderTrackingComponent),
+      },
+      {
+        path: 'account/orders',
+        loadComponent: () =>
+          import('./features/shop/order-history/order-history.component').then((m) => m.OrderHistoryComponent),
       },
     ],
   },

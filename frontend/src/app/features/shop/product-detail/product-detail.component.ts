@@ -181,7 +181,7 @@ export class ProductDetailComponent implements OnInit {
     if (v) {
       this.cartService.addToCart(v.variantId, this.quantity()).subscribe((success) => {
         if (success) {
-          this.router.navigate(['/cart']);
+          this.router.navigate(['/checkout']);
         }
       });
     }

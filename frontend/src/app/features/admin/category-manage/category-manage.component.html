@@ -314,7 +314,12 @@
         <h3 class="modal-title">
           {{ formMode() === 'create' ? 'Thêm danh mục mới' : 'Cập nhật danh mục' }}
         </h3>
-        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Đóng cửa sổ">✕</button>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Đóng cửa sổ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Modal Body Form -->
@@ -383,7 +388,7 @@
             <div class="form-label-row">
               <label class="form-label" for="cat-slug">Đường dẫn tĩnh (Slug)</label>
               <button type="button" class="link-action" (click)="toggleSlugEdit()">
-                {{ slugEditable() ? '🔒 Khóa lại' : '✏️ Chỉnh sửa slug' }}
+                {{ slugEditable() ? 'Khóa slug' : 'Chỉnh sửa slug' }}
               </button>
             </div>
             <input
@@ -437,7 +442,7 @@
   [isOpen]="confirmDeleteId() !== null"
   title="Bạn có chắc chắn muốn xóa không?"
   [message]="'Danh mục <strong>&quot;' + confirmDeleteName() + '&quot;</strong> sẽ được chuyển vào thùng rác (xóa mềm).'"
-  [warningMessage]="confirmDeleteChildCount() > 0 ? '⚠️ Cảnh báo phân cấp: Danh mục này đang có ' + confirmDeleteChildCount() + ' danh mục con. Toàn bộ các danh mục con và cháu trong cây cũng sẽ tự động bị chuyển vào thùng rác.' : null"
+  [warningMessage]="confirmDeleteChildCount() > 0 ? 'Cảnh báo phân cấp: Danh mục này đang có ' + confirmDeleteChildCount() + ' danh mục con. Toàn bộ các danh mục con và cháu trong cây cũng sẽ tự động bị chuyển vào thùng rác.' : null"
   confirmText="Chắc chắn, xóa ngay"
   cancelText="Hủy bỏ"
   variant="danger"

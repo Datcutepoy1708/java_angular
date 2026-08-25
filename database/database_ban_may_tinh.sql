@@ -481,6 +481,7 @@ CREATE TABLE `order_items` (
   `order_item_id` bigint NOT NULL AUTO_INCREMENT,
   `order_id` bigint NOT NULL,
   `variant_id` bigint NOT NULL,
+  `warehouse_id` int DEFAULT NULL,
   `product_name_snapshot` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `price_snapshot` decimal(15,2) NOT NULL,
   `quantity` int NOT NULL,
@@ -488,8 +489,10 @@ CREATE TABLE `order_items` (
   PRIMARY KEY (`order_item_id`),
   KEY `order_id` (`order_id`),
   KEY `variant_id` (`variant_id`),
+  KEY `warehouse_id` (`warehouse_id`),
   CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
-  CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`)
+  CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`),
+  CONSTRAINT `fk_order_items_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`warehouse_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

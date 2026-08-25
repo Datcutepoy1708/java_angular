@@ -1,0 +1,526 @@
+package com.store.service.impl;
+
+import com.store.dto.request.order.CreateOrderRequest;
+import com.store.dto.request.order.OrderFilterRequest;
+import com.store.dto.request.order.UpdateOrderStatusRequest;
+import com.store.dto.request.order.UpdatePaymentStatusRequest;
+import com.store.dto.response.order.OrderItemResponse;
+import com.store.dto.response.order.OrderMetricsResponse;
+import com.store.dto.response.order.OrderResponse;
+import com.store.dto.response.order.OrderStatusHistoryResponse;
+import com.store.entity.cart.CartItem;
+import com.store.entity.inventory.Inventory;
+import com.store.entity.order.Address;
+import com.store.entity.order.Order;
+import com.store.entity.order.OrderItem;
+import com.store.entity.order.OrderStatus;
+import com.store.entity.order.OrderStatusHistory;
+import com.store.entity.order.PaymentMethod;
+import com.store.entity.order.PaymentStatus;
+import com.store.entity.product.Product;
+import com.store.entity.product.ProductImage;
+import com.store.entity.product.ProductStatus;
+import com.store.entity.product.ProductVariant;
+import com.store.entity.user.User;
+import com.store.exception.InsufficientStockException;
+import com.store.exception.ResourceNotFoundException;
+import com.store.repository.AddressRepository;
+import com.store.repository.CartItemRepository;
+import com.store.repository.InventoryRepository;
+import com.store.repository.OrderItemRepository;
+import com.store.repository.OrderRepository;
+import com.store.repository.OrderStatusHistoryRepository;
+import com.store.repository.ProductImageRepository;
+import com.store.repository.UserRepository;
+import com.store.service.OrderService;
+import jakarta.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class OrderServiceImpl implements OrderService {
+
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final AddressRepository addressRepository;
+    private final CartItemRepository cartItemRepository;
+    private final InventoryRepository inventoryRepository;
+    private final UserRepository userRepository;
+    private final ProductImageRepository productImageRepository;
+
+    private static final String ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final Random RANDOM = new SecureRandom();
+
+    @Override
+    @Transactional
+    public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
+        log.info("User {} is creating an order", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        List<CartItem> cartItems = cartItemRepository.findByUserIdWithDetails(userId);
+        if (cartItems == null || cartItems.isEmpty()) {
+            throw new IllegalStateException("Giỏ hàng của bạn đang trống, không thể tiến hành đặt hàng");
+        }
+
+        // 1. Resolve receiver info
+        Address selectedAddress = null;
+        String receiverName;
+        String receiverPhone;
+        String shippingAddress;
+
+        if (request.getAddressId() != null) {
+            selectedAddress = addressRepository.findByAddressIdAndUserUserId(request.getAddressId(), userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + request.getAddressId()));
+            receiverName = selectedAddress.getReceiverName();
+            receiverPhone = selectedAddress.getPhone();
+            shippingAddress = selectedAddress.getFullAddress();
+        } else {
+            receiverName = request.getReceiverName();
+            receiverPhone = request.getReceiverPhone();
+            if (request.getShippingAddress() != null && !request.getShippingAddress().isBlank()) {
+                shippingAddress = request.getShippingAddress();
+            } else {
+                StringBuilder sb = new StringBuilder();
+                if (request.getDetailAddress() != null) sb.append(request.getDetailAddress());
+                if (request.getWard() != null) { if (!sb.isEmpty()) sb.append(", "); sb.append(request.getWard()); }
+                if (request.getDistrict() != null) { if (!sb.isEmpty()) sb.append(", "); sb.append(request.getDistrict()); }
+                if (request.getProvince() != null) { if (!sb.isEmpty()) sb.append(", "); sb.append(request.getProvince()); }
+                shippingAddress = sb.toString();
+            }
+        }
+
+        if (receiverName == null || receiverName.isBlank()) {
+            receiverName = user.getFullName();
+        }
+        if (receiverPhone == null || receiverPhone.isBlank()) {
+            receiverPhone = user.getPhone();
+        }
+        if (shippingAddress == null || shippingAddress.isBlank()) {
+            throw new IllegalArgumentException("Địa chỉ giao hàng không được để trống");
+        }
+
+        PaymentMethod paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD;
+
+        // 2. Deadlock Prevention: Sort items deterministically by variantId ASC
+        List<CartItem> sortedItems = new ArrayList<>(cartItems);
+        sortedItems.sort(Comparator.comparing(item -> item.getVariant().getVariantId()));
+
+        // 3. Single-Warehouse Allocation & Atomic Stock Reservation Loop
+        BigDecimal subtotal = BigDecimal.ZERO;
+        List<OrderItem> orderItemsToSave = new ArrayList<>();
+
+        for (CartItem cartItem : sortedItems) {
+            ProductVariant variant = cartItem.getVariant();
+            Product product = variant.getProduct();
+
+            if (variant.getDeletedAt() != null || product.getDeletedAt() != null || product.getStatus() != ProductStatus.ACTIVE) {
+                throw new IllegalStateException("Sản phẩm '" + product.getName() + "' không còn kinh doanh hoặc đã bị xóa");
+            }
+
+            int requestedQty = cartItem.getQuantity();
+            if (requestedQty <= 0) {
+                continue;
+            }
+
+            // Find first warehouse with sufficient available stock (ordered by warehouse_id ASC)
+            List<Inventory> availableWarehouses = inventoryRepository.findWarehousesWithAvailableStock(variant.getVariantId(), requestedQty);
+            if (availableWarehouses.isEmpty()) {
+                throw new InsufficientStockException("Sản phẩm '" + product.getName() + " (" + variant.getVariantName() +
+                        ")' không đủ tồn kho tại một chi nhánh duy nhất để đáp ứng số lượng yêu cầu (" + requestedQty + ")");
+            }
+
+            Inventory allocatedInventory = availableWarehouses.get(0);
+            Integer allocatedWarehouseId = allocatedInventory.getWarehouse().getWarehouseId();
+
+            // Atomic conditional reservation in MySQL
+            int reservedRows = inventoryRepository.reserveStockAtomic(variant.getVariantId(), allocatedWarehouseId, requestedQty);
+            if (reservedRows == 0) {
+                throw new InsufficientStockException("Sản phẩm '" + product.getName() + " (" + variant.getVariantName() +
+                        ")' vừa hết tồn kho khả dụng tại chi nhánh");
+            }
+
+            BigDecimal itemPrice = variant.getEffectivePrice();
+            BigDecimal itemSubtotal = itemPrice.multiply(BigDecimal.valueOf(requestedQty));
+            subtotal = subtotal.add(itemSubtotal);
+
+            String productNameSnapshot = product.getName() + (variant.getVariantName() != null && !variant.getVariantName().isBlank() ? " - " + variant.getVariantName() : "");
+
+            OrderItem orderItem = OrderItem.builder()
+                    .variant(variant)
+                    .warehouse(allocatedInventory.getWarehouse())
+                    .productNameSnapshot(productNameSnapshot)
+                    .priceSnapshot(itemPrice)
+                    .quantity(requestedQty)
+                    .subtotal(itemSubtotal)
+                    .build();
+
+            orderItemsToSave.add(orderItem);
+        }
+
+        BigDecimal shippingFee = BigDecimal.ZERO;
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal totalAmount = subtotal.add(shippingFee).subtract(discountAmount);
+
+        // 4. Generate unique order code
+        String orderCode = generateUniqueOrderCode();
+
+        // 5. Create and save Order
+        Order order = Order.builder()
+                .orderCode(orderCode)
+                .user(user)
+                .address(selectedAddress)
+                .receiverName(receiverName)
+                .receiverPhone(receiverPhone)
+                .shippingAddress(shippingAddress)
+                .subtotal(subtotal)
+                .discountAmount(discountAmount)
+                .shippingFee(shippingFee)
+                .totalAmount(totalAmount)
+                .paymentMethod(paymentMethod)
+                .paymentStatus(PaymentStatus.UNPAID)
+                .orderStatus(OrderStatus.PENDING)
+                .note(request.getNote())
+                .build();
+
+        for (OrderItem item : orderItemsToSave) {
+            order.addItem(item);
+        }
+
+        OrderStatusHistory initialHistory = OrderStatusHistory.builder()
+                .order(order)
+                .status(OrderStatus.PENDING.getValue())
+                .note("Đơn hàng được khởi tạo thành công")
+                .changedBy(user)
+                .build();
+        order.addStatusHistory(initialHistory);
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Successfully created order {} (id: {}) for user {}", orderCode, savedOrder.getOrderId(), userId);
+
+        // 6. Clean up user's cart
+        cartItemRepository.deleteByUserUserId(userId);
+
+        return mapOrderToResponse(savedOrder);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getUserOrders(Long userId, Pageable pageable) {
+        return orderRepository.findByUserUserIdOrderByCreatedAtDesc(userId, pageable)
+                .map(this::mapOrderToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByCode(String orderCode, Long userId) {
+        Order order = orderRepository.findByOrderCodeAndUserUserId(orderCode, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with code: " + orderCode));
+        return mapOrderToResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrderByCustomer(String orderCode, Long userId, String reason) {
+        log.info("Customer {} requesting cancellation for order {}", userId, orderCode);
+        Order order = orderRepository.findByOrderCodeAndUserUserId(orderCode, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with code: " + orderCode));
+
+        if (order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new IllegalStateException("Chỉ có thể tự hủy đơn hàng khi đang ở trạng thái Chờ xác nhận (PENDING). Vui lòng liên hệ CSKH để được hỗ trợ.");
+        }
+
+        // Release reserved stock from each item's allocated warehouse
+        releaseOrderStock(order);
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .status(OrderStatus.CANCELLED.getValue())
+                .note("Khách hàng tự hủy đơn" + (reason != null && !reason.isBlank() ? ": " + reason : ""))
+                .changedBy(order.getUser())
+                .build();
+        order.addStatusHistory(history);
+
+        Order updated = orderRepository.save(order);
+        log.info("Order {} successfully cancelled by customer {}", orderCode, userId);
+        return mapOrderToResponse(updated);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getAdminOrders(OrderFilterRequest filter) {
+        Pageable pageable = createPageable(filter);
+
+        Specification<Order> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (filter.getStatus() != null) {
+                predicates.add(cb.equal(root.get("orderStatus"), filter.getStatus()));
+            }
+            if (filter.getPaymentStatus() != null) {
+                predicates.add(cb.equal(root.get("paymentStatus"), filter.getPaymentStatus()));
+            }
+            if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
+                String pattern = "%" + filter.getKeyword().trim().toLowerCase() + "%";
+                Predicate codePred = cb.like(cb.lower(root.get("orderCode")), pattern);
+                Predicate namePred = cb.like(cb.lower(root.get("receiverName")), pattern);
+                Predicate phonePred = cb.like(cb.lower(root.get("receiverPhone")), pattern);
+                predicates.add(cb.or(codePred, namePred, phonePred));
+            }
+            if (filter.getStartDate() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), filter.getStartDate().atStartOfDay()));
+            }
+            if (filter.getEndDate() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), filter.getEndDate().atTime(23, 59, 59)));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return orderRepository.findAll(spec, pageable).map(this::mapOrderToResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getAdminOrderById(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+        return mapOrderToResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatusByAdmin(Long orderId, UpdateOrderStatusRequest request, Long adminUserId) {
+        log.info("Admin {} updating order {} status to {}", adminUserId, orderId, request.getStatus());
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        User adminUser = adminUserId != null ? userRepository.findById(adminUserId).orElse(null) : null;
+        OrderStatus oldStatus = order.getOrderStatus();
+        OrderStatus newStatus = request.getStatus();
+
+        if (oldStatus == newStatus) {
+            return mapOrderToResponse(order);
+        }
+
+        if (oldStatus == OrderStatus.COMPLETED || oldStatus == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Không thể thay đổi trạng thái của đơn hàng đã Hoàn tất hoặc đã Hủy");
+        }
+
+        // Action upon transitioning to COMPLETED
+        if (newStatus == OrderStatus.COMPLETED) {
+            for (OrderItem item : order.getItems()) {
+                if (item.getWarehouse() != null) {
+                    inventoryRepository.deductCompletedStockAtomic(
+                            item.getVariant().getVariantId(),
+                            item.getWarehouse().getWarehouseId(),
+                            item.getQuantity()
+                    );
+                }
+            }
+            if (order.getPaymentMethod() == PaymentMethod.COD && order.getPaymentStatus() == PaymentStatus.UNPAID) {
+                order.setPaymentStatus(PaymentStatus.PAID);
+            }
+        }
+
+        // Action upon transitioning to CANCELLED
+        if (newStatus == OrderStatus.CANCELLED) {
+            releaseOrderStock(order);
+        }
+
+        order.setOrderStatus(newStatus);
+
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .status(newStatus.getValue())
+                .note(request.getNote() != null && !request.getNote().isBlank() ? request.getNote() : "Chuyển trạng thái sang " + newStatus.getValue())
+                .changedBy(adminUser)
+                .build();
+        order.addStatusHistory(history);
+
+        Order saved = orderRepository.save(order);
+        return mapOrderToResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updatePaymentStatusByAdmin(Long orderId, UpdatePaymentStatusRequest request, Long adminUserId) {
+        log.info("Admin {} updating order {} payment status to {}", adminUserId, orderId, request.getPaymentStatus());
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        User adminUser = adminUserId != null ? userRepository.findById(adminUserId).orElse(null) : null;
+        PaymentStatus newPaymentStatus = request.getPaymentStatus();
+
+        order.setPaymentStatus(newPaymentStatus);
+
+        OrderStatusHistory history = OrderStatusHistory.builder()
+                .order(order)
+                .status(order.getOrderStatus().getValue())
+                .note("Cập nhật thanh toán sang " + newPaymentStatus.getValue() + (request.getNote() != null && !request.getNote().isBlank() ? ": " + request.getNote() : ""))
+                .changedBy(adminUser)
+                .build();
+        order.addStatusHistory(history);
+
+        Order saved = orderRepository.save(order);
+        return mapOrderToResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderMetricsResponse getAdminMetrics() {
+        long totalOrders = orderRepository.count();
+        long pending = orderRepository.countByOrderStatus(OrderStatus.PENDING);
+        long confirmed = orderRepository.countByOrderStatus(OrderStatus.CONFIRMED);
+        long processing = orderRepository.countByOrderStatus(OrderStatus.PROCESSING);
+        long shipping = orderRepository.countByOrderStatus(OrderStatus.SHIPPING);
+        long completed = orderRepository.countByOrderStatus(OrderStatus.COMPLETED);
+        long cancelled = orderRepository.countByOrderStatus(OrderStatus.CANCELLED);
+        long unpaid = orderRepository.countByPaymentStatus(PaymentStatus.UNPAID);
+        long paid = orderRepository.countByPaymentStatus(PaymentStatus.PAID);
+        BigDecimal revenue = orderRepository.sumTotalRevenue();
+
+        return OrderMetricsResponse.builder()
+                .totalOrders(totalOrders)
+                .pendingCount(pending)
+                .confirmedCount(confirmed)
+                .processingCount(processing)
+                .shippingCount(shipping)
+                .completedCount(completed)
+                .cancelledCount(cancelled)
+                .unpaidCount(unpaid)
+                .paidCount(paid)
+                .totalRevenue(revenue != null ? revenue : BigDecimal.ZERO)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public int processExpiredPendingOrders() {
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+        List<Order> expiredOrders = orderRepository.findByOrderStatusAndCreatedAtBefore(OrderStatus.PENDING, cutoffTime);
+
+        if (expiredOrders.isEmpty()) {
+            return 0;
+        }
+
+        log.info("Found {} expired PENDING orders to auto-cancel", expiredOrders.size());
+        int count = 0;
+
+        for (Order order : expiredOrders) {
+            try {
+                releaseOrderStock(order);
+                order.setOrderStatus(OrderStatus.CANCELLED);
+
+                OrderStatusHistory history = OrderStatusHistory.builder()
+                        .order(order)
+                        .status(OrderStatus.CANCELLED.getValue())
+                        .note("Hệ thống tự động hủy đơn do quá hạn thanh toán/xác nhận (24 giờ)")
+                        .changedBy(null)
+                        .build();
+                order.addStatusHistory(history);
+
+                orderRepository.save(order);
+                count++;
+                log.info("Auto-cancelled expired order {}", order.getOrderCode());
+            } catch (Exception e) {
+                log.error("Failed to auto-cancel expired order {}: {}", order.getOrderCode(), e.getMessage(), e);
+            }
+        }
+
+        return count;
+    }
+
+    private void releaseOrderStock(Order order) {
+        for (OrderItem item : order.getItems()) {
+            if (item.getWarehouse() != null) {
+                inventoryRepository.releaseStockAtomic(
+                        item.getVariant().getVariantId(),
+                        item.getWarehouse().getWarehouseId(),
+                        item.getQuantity()
+                );
+            }
+        }
+    }
+
+    private String generateUniqueOrderCode() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+        for (int i = 0; i < 10; i++) {
+            String timestamp = LocalDateTime.now().format(formatter);
+            String randomChars = generateRandomAlphanumeric(4);
+            String code = "ORD-" + timestamp + "-" + randomChars;
+            if (!orderRepository.existsByOrderCode(code)) {
+                return code;
+            }
+        }
+        return "ORD-" + System.currentTimeMillis() + "-" + generateRandomAlphanumeric(6);
+    }
+
+    private String generateRandomAlphanumeric(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(ALPHANUMERIC.charAt(RANDOM.nextInt(ALPHANUMERIC.length())));
+        }
+        return sb.toString();
+    }
+
+    private OrderResponse mapOrderToResponse(Order order) {
+        List<OrderItemResponse> itemResponses = new ArrayList<>();
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                String imageUrl = null;
+                if (item.getVariant() != null) {
+                    List<ProductImage> variantImages = productImageRepository.findByVariant_VariantIdOrderBySortOrderAscImageIdAsc(item.getVariant().getVariantId());
+                    if (!variantImages.isEmpty()) {
+                        imageUrl = variantImages.get(0).getImageUrl();
+                    } else if (item.getVariant().getProduct() != null) {
+                        List<ProductImage> prodImages = productImageRepository.findByProduct_ProductIdAndDeletedAtIsNullOrderBySortOrderAscImageIdAsc(item.getVariant().getProduct().getProductId());
+                        if (!prodImages.isEmpty()) {
+                            imageUrl = prodImages.get(0).getImageUrl();
+                        }
+                    }
+                }
+                itemResponses.add(OrderItemResponse.fromEntity(item, imageUrl));
+            }
+        }
+
+        List<OrderStatusHistoryResponse> historyResponses = new ArrayList<>();
+        if (order.getStatusHistory() != null) {
+            for (OrderStatusHistory history : order.getStatusHistory()) {
+                historyResponses.add(OrderStatusHistoryResponse.fromEntity(history));
+            }
+        }
+
+        return OrderResponse.fromEntity(order, itemResponses, historyResponses);
+    }
+
+    private Pageable createPageable(OrderFilterRequest filter) {
+        int page = Math.max(0, filter.getPage());
+        int size = filter.getSize() > 0 ? Math.min(100, filter.getSize()) : 10;
+        String sortBy = filter.getSortBy() != null && !filter.getSortBy().isBlank() ? filter.getSortBy() : "createdAt";
+        Sort.Direction direction = "asc".equalsIgnoreCase(filter.getSortDir()) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(page, size, Sort.by(direction, sortBy));
+    }
+}

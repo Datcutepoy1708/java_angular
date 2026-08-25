@@ -301,7 +301,7 @@ $radius: 8px;
 .user-profile-menu {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 
   .user-greeting {
     display: flex;
@@ -317,6 +317,29 @@ $radius: 8px;
       font-size: 0.825rem;
       font-weight: 700;
       color: $on-surface;
+    }
+  }
+
+  .user-dropdown-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .orders-link {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: $primary;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: $primary;
+      color: #ffffff;
     }
   }
 

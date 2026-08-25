@@ -102,9 +102,14 @@
               <span class="greeting-sub">Xin chào,</span>
               <span class="greeting-name">{{ authService.currentUser()?.fullName || 'Khách hàng' }}</span>
             </div>
-            <button type="button" class="logout-btn" (click)="logout()" title="Đăng xuất">
-              Đăng xuất
-            </button>
+            <div class="user-dropdown-actions">
+              <a routerLink="/account/orders" class="orders-link" title="Xem đơn hàng của tôi">
+                Đơn hàng
+              </a>
+              <button type="button" class="logout-btn" (click)="logout()" title="Đăng xuất">
+                Đăng xuất
+              </button>
+            </div>
           </div>
         } @else {
           <a routerLink="/auth/login" class="header-action-btn login-btn">

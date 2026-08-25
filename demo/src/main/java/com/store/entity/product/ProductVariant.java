@@ -68,4 +68,8 @@ public class ProductVariant {
     /** Soft-delete timestamp. NULL = active; NOT NULL = deleted (independently of Product's deleted_at). */
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public BigDecimal getEffectivePrice() {
+        return (salePrice != null && salePrice.compareTo(BigDecimal.ZERO) > 0) ? salePrice : price;
+    }
 }

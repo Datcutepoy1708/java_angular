@@ -143,7 +143,12 @@
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2>{{ modalMode() === 'create' ? 'Thêm thuộc tính mới' : 'Chỉnh sửa thuộc tính' }}</h2>
-          <button type="button" class="btn-close" (click)="closeModal()">✕</button>
+          <button type="button" class="btn-close" (click)="closeModal()" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
 
         <form [formGroup]="attributeForm" (ngSubmit)="saveAttribute()" class="modal-form">

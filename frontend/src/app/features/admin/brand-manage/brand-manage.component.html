@@ -255,7 +255,10 @@
           {{ formMode() === 'create' ? 'Thêm thương hiệu mới' : 'Cập nhật thương hiệu' }}
         </h3>
         <button type="button" class="btn-close" (click)="closeModal()" aria-label="Đóng cửa sổ">
-          ✕
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
 
@@ -318,7 +321,7 @@
             <div class="form-label-row">
               <label class="form-label" for="brand-slug">Đường dẫn tĩnh (Slug)</label>
               <button type="button" class="link-action" (click)="toggleSlugEdit()">
-                {{ slugEditable() ? '🔒 Khóa lại' : '✏️ Chỉnh sửa slug' }}
+                {{ slugEditable() ? 'Khóa slug' : 'Chỉnh sửa slug' }}
               </button>
             </div>
             <input

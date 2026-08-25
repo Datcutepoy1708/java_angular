@@ -48,16 +48,11 @@ java_angular/                  # repo root
 │   │   ├── dto/
 │   │   │   ├── request/
 │   │   │   └── response/
-│   │   ├── entity/          # JPA entities, grouped by domain packages
-│   │   │   ├── brand/       # Brand
-│   │   │   ├── category/    # Category, CategoryStatus, Converters
-│   │   │   ├── product/     # Product, ProductVariant, ProductImage, Converters
-│   │   │   ├── supplier/    # Supplier, SupplierStatus, Converters
-│   │   │   └── user/        # User, Role, Permission, AuthToken (Phase 2)
+│   │   ├── entity/          # JPA entities, mapped to database_ban_may_tinh.sql
 │   │   ├── repository/      # Spring Data JPA repositories
 │   │   ├── service/
 │   │   │   └── impl/
-│   │   ├── mapper/          # DTO Mapper (or static mappers in Response DTOs)
+│   │   ├── mapper/          # MapStruct mapper Entity <-> DTO
 │   │   ├── exception/       # Custom exceptions + GlobalExceptionHandler
 │   │   ├── security/        # JwtTokenProvider, UserDetailsServiceImpl, filters
 │   │   └── util/
@@ -132,7 +127,6 @@ public void deleteProduct(Long productId) { ... }
 ```
 - On **create/update/delete**, always evict the relevant cache entries in the same service method — never let stale cache outlive a write operation.
 - For paginated product-list caches, prefer `allEntries = true` eviction on write (list caches with different filter/page params are hard to target individually), rather than leaving stale pages behind.
-- **Cache Bloat Prevention**: With dynamic multi-criteria search filters (keyword, category, brand, supplier, status), avoid creating infinite permutations of cached keys. Prefer caching default catalog pages / common listings, or set short TTL to prevent memory bloating.
 - Cache key naming: include enough parameters to be unique (e.g. `products::category_5_page_0_size_20`) — use a custom `KeyGenerator` if the default key generation isn't specific enough.
 
 ### 5.4 Redis for other use cases (later phases, not now)
@@ -198,9 +192,11 @@ Use `@RestControllerAdvice` (`GlobalExceptionHandler`) to catch exceptions and r
 - Circular dependencies between services are a design smell — refactor (extract shared logic into a third service) instead of using `@Lazy` to paper over it.
 
 ## 7. Frontend conventions (Angular)
-No SSR. Angular CLI defaults to scaffolding SSR (main.server.ts, server.ts, app.config.server.ts, app.routes.server.ts). This project does not use it during development — delete those files and the SSR-related entries in angular.json ("ssr" block) and package.json ("serve:ssr:*" scripts) right after ng new. Revisit adding SSR back via ng add @angular/ssr only when SEO on the public storefront becomes a real concern near launch, not before.
-Component file naming keeps the .component suffix, overriding the newer Angular CLI default that drops it (app.ts/app.html instead of app.component.ts/app.component.html). Always generate/name component files as xyz.component.ts, xyz.component.html, xyz.component.scss — this matches every component example already established in this codebase and keeps component files visually distinct from services/guards/models at a glance. Rename the CLI-generated root app.ts/app.html/app.css to app.component.ts/app.component.html/app.component.scss (updating the selector/bootstrap reference accordingly) to stay consistent.
-Keep app.spec.ts (unit test scaffold), .editorconfig, angular.json, tsconfig*.json — these are normal, not clutter.
+
+### 7.0 Project baseline decisions (settled — do not re-litigate per task)
+- **No SSR.** Angular CLI defaults to scaffolding SSR (`main.server.ts`, `server.ts`, `app.config.server.ts`, `app.routes.server.ts`). This project does not use it during development — delete those files and the SSR-related entries in `angular.json` (`"ssr"` block) and `package.json` (`"serve:ssr:*"` scripts) right after `ng new`. Revisit adding SSR back via `ng add @angular/ssr` only when SEO on the public storefront becomes a real concern near launch, not before.
+- **Component file naming keeps the `.component` suffix**, overriding the newer Angular CLI default that drops it (`app.ts`/`app.html` instead of `app.component.ts`/`app.component.html`). Always generate/name component files as `xyz.component.ts`, `xyz.component.html`, `xyz.component.scss` — this matches every component example already established in this codebase and keeps component files visually distinct from services/guards/models at a glance. Rename the CLI-generated root `app.ts`/`app.html`/`app.css` to `app.component.ts`/`app.component.html`/`app.component.scss` (updating the selector/bootstrap reference accordingly) to stay consistent.
+- Keep `app.spec.ts` (unit test scaffold), `.editorconfig`, `angular.json`, `tsconfig*.json` — these are normal, not clutter.
 
 ### 7.1 Architecture
 - Use **standalone components** (Angular 18+), lazy-loaded per feature route (`shop`, `admin`, `auth`).
@@ -232,12 +228,27 @@ Keep app.spec.ts (unit test scaffold), .editorconfig, angular.json, tsconfig*.js
   ```
 - Never instantiate a service manually with `new SomeService()` — always let Angular's injector provide it, so interceptors, testing overrides, and singleton behavior work correctly.
 - Never inject `HttpClient` directly into a component — always go through a domain service (`BrandService`, `ProductService`...) so API logic stays testable and reusable, per section 7.2.
-### 7.5 Admin vs Client separation
+
+### 7.5 Static assets (images, video, design references)
+- **`frontend/public/`**: production assets actually served to end users — logos, product images, favicon, hero video/poster. Anything here ends up in the deployed bundle and is publicly reachable by URL.
+- **`design/`** (repo root, outside `frontend/`): Stitch mockup exports (`.md` design tokens, screenshot `.png` references). These are for agent/developer reference only — never referenced at runtime, never imported into Angular code.
+- **Responsive media rule**: heavy assets (video) are desktop-only; mobile always gets a lightweight static image fallback, never the video, to save mobile bandwidth and avoid autoplay restrictions on mobile browsers. Pattern:
+  ```html
+  <video class="hero-video hidden md:block" autoplay muted loop playsinline poster="/videos/hero-poster.jpg">
+    <source src="/videos/homepage-hero.mp4" type="video/mp4">
+  </video>
+  <img class="hero-image block md:hidden" src="/videos/hero-poster.jpg" alt="...">
+  ```
+  Breakpoint used for this split must match `$breakpoint-tablet` already defined in `frontend/src/styles/_typography.scss` (~768px) — don't invent a new breakpoint value elsewhere.
+- Any video asset must be compressed (H.264, target well under 5MB for a ~10s clip) and audio-stripped before being placed in `public/` — autoplay banners are always muted, so shipping an audio track is dead weight.
+- Always pair a hero video with a static poster image (extracted frame) for the `poster` attribute and for the mobile fallback — never leave `<video>` without a `poster`.
+
+### 7.6 Admin vs Client separation
 
 The storefront (public-facing shop) and the admin panel are two distinct experiences sharing one Angular app. Keep them cleanly separated at every layer — routing, layout shell, and feature folders — so neither leaks into the other and each can be worked on independently.
 
-Folder structure (expand on the features/ skeleton already defined in section 4):
-
+**Folder structure** (expand on the `features/` skeleton already defined in section 4):
+```
 src/app/
 ├── core/                    # cross-cutting: guards, interceptors, models, services
 ├── layout/
@@ -260,10 +271,10 @@ src/app/
 │       ├── product-manage/
 │       ├── order-manage/
 │       └── statistics/
+```
 
-Routing rule — one shell per route tree, lazy-loaded, path-prefixed:
-
-typescript
+**Routing rule — one shell per route tree, lazy-loaded, path-prefixed:**
+```typescript
 // app.routes.ts
 export const routes: Routes = [
   { path: '', component: PublicShellComponent, children: [
@@ -277,13 +288,16 @@ export const routes: Routes = [
       { path: 'products', loadComponent: () => ... },
     ]
   },
-  { path: 'login', loadComponent: () => import('./features/auth/login/login.component')... },
-  { path: 'admin/login', loadComponent: () => import('./features/auth/admin-login/admin-login.component')... },
+  { path: 'auth/login', loadComponent: () => import('./features/auth/login/login.component')... },
+  { path: 'auth/register', loadComponent: () => import('./features/auth/register/register.component')... },
+  { path: 'auth/admin-login', loadComponent: () => import('./features/auth/admin-login/admin-login.component')... },
 ];
-Every route under /admin/** carries authGuard + roleGuard (checking for ROLE_ADMIN/ROLE_STAFF) at the parent route level — do not re-add the guard on every child route individually; the parent's canActivate already protects all children.
-features/shop/** never imports anything from features/admin/** and vice versa. If a component is genuinely needed by both (e.g. a product card), it belongs in shared/, not duplicated or cross-imported.
-Services in core/services/ (e.g. product.service.ts) are shared by both — the split is about UI/routes/layout, not about duplicating API-calling logic. Admin and Client both call the same ProductService, just from different components with different permissions enforced server-side.
-Two shells (public-shell, admin-shell) must not share a layout component even if visually similar — keep them as separate components since their structure (header+footer vs sidebar+topbar) diverges enough that forcing a shared shell adds more conditional complexity than it saves.
+```
+- Every route under `/admin/**` carries `authGuard` + `roleGuard` (checking for `ROLE_ADMIN`/`ROLE_STAFF`) at the parent route level — do not re-add the guard on every child route individually; the parent's `canActivate` already protects all children.
+- `features/shop/**` never imports anything from `features/admin/**` and vice versa. If a component is genuinely needed by both (e.g. a product card), it belongs in `shared/`, not duplicated or cross-imported.
+- Services in `core/services/` (e.g. `product.service.ts`) are shared by both — the split is about UI/routes/layout, not about duplicating API-calling logic. Admin and Client both call the same `ProductService`, just from different components with different permissions enforced server-side.
+- Two shells (`public-shell`, `admin-shell`) must not share a layout component even if visually similar — keep them as separate components since their structure (header+footer vs sidebar+topbar) diverges enough that forcing a shared shell adds more conditional complexity than it saves.
+
 ## 8. Database conventions
 
 - `database/database_ban_may_tinh.sql` is the source of truth for schema.
@@ -302,18 +316,19 @@ Two shells (public-shell, admin-shell) must not share a layout component even if
 ## 10. Testing
 
 - Backend: JUnit 5 + Mockito for the service layer; `@SpringBootTest` + Testcontainers (MySQL + Redis containers) for integration tests, including cache-eviction-on-write behavior.
-- Frontend: Jasmine/Karma for unit tests; Cypress/Playwright for e2e on core flows once they exist.
+- Frontend: Vitest for unit tests (Angular's current default, replacing Karma); Cypress/Playwright for e2e on core flows once they exist.
 - Whenever Redis caching is added to a CRUD endpoint, write a test verifying that an update/delete actually evicts the cache (stale reads are a common bug class here).
 
 ## 11. Git & commit conventions
-Branches: main (production), develop (staging), feature/<name>, fix/<name>.
-Conventional Commits: feat:, fix:, refactor:, chore:, docs:.
-Example: feat(product): add Redis caching for product detail endpoint
-PRs must describe: purpose, affected DB tables (if any), how it was tested, and whether cache eviction was verified.
-No decorative icon/emoji badges or trust badges. Do not add small colorful icon+text chip elements like "🚀 50K+ Products" or "🚚 Free Shipping" — these decorative trust-badge patterns (common in AI-generated hero sections) are visual clutter and must be removed or replaced with plain text if the content is worth keeping (e.g. plain text "50,000+ products in stock" with no icon/emoji in front of it).
-If a Stitch mockup includes these badges, treat it as reference for layout only — strip the icon/emoji and either drop the badge entirely or keep it as plain text, when implementing the real Angular component.
-This also applies to commit messages, PR descriptions, code comments, and log messages — no decorative emoji there either (e.g. feat(product): ✨ add search 🔍 → feat(product): add search).
-Functional UI icons are still allowed where they materially aid usability — e.g. a cart icon with item-count badge in the header (no room for text label there), a password show/hide toggle icon, a search magnifying-glass inside a search input, a notification bell in the admin topbar, a dark-mode toggle, an "opens in new tab" external-link glyph. Keep these minimal, single-color/monochrome (matching --on-surface-variant from the design tokens), and consistent with the design system — not colorful, not multi-color, not emoji-style. If in doubt whether an icon is "functional" or "decorative," ask before adding it.
+
+- Branches: `main` (production), `develop` (staging), `feature/<name>`, `fix/<name>`.
+- Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`.
+  - Example: `feat(product): add Redis caching for product detail endpoint`
+- PRs must describe: purpose, affected DB tables (if any), how it was tested, and whether cache eviction was verified.
+- **No decorative icon/emoji badges or trust badges.** Do not add small colorful icon+text chip elements like "🚀 50K+ Products" or "🚚 Free Shipping" — these decorative trust-badge patterns (common in AI-generated hero sections) are visual clutter and must be removed or replaced with plain text if the content is worth keeping (e.g. plain text "50,000+ products in stock" with no icon/emoji in front of it).
+  - If a Stitch mockup includes these badges, treat it as reference for layout only — strip the icon/emoji and either drop the badge entirely or keep it as plain text, when implementing the real Angular component.
+  - This also applies to commit messages, PR descriptions, code comments, and log messages — no decorative emoji there either (e.g. `feat(product): ✨ add search 🔍` → `feat(product): add search`).
+  - **Functional UI icons are still allowed where they materially aid usability** — e.g. a cart icon with item-count badge in the header (no room for text label there), a password show/hide toggle icon, a search magnifying-glass inside a search input, a notification bell in the admin topbar, a dark-mode toggle, an "opens in new tab" external-link glyph. Keep these minimal, single-color/monochrome (matching `--on-surface-variant` from the design tokens), and consistent with the design system — not colorful, not multi-color, not emoji-style. If in doubt whether an icon is "functional" or "decorative," ask before adding it.
 
 ## 12. Continuous Integration (GitHub Actions)
 
@@ -362,5 +377,6 @@ CI configuration lives in `.github/workflows/`. Every PR into `main` or `develop
 7. Auth module (register/login/JWT refresh) — required before any user-specific feature.
 8. Product attributes (EAV) + dynamic spec filtering.
 9. Cart → Order flow with inventory deduction transaction (no caching on these — real-time accuracy required).
+   - **Payment: no real gateway integration for now.** Only `cod` and a manually-declared "bank transfer" option are supported — `payment_status` moves `unpaid → paid` via a manual "Confirm payment" action (Admin, or auto for COD), not a real VNPay/Momo/ZaloPay integration with callbacks/webhooks. Do not build gateway integration speculatively; revisit only when there's a real need to accept online payments.
 10. Discount codes, warehouse/inventory management.
 11. Admin dashboard/statistics, news, banners.

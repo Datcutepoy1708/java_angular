@@ -1,0 +1,453 @@
+<div class="order-manage-page">
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">Quản Lý Đơn Hàng</h1>
+      <p class="page-subtitle">Theo dõi, xác nhận và xử lý tiến trình đơn hàng toàn hệ thống</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  @if (toastMessage()) {
+    <div class="toast-alert" [class.toast-error]="toastMessage()?.type === 'error'">
+      @if (toastMessage()?.type === 'error') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      }
+      <span>{{ toastMessage()?.text }}</span>
+    </div>
+  }
+
+  <!-- Summary Metrics Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Tổng đơn hàng</span>
+        <strong class="metric-value">{{ metrics()?.totalOrders || 0 }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card warning">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Chờ xác nhận</span>
+        <strong class="metric-value">{{ metrics()?.pendingCount || 0 }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card info">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Đang chuẩn bị / Giao</span>
+        <strong class="metric-value">{{ (metrics()?.confirmedCount || 0) + (metrics()?.processingCount || 0) + (metrics()?.shippingCount || 0) }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card success">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Hoàn tất</span>
+        <strong class="metric-value">{{ metrics()?.completedCount || 0 }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card danger">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Đã hủy</span>
+        <strong class="metric-value">{{ metrics()?.cancelledCount || 0 }}</strong>
+      </div>
+    </div>
+
+    <div class="metric-card revenue">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div class="metric-data">
+        <span class="metric-label">Doanh thu hoàn tất</span>
+        <strong class="metric-value text-success">{{ formatPrice(metrics()?.totalRevenue || 0) }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <div class="filter-card">
+    <form [formGroup]="filterForm" (ngSubmit)="onSearch()" class="filter-form">
+      <div class="filter-grid">
+        <div class="form-group">
+          <label>Từ khóa tìm kiếm</label>
+          <input 
+            type="text" 
+            formControlName="keyword" 
+            class="form-control" 
+            placeholder="Mã đơn, Tên khách hàng, SĐT..."
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Trạng thái đơn</label>
+          <select formControlName="status" class="form-control">
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="pending">Chờ xác nhận</option>
+            <option value="confirmed">Đã xác nhận</option>
+            <option value="processing">Đang chuẩn bị</option>
+            <option value="shipping">Đang giao hàng</option>
+            <option value="completed">Hoàn tất</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Thanh toán</label>
+          <select formControlName="paymentStatus" class="form-control">
+            <option value="">-- Tất cả thanh toán --</option>
+            <option value="unpaid">Chưa thanh toán</option>
+            <option value="paid">Đã thanh toán</option>
+            <option value="refunded">Đã hoàn tiền</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Từ ngày</label>
+          <input type="date" formControlName="startDate" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label>Đến ngày</label>
+          <input type="date" formControlName="endDate" class="form-control" />
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        <button type="button" class="btn btn-outline" (click)="resetFilter()">Đặt lại</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="table-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Đang tải danh sách đơn hàng...</p>
+      </div>
+    } @else if (orders().length === 0) {
+      <div class="empty-table">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <h3>Không tìm thấy đơn hàng nào</h3>
+        <p>Thử thay đổi bộ lọc tìm kiếm hoặc từ khóa.</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã Đơn Hàng</th>
+              <th>Khách Hàng</th>
+              <th>Số Điện Thoại</th>
+              <th>Ngày Tạo</th>
+              <th>Tổng Tiền</th>
+              <th>Phương Thức</th>
+              <th>Trạng Thái Đơn</th>
+              <th>Thanh Toán</th>
+              <th class="text-right">Hành Động</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of orders(); track order.orderId) {
+              <tr (click)="openDetailModal(order)" class="clickable-row">
+                <td>
+                  <strong class="order-code-text">{{ order.orderCode }}</strong>
+                </td>
+                <td>{{ order.receiverName }}</td>
+                <td>{{ order.receiverPhone }}</td>
+                <td>{{ formatDate(order.createdAt) }}</td>
+                <td>
+                  <strong class="text-danger">{{ formatPrice(order.totalAmount) }}</strong>
+                </td>
+                <td>
+                  <span class="payment-method-tag">
+                    {{ order.paymentMethod === 'cod' ? 'COD' : 'Chuyển khoản' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [attr.data-status]="order.orderStatus">
+                    @switch (order.orderStatus) {
+                      @case ('pending') { Chờ xác nhận }
+                      @case ('confirmed') { Đã xác nhận }
+                      @case ('processing') { Đang chuẩn bị }
+                      @case ('shipping') { Đang giao hàng }
+                      @case ('completed') { Hoàn tất }
+                      @case ('cancelled') { Đã hủy }
+                    }
+                  </span>
+                </td>
+                <td>
+                  <span class="payment-badge" [class.paid]="order.paymentStatus === 'paid'">
+                    {{ order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa TT' }}
+                  </span>
+                </td>
+                <td class="text-right action-col" (click)="$event.stopPropagation()">
+                  <button type="button" class="btn btn-sm btn-primary" (click)="openDetailModal(order)">
+                    Chi tiết & Xử lý
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-footer">
+        <span class="pagination-info">
+          Hiển thị {{ orders().length }} trên tổng số {{ totalOrders() }} đơn hàng
+        </span>
+
+        <div class="pagination-controls">
+          <button 
+            type="button" 
+            class="btn-page" 
+            [disabled]="currentPage() === 0" 
+            (click)="loadOrders(currentPage() - 1)"
+          >
+            ← Trước
+          </button>
+          <span class="page-current">Trang {{ currentPage() + 1 }} / {{ totalPages() || 1 }}</span>
+          <button 
+            type="button" 
+            class="btn-page" 
+            [disabled]="currentPage() >= totalPages() - 1" 
+            (click)="loadOrders(currentPage() + 1)"
+          >
+            Sau →
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Detail & Action Modal -->
+  @if (showDetailModal() && selectedOrder()) {
+    <div class="modal-backdrop" (click)="closeDetailModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="header-title-box">
+            <h2>Chi Tiết Đơn Hàng: <span class="text-primary">{{ selectedOrder()?.orderCode }}</span></h2>
+            <span class="modal-date">Ngày tạo: {{ formatDate(selectedOrder()?.createdAt || '') }}</span>
+          </div>
+          <button type="button" class="btn-close" (click)="closeDetailModal()" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Two Columns: Info & Actions -->
+          <div class="modal-grid">
+            <!-- Left Column: Order Content -->
+            <div class="modal-left">
+              <!-- Customer & Delivery Info -->
+              <div class="info-card">
+                <h4 class="card-subtitle">Thông Tin Khách Hàng & Giao Hàng</h4>
+                <div class="customer-info-grid">
+                  <div class="info-item">
+                    <span class="info-label">Họ và tên</span>
+                    <strong class="info-val">{{ selectedOrder()?.receiverName }}</strong>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Số điện thoại</span>
+                    <strong class="info-val">{{ selectedOrder()?.receiverPhone }}</strong>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Tài khoản email</span>
+                    <span class="info-val">{{ selectedOrder()?.userEmail || 'Khách vãng lai' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">Phương thức thanh toán</span>
+                    <span class="info-val">{{ selectedOrder()?.paymentMethod === 'cod' ? 'COD (Thanh toán khi nhận)' : 'Chuyển khoản Ngân hàng' }}</span>
+                  </div>
+                </div>
+                <div class="info-item address-item">
+                  <span class="info-label">Địa chỉ giao hàng</span>
+                  <strong class="info-val text-address">{{ selectedOrder()?.shippingAddress }}</strong>
+                </div>
+                @if (selectedOrder()?.note) {
+                  <div class="info-item note-item">
+                    <span class="info-label">Ghi chú của khách</span>
+                    <em class="info-val text-note">"{{ selectedOrder()?.note }}"</em>
+                  </div>
+                }
+              </div>
+
+              <!-- Items Table -->
+              <div class="info-card">
+                <h4 class="card-subtitle">Danh Sách Mặt Hàng ({{ selectedOrder()?.items?.length }} món)</h4>
+                <div class="modal-items-table">
+                  @for (item of selectedOrder()?.items; track item.orderItemId) {
+                    <div class="modal-item-row">
+                      <img [src]="item.imageUrl || '/images/default-product.png'" [alt]="item.productName" />
+                      <div class="item-details">
+                        <div class="item-title">{{ item.productNameSnapshot }}</div>
+                        <div class="item-variant">{{ item.variantName }}</div>
+                        @if (item.warehouseName) {
+                          <div class="item-warehouse-badge">Kho xuất: {{ item.warehouseName }}</div>
+                        }
+                      </div>
+                      <div class="item-calc">
+                        <div class="calc-unit">{{ formatPrice(item.priceSnapshot) }} x {{ item.quantity }}</div>
+                        <strong class="calc-subtotal text-danger">{{ formatPrice(item.subtotal) }}</strong>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <div class="modal-total-box">
+                  <div class="row"><span>Tạm tính:</span> <span>{{ formatPrice(selectedOrder()?.subtotal || 0) }}</span></div>
+                  <div class="row"><span>Phí vận chuyển:</span> <span class="text-success">Miễn phí</span></div>
+                  <div class="row total"><span>Tổng thanh toán:</span> <strong class="text-danger">{{ formatPrice(selectedOrder()?.totalAmount || 0) }}</strong></div>
+                </div>
+              </div>
+
+              <!-- Status History Timeline -->
+              <div class="info-card">
+                <h4 class="card-subtitle">Lịch Sử Trạng Thái</h4>
+                <div class="history-list">
+                  @for (h of selectedOrder()?.statusHistory; track h.id) {
+                    <div class="history-entry">
+                      <span class="dot"></span>
+                      <div class="entry-content">
+                        <div class="entry-header">
+                          <strong class="entry-status">{{ h.status | uppercase }}</strong>
+                          <span class="entry-time">{{ formatDate(h.changedAt) }} ({{ h.changedByName || 'Hệ thống' }})</span>
+                        </div>
+                        @if (h.note) {
+                          <div class="entry-note">{{ h.note }}</div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Admin Operations -->
+            <div class="modal-right">
+              <!-- Status Update Card -->
+              <div class="action-card">
+                <h4 class="card-subtitle">Cập Nhật Trạng Thái</h4>
+                
+                <form [formGroup]="statusForm" (ngSubmit)="onUpdateStatus()" class="status-update-form">
+                  <div class="form-group">
+                    <label class="form-label" for="statusSelect">Trạng thái mới</label>
+                    <select id="statusSelect" formControlName="status" class="form-control select-control">
+                      <option value="pending">Chờ xác nhận (PENDING)</option>
+                      <option value="confirmed">Đã xác nhận (CONFIRMED)</option>
+                      <option value="processing">Đang chuẩn bị (PROCESSING)</option>
+                      <option value="shipping">Đang giao hàng (SHIPPING)</option>
+                      <option value="completed">Giao thành công (COMPLETED)</option>
+                      <option value="cancelled">Hủy đơn hàng (CANCELLED)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="statusNote">Ghi chú thay đổi</label>
+                    <textarea 
+                      id="statusNote"
+                      formControlName="note" 
+                      class="form-control textarea-control" 
+                      rows="3" 
+                      placeholder="Nhập lý do hoặc ghi chú nội bộ..."
+                    ></textarea>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary btn-block btn-save-status" [disabled]="isUpdatingStatus()">
+                    @if (isUpdatingStatus()) {
+                      Đang xử lý...
+                    } @else {
+                      Lưu Trạng Thái
+                    }
+                  </button>
+                </form>
+              </div>
+
+              <!-- Payment Action Card -->
+              <div class="action-card payment-action-card">
+                <h4 class="card-subtitle">Trạng Thái Thanh Toán</h4>
+                <div class="payment-status-row">
+                  <span class="payment-label">Hiện tại:</span>
+                  <span class="payment-badge-pill" [class.paid]="selectedOrder()?.paymentStatus === 'paid'">
+                    {{ selectedOrder()?.paymentStatus === 'paid' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN' }}
+                  </span>
+                </div>
+
+                @if (selectedOrder()?.paymentStatus !== 'paid') {
+                  <button 
+                    type="button" 
+                    class="btn btn-confirm-payment btn-block" 
+                    [disabled]="isUpdatingStatus()" 
+                    (click)="onConfirmPayment()"
+                  >
+                    Xác Nhận Đã Nhận Tiền
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeDetailModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

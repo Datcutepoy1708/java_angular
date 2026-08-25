@@ -1,0 +1,294 @@
+<div class="order-tracking-page">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a routerLink="/" class="breadcrumb-item">Trang chủ</a>
+      <span class="breadcrumb-separator">/</span>
+      <a routerLink="/account/orders" class="breadcrumb-item">Đơn hàng của tôi</a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-item active">Chi tiết đơn hàng</span>
+    </nav>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Đang tải thông tin đơn hàng...</p>
+      </div>
+    } @else if (errorMessage()) {
+      <div class="error-card">
+        <div class="error-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <h2>Không thể tìm thấy đơn hàng</h2>
+        <p>{{ errorMessage() }}</p>
+        <a routerLink="/account/orders" class="btn btn-primary">Xem danh sách đơn hàng</a>
+      </div>
+    } @else if (order()) {
+      <!-- Success / Cancel Alert -->
+      @if (cancelSuccessMessage()) {
+        <div class="alert alert-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span>{{ cancelSuccessMessage() }}</span>
+        </div>
+      }
+
+      <!-- Order Header Card -->
+      <div class="order-header-card">
+        <div class="header-left">
+          <div class="order-id-badge">
+            <span class="label">Mã đơn hàng:</span>
+            <strong class="code">{{ order()?.orderCode }}</strong>
+          </div>
+          <span class="order-date">Ngày đặt: {{ formatDate(order()?.createdAt || '') }}</span>
+        </div>
+
+        <div class="header-right">
+          <div class="status-badges">
+            <!-- Order Status Badge -->
+            <span class="status-badge" [attr.data-status]="order()?.orderStatus">
+              @switch (order()?.orderStatus) {
+                @case ('pending') { Chờ xác nhận }
+                @case ('confirmed') { Đã xác nhận }
+                @case ('processing') { Đang chuẩn bị hàng }
+                @case ('shipping') { Đang giao hàng }
+                @case ('completed') { Giao thành công }
+                @case ('cancelled') { Đã hủy }
+              }
+            </span>
+
+            <!-- Payment Status Badge -->
+            <span class="payment-badge" [class.paid]="order()?.paymentStatus === 'paid'">
+              {{ order()?.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán' }}
+            </span>
+          </div>
+
+          <!-- Cancel button if eligible -->
+          @if (canCustomerCancel()) {
+            <button type="button" class="btn-cancel-order" (click)="openCancelModal()">
+              Hủy đơn hàng
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Stepper Tracking (If not cancelled) -->
+      @if (order()?.orderStatus !== 'cancelled') {
+        <div class="tracking-stepper-card">
+          <h3 class="stepper-title">Tiến Độ Giao Hàng</h3>
+          <div class="stepper-wrapper">
+            @for (step of statusSteps; track step.key; let idx = $index) {
+              <div 
+                class="step-item"
+                [class.completed]="getStepIndex(order()?.orderStatus) >= idx"
+                [class.current]="getStepIndex(order()?.orderStatus) === idx"
+              >
+                <div class="step-icon-circle">
+                  @if (getStepIndex(order()?.orderStatus) > idx) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  } @else {
+                    <span class="step-num">{{ step.stepNumber }}</span>
+                  }
+                </div>
+                <div class="step-label">{{ step.label }}</div>
+                @if (idx < statusSteps.length - 1) {
+                  <div class="step-line" [class.active]="getStepIndex(order()?.orderStatus) > idx"></div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="cancelled-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cancel-icon" width="28" height="28">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <div class="cancel-info">
+            <h4>Đơn hàng đã bị hủy</h4>
+            <p>Toàn bộ sản phẩm đã được giải phóng và hoàn trả lại kho hàng.</p>
+          </div>
+        </div>
+      }
+
+      <div class="details-grid">
+        <!-- Left: Items list -->
+        <div class="items-section">
+          <div class="card">
+            <h3 class="card-title">Sản Phẩm Đã Đặt ({{ order()?.items?.length }} mặt hàng)</h3>
+
+            <div class="items-table">
+              @for (item of order()?.items; track item.orderItemId) {
+                <div class="item-row">
+                  <div class="item-img">
+                    <img [src]="item.imageUrl || '/images/default-product.png'" [alt]="item.productName" />
+                  </div>
+                  <div class="item-meta">
+                    <h4 class="item-name">{{ item.productNameSnapshot }}</h4>
+                    <span class="item-variant">{{ item.variantName }}</span>
+                    @if (item.warehouseName) {
+                      <span class="item-warehouse">Xuất từ: {{ item.warehouseName }}</span>
+                    }
+                  </div>
+                  <div class="item-pricing">
+                    <div class="unit-price">{{ formatPrice(item.priceSnapshot) }}</div>
+                    <div class="qty">x {{ item.quantity }}</div>
+                    <div class="subtotal">{{ formatPrice(item.subtotal) }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Total Breakdown -->
+            <div class="card-footer-breakdown">
+              <div class="row">
+                <span>Tạm tính:</span>
+                <span>{{ formatPrice(order()?.subtotal || 0) }}</span>
+              </div>
+              <div class="row">
+                <span>Phí giao hàng:</span>
+                <span class="text-success">Miễn phí</span>
+              </div>
+              @if ((order()?.discountAmount || 0) > 0) {
+                <div class="row text-success">
+                  <span>Giảm giá:</span>
+                  <span>-{{ formatPrice(order()?.discountAmount || 0) }}</span>
+                </div>
+              }
+              <div class="row total-row">
+                <span class="total-label">Tổng thanh toán:</span>
+                <span class="total-value text-danger">{{ formatPrice(order()?.totalAmount || 0) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Delivery & Payment Details -->
+        <div class="info-sidebar">
+          <!-- Delivery Info -->
+          <div class="card">
+            <h3 class="card-title">Thông Tin Giao Hàng</h3>
+            <div class="info-block">
+              <div class="info-line">
+                <span class="label">Người nhận:</span>
+                <strong>{{ order()?.receiverName }}</strong>
+              </div>
+              <div class="info-line">
+                <span class="label">Số điện thoại:</span>
+                <span>{{ order()?.receiverPhone }}</span>
+              </div>
+              <div class="info-line">
+                <span class="label">Địa chỉ nhận hàng:</span>
+                <span>{{ order()?.shippingAddress }}</span>
+              </div>
+              @if (order()?.note) {
+                <div class="info-line">
+                  <span class="label">Ghi chú:</span>
+                  <em>"{{ order()?.note }}"</em>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Payment Info -->
+          <div class="card">
+            <h3 class="card-title">Thông Tin Thanh Toán</h3>
+            <div class="info-block">
+              <div class="info-line">
+                <span class="label">Phương thức:</span>
+                <strong>
+                  @if (order()?.paymentMethod === 'cod') {
+                    Thanh toán khi nhận hàng (COD)
+                  } @else {
+                    Chuyển khoản Ngân hàng
+                  }
+                </strong>
+              </div>
+              <div class="info-line">
+                <span class="label">Trạng thái:</span>
+                <span class="payment-status-badge" [class.paid]="order()?.paymentStatus === 'paid'">
+                  {{ order()?.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status History Log -->
+          <div class="card">
+            <h3 class="card-title">Lịch Sử Trạng Thái</h3>
+            <div class="history-timeline">
+              @for (h of order()?.statusHistory; track h.id) {
+                <div class="history-item">
+                  <div class="history-dot"></div>
+                  <div class="history-content">
+                    <div class="history-status">
+                      @switch (h.status) {
+                        @case ('pending') { Chờ xác nhận }
+                        @case ('confirmed') { Đã xác nhận }
+                        @case ('processing') { Đang chuẩn bị }
+                        @case ('shipping') { Đang giao hàng }
+                        @case ('completed') { Hoàn tất }
+                        @case ('cancelled') { Đã hủy }
+                        @default { {{ h.status }} }
+                      }
+                    </div>
+                    @if (h.note) {
+                      <div class="history-note">{{ h.note }}</div>
+                    }
+                    <div class="history-time">{{ formatDate(h.changedAt) }} ({{ h.changedByName || 'Hệ thống' }})</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Cancel Modal -->
+    @if (showCancelModal()) {
+      <div class="modal-backdrop" (click)="closeCancelModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3 class="modal-title">Xác Nhận Hủy Đơn Hàng</h3>
+          <p class="modal-desc">
+            Bạn có chắc chắn muốn hủy đơn hàng <strong>{{ order()?.orderCode }}</strong> không?
+            Các sản phẩm đã giữ chỗ sẽ được hoàn trả lại cho hệ thống.
+          </p>
+
+          <div class="form-group">
+            <label for="cancelReasonInput">Lý do hủy đơn (tùy chọn):</label>
+            <textarea 
+              id="cancelReasonInput"
+              [ngModel]="cancelReason()"
+              (ngModelChange)="cancelReason.set($event)"
+              class="form-control" 
+              rows="3" 
+              placeholder="VD: Muốn thay đổi địa chỉ nhận hàng, đổi sang sản phẩm khác..."
+            ></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" [disabled]="isCancelling()" (click)="closeCancelModal()">
+              Đóng
+            </button>
+            <button type="button" class="btn btn-danger" [disabled]="isCancelling()" (click)="confirmCancelOrder()">
+              @if (isCancelling()) {
+                Đang xử lý...
+              } @else {
+                Đồng Ý Hủy Đơn
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

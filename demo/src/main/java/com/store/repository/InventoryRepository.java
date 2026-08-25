@@ -73,6 +73,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long>, Jpa
     @Query("SELECT COUNT(i) FROM Inventory i WHERE (i.quantity - i.reservedQty) <= 0")
     long countOutOfStockItems();
 
+    @Query("SELECT i FROM Inventory i WHERE i.variant.variantId = :variantId AND (i.quantity - i.reservedQty) >= :qty ORDER BY i.warehouse.warehouseId ASC")
+    List<Inventory> findWarehousesWithAvailableStock(@Param("variantId") Long variantId, @Param("qty") int qty);
+
     @Query("SELECT COALESCE(SUM(i.quantity), 0) FROM Inventory i")
     long sumAllPhysicalQuantity();
 }

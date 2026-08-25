@@ -93,8 +93,8 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    // Ready for Phase 6 Checkout
-    this.cartService.showToast('Đang chuyển tới trang Thanh toán (Phase 6)...', 'success');
+    // Navigate to Checkout page
+    this.router.navigate(['/checkout']);
   }
 
   formatCurrency(amount: number): string {
