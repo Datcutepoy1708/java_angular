@@ -22,12 +22,15 @@ import com.store.exception.InsufficientStockException;
 import com.store.exception.ResourceNotFoundException;
 import com.store.repository.AddressRepository;
 import com.store.repository.CartItemRepository;
+import com.store.repository.DiscountCodeRepository;
+import com.store.repository.DiscountUsageRepository;
 import com.store.repository.InventoryRepository;
 import com.store.repository.OrderItemRepository;
 import com.store.repository.OrderRepository;
 import com.store.repository.OrderStatusHistoryRepository;
 import com.store.repository.ProductImageRepository;
 import com.store.repository.UserRepository;
+import com.store.service.DiscountService;
 import com.store.service.impl.OrderServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -76,6 +79,12 @@ class OrderServiceTest {
     private UserRepository userRepository;
     @Mock
     private ProductImageRepository productImageRepository;
+    @Mock
+    private DiscountService discountService;
+    @Mock
+    private DiscountCodeRepository discountCodeRepository;
+    @Mock
+    private DiscountUsageRepository discountUsageRepository;
 
     @InjectMocks
     private OrderServiceImpl orderService;

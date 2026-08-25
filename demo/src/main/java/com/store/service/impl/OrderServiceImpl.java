@@ -22,16 +22,23 @@ import com.store.entity.product.ProductImage;
 import com.store.entity.product.ProductStatus;
 import com.store.entity.product.ProductVariant;
 import com.store.entity.user.User;
+import com.store.dto.response.discount.DiscountValidationResult;
+import com.store.entity.discount.DiscountCode;
+import com.store.entity.discount.DiscountUsage;
 import com.store.exception.InsufficientStockException;
+import com.store.exception.InvalidDiscountException;
 import com.store.exception.ResourceNotFoundException;
 import com.store.repository.AddressRepository;
 import com.store.repository.CartItemRepository;
+import com.store.repository.DiscountCodeRepository;
+import com.store.repository.DiscountUsageRepository;
 import com.store.repository.InventoryRepository;
 import com.store.repository.OrderItemRepository;
 import com.store.repository.OrderRepository;
 import com.store.repository.OrderStatusHistoryRepository;
 import com.store.repository.ProductImageRepository;
 import com.store.repository.UserRepository;
+import com.store.service.DiscountService;
 import com.store.service.OrderService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +73,9 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryRepository inventoryRepository;
     private final UserRepository userRepository;
     private final ProductImageRepository productImageRepository;
+    private final DiscountService discountService;
+    private final DiscountCodeRepository discountCodeRepository;
+    private final DiscountUsageRepository discountUsageRepository;
 
     private static final String ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final Random RANDOM = new SecureRandom();
@@ -81,6 +91,18 @@ public class OrderServiceImpl implements OrderService {
         List<CartItem> cartItems = cartItemRepository.findByUserIdWithDetails(userId);
         if (cartItems == null || cartItems.isEmpty()) {
             throw new IllegalStateException("Giỏ hàng của bạn đang trống, không thể tiến hành đặt hàng");
+        }
+
+        // Step 1: Read-only Fail-fast pre-validation for Discount Code (if provided)
+        BigDecimal tentativeSubtotal = BigDecimal.ZERO;
+        for (CartItem item : cartItems) {
+            tentativeSubtotal = tentativeSubtotal.add(item.getVariant().getEffectivePrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+
+        DiscountCode appliedDiscount = null;
+        if (request.getDiscountCode() != null && !request.getDiscountCode().isBlank()) {
+            DiscountValidationResult preVal = discountService.validateAndCalculate(request.getDiscountCode(), userId, tentativeSubtotal, cartItems);
+            appliedDiscount = discountCodeRepository.findById(preVal.getDiscountId()).orElse(null);
         }
 
         // 1. Resolve receiver info
@@ -122,11 +144,11 @@ public class OrderServiceImpl implements OrderService {
 
         PaymentMethod paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD;
 
-        // 2. Deadlock Prevention: Sort items deterministically by variantId ASC
+        // Step 2: Deadlock Prevention: Sort items deterministically by variantId ASC
         List<CartItem> sortedItems = new ArrayList<>(cartItems);
         sortedItems.sort(Comparator.comparing(item -> item.getVariant().getVariantId()));
 
-        // 3. Single-Warehouse Allocation & Atomic Stock Reservation Loop
+        // Step 3: Single-Warehouse Allocation & Atomic Stock Reservation Loop
         BigDecimal subtotal = BigDecimal.ZERO;
         List<OrderItem> orderItemsToSave = new ArrayList<>();
 
@@ -178,14 +200,29 @@ public class OrderServiceImpl implements OrderService {
             orderItemsToSave.add(orderItem);
         }
 
-        BigDecimal shippingFee = BigDecimal.ZERO;
+        // Step 4: Atomic Discount Calculation & Increment
         BigDecimal discountAmount = BigDecimal.ZERO;
-        BigDecimal totalAmount = subtotal.add(shippingFee).subtract(discountAmount);
+        Long discountId = null;
 
-        // 4. Generate unique order code
+        if (appliedDiscount != null) {
+            DiscountValidationResult discountResult = discountService.validateAndCalculate(appliedDiscount.getCode(), userId, subtotal, cartItems);
+            discountAmount = discountResult.getDiscountAmount();
+            discountId = appliedDiscount.getDiscountId();
+
+            LocalDateTime now = LocalDateTime.now();
+            int updatedRows = discountService.incrementUsedCountAtomic(discountId, now);
+            if (updatedRows == 0) {
+                throw new InvalidDiscountException("Mã giảm giá '" + appliedDiscount.getCode() + "' vừa hết lượt sử dụng.");
+            }
+        }
+
+        BigDecimal shippingFee = BigDecimal.ZERO;
+        BigDecimal totalAmount = subtotal.add(shippingFee).subtract(discountAmount).max(BigDecimal.ZERO);
+
+        // Generate unique order code
         String orderCode = generateUniqueOrderCode();
 
-        // 5. Create and save Order
+        // Step 5: Create and save Order
         Order order = Order.builder()
                 .orderCode(orderCode)
                 .user(user)
@@ -197,6 +234,7 @@ public class OrderServiceImpl implements OrderService {
                 .discountAmount(discountAmount)
                 .shippingFee(shippingFee)
                 .totalAmount(totalAmount)
+                .discountId(discountId)
                 .paymentMethod(paymentMethod)
                 .paymentStatus(PaymentStatus.UNPAID)
                 .orderStatus(OrderStatus.PENDING)
@@ -218,7 +256,16 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Successfully created order {} (id: {}) for user {}", orderCode, savedOrder.getOrderId(), userId);
 
-        // 6. Clean up user's cart
+        // Step 6: Save DiscountUsage record (if discount was applied)
+        if (appliedDiscount != null) {
+            discountUsageRepository.save(DiscountUsage.builder()
+                    .discount(appliedDiscount)
+                    .user(user)
+                    .order(savedOrder)
+                    .build());
+        }
+
+        // Step 7: Clean up user's cart
         cartItemRepository.deleteByUserUserId(userId);
 
         return mapOrderToResponse(savedOrder);
@@ -463,6 +510,9 @@ public class OrderServiceImpl implements OrderService {
                 );
             }
         }
+        if (order.getDiscountId() != null) {
+            discountService.rollbackDiscountUsage(order.getDiscountId(), order.getOrderId());
+        }
     }
 
     private String generateUniqueOrderCode() {
@@ -513,7 +563,14 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        return OrderResponse.fromEntity(order, itemResponses, historyResponses);
+        String discountCode = null;
+        if (order.getDiscountId() != null) {
+            discountCode = discountCodeRepository.findById(order.getDiscountId())
+                    .map(DiscountCode::getCode)
+                    .orElse(null);
+        }
+
+        return OrderResponse.fromEntity(order, itemResponses, historyResponses, discountCode);
     }
 
     private Pageable createPageable(OrderFilterRequest filter) {

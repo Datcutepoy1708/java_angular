@@ -7,6 +7,7 @@ import { CartService } from '../../../core/services/cart.service';
 import { OrderService } from '../../../core/services/order.service';
 import { AddressService } from '../../../core/services/address.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { DiscountService } from '../../../core/services/discount.service';
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;
@@ -22,7 +23,8 @@ describe('CheckoutComponent', () => {
         CartService,
         OrderService,
         AddressService,
-        AuthService
+        AuthService,
+        DiscountService
       ]
     }).compileComponents();
 
@@ -39,4 +41,29 @@ describe('CheckoutComponent', () => {
     expect(component.checkoutForm).toBeDefined();
     expect(component.checkoutForm.get('paymentMethod')?.value).toBe('cod');
   });
+
+  it('should set couponError when applying empty coupon code', () => {
+    component.couponInput.set('   ');
+    component.applyCoupon();
+    expect(component.couponError()).toBe('Vui lòng nhập mã giảm giá.');
+  });
+
+  it('should clear applied coupon on removeCoupon', () => {
+    component.couponInput.set('SALE10');
+    component.appliedDiscount.set({
+      valid: true,
+      discountId: 1,
+      code: 'SALE10',
+      discountType: 'percent',
+      discountValue: 10,
+      discountAmount: 50000,
+      subtotal: 500000,
+      finalTotal: 450000,
+      message: 'OK'
+    });
+    component.removeCoupon();
+    expect(component.appliedDiscount()).toBeNull();
+    expect(component.couponInput()).toBe('');
+  });
 });
+

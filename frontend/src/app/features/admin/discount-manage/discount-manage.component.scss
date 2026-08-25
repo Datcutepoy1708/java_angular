@@ -1,0 +1,707 @@
+$brand: #2563eb;
+$brand-light: #EEF3FF;
+$on-surface: #111827;
+$on-surface-variant: #6b7280;
+$surface: #ffffff;
+$surface-alt: #f9fafb;
+$border: #e5e7eb;
+$danger: #dc2626;
+$danger-light: #FEF2F2;
+$success: #16a34a;
+$success-light: #F0FDF4;
+$amber: #d97706;
+$amber-light: #FFFBEB;
+$indigo: #4f46e5;
+$indigo-light: #EEF2FF;
+$radius: 12px;
+$radius-sm: 8px;
+
+.page-container {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+}
+
+// ── Header ────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+
+  .header-left {
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-desc {
+      font-size: 0.875rem;
+      color: $on-surface-variant;
+      margin: 0;
+    }
+  }
+}
+
+// ── Cards ──────────────────────────────────────────────────────────
+.card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+// ── Metric KPI Cards ──────────────────────────────────────────────
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: $radius;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .metric-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      &.icon-blue { background: $brand-light; color: $brand; }
+      &.icon-green { background: $success-light; color: $success; }
+      &.icon-indigo { background: $indigo-light; color: $indigo; }
+      &.icon-amber { background: $amber-light; color: $amber; }
+    }
+
+    .metric-data {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .metric-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: $on-surface-variant;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .metric-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: $on-surface;
+        line-height: 1.2;
+
+        &.text-green { color: $success; }
+        &.text-indigo { color: $indigo; }
+        &.text-amber { color: $amber; }
+      }
+    }
+  }
+}
+
+// ── Alerts ─────────────────────────────────────────────────────────
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: $radius-sm;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+
+  &.alert-success {
+    background: $success-light;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+  }
+
+  &.alert-danger {
+    background: $danger-light;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+  }
+
+  .btn-close-alert {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: inherit;
+    opacity: 0.7;
+    &:hover { opacity: 1; }
+  }
+}
+
+// ── Toolbar ────────────────────────────────────────────────────────
+.toolbar-card {
+  padding: 14px 18px;
+  margin-bottom: 16px;
+
+  .toolbar-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+
+      .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        width: 16px;
+        height: 16px;
+      }
+
+      .search-input {
+        width: 100%;
+        height: 38px;
+        padding: 0 12px 0 36px;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        font-size: 0.875rem;
+        color: $on-surface;
+        background: $surface;
+        box-sizing: border-box;
+
+        &:focus {
+          outline: none;
+          border-color: $brand;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+      }
+    }
+
+    .filter-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+
+      .filter-select {
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        font-size: 0.875rem;
+        color: $on-surface;
+        background: $surface;
+        cursor: pointer;
+
+        &:focus {
+          outline: none;
+          border-color: $brand;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+      }
+    }
+  }
+}
+
+// ── Table Card ─────────────────────────────────────────────────────
+.table-card {
+  overflow: hidden;
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+
+    th {
+      background: $surface-alt;
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: $on-surface-variant;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid $border;
+      white-space: nowrap;
+
+      &.text-right { text-align: right; }
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid $border;
+      vertical-align: middle;
+      color: $on-surface;
+
+      &.text-right { text-align: right; }
+    }
+
+    tbody tr {
+      transition: background-color 0.15s;
+      &:hover {
+        background-color: $surface-alt;
+      }
+    }
+  }
+}
+
+.code-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .code-badge {
+    font-family: monospace;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: $brand;
+    background: $brand-light;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+  }
+
+  .code-desc {
+    font-size: 0.75rem;
+    color: $on-surface-variant;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.discount-value-pill {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .val-main {
+    font-weight: 700;
+    color: $success;
+    font-size: 0.95rem;
+  }
+
+  &.is-percent .val-main {
+    color: $brand;
+  }
+
+  .val-sub {
+    font-size: 0.72rem;
+    color: $on-surface-variant;
+  }
+}
+
+.order-min {
+  font-weight: 600;
+  color: #374151;
+}
+
+.usage-track {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .usage-text {
+    font-weight: 700;
+    color: $on-surface;
+    font-size: 0.9rem;
+  }
+
+  .usage-user {
+    font-size: 0.72rem;
+    color: $on-surface-variant;
+  }
+}
+
+.time-range {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 0.75rem;
+
+  .time-start { color: #374151; font-weight: 500; }
+  .time-divider { color: #9ca3af; font-size: 0.7rem; }
+  .time-end { color: #374151; font-weight: 500; }
+}
+
+.category-pill {
+  display: inline-block;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  color: #4b5563;
+  font-weight: 500;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.status-active {
+    background: $success-light;
+    color: $success;
+    border: 1px solid #bbf7d0;
+  }
+
+  &.status-inactive {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+  }
+
+  &.status-expired {
+    background: $danger-light;
+    color: $danger;
+    border: 1px solid #fecaca;
+  }
+}
+
+.actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border: 1px solid $border;
+    border-radius: 6px;
+    background: $surface;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $on-surface-variant;
+    transition: all 0.15s;
+
+    &:hover {
+      background: $surface-alt;
+      color: $on-surface;
+    }
+
+    &.btn-edit:hover {
+      color: $brand;
+      border-color: $brand;
+      background: $brand-light;
+    }
+
+    &.btn-delete:hover {
+      color: $danger;
+      border-color: $danger;
+      background: $danger-light;
+    }
+  }
+}
+
+// ── Pagination Footer ──────────────────────────────────────────────
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid $border;
+  background: $surface-alt;
+
+  .pagination-summary {
+    font-size: 0.8rem;
+    color: $on-surface-variant;
+  }
+
+  .pagination-nav {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+// ── Modals ─────────────────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal-card {
+  background: $surface;
+  border-radius: $radius;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.modal-lg {
+    max-width: 780px;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid $border;
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0;
+
+      .code-highlight {
+        font-family: monospace;
+        color: $brand;
+      }
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      color: $on-surface-variant;
+      &:hover { color: $on-surface; }
+    }
+  }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid $border;
+    background: $surface-alt;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  .span-2 {
+    grid-column: span 2;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+
+    .required { color: $danger; }
+  }
+
+  .form-control {
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    font-size: 0.875rem;
+    color: $on-surface;
+    background: $surface;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: $brand;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    &.uppercase {
+      text-transform: uppercase;
+      font-family: monospace;
+      font-weight: 700;
+    }
+  }
+
+  .form-error {
+    font-size: 0.75rem;
+    color: $danger;
+  }
+}
+
+.order-code-badge {
+  font-family: monospace;
+  font-weight: 700;
+  color: $brand;
+  background: $brand-light;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.text-secondary {
+  color: $on-surface-variant;
+}
+
+// ── Buttons ────────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: $radius-sm;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+
+  &.btn-primary {
+    background: $brand;
+    color: #ffffff;
+    &:hover:not(:disabled) { background: #1d4ed8; }
+  }
+
+  &.btn-ghost {
+    background: transparent;
+    color: $on-surface-variant;
+    border-color: $border;
+    &:hover:not(:disabled) { background: $surface-alt; color: $on-surface; }
+  }
+
+  &.btn-sm {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.8rem;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ── State Containers ───────────────────────────────────────────────
+.state-container {
+  text-align: center;
+  padding: 56px 24px;
+  color: $on-surface-variant;
+
+  &.empty-state {
+    .empty-icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: $surface-alt;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: #9ca3af;
+    }
+
+    .empty-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0 0 6px;
+    }
+
+    .empty-desc {
+      font-size: 0.875rem;
+      color: $on-surface-variant;
+      margin: 0 0 20px;
+    }
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: $brand;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScale {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

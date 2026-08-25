@@ -40,6 +40,9 @@ public interface CategoryService {
 
     long countChildren(Integer parentId);
 
+    /** Get set of category ID and all its descendant category IDs in memory */
+    java.util.Set<Integer> getCategoryAndDescendantIds(Integer rootId);
+
     /** @deprecated Use softDeleteCategory instead */
     @Deprecated
     void deleteCategory(Integer id);

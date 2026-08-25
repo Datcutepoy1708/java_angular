@@ -91,6 +91,11 @@ export const routes: Routes = [
             path: 'orders',
             loadComponent: () =>
               import('./features/admin/order-manage/order-manage.component').then((m) => m.OrderManageComponent)
+          },
+          {
+            path: 'discounts',
+            loadComponent: () =>
+              import('./features/admin/discount-manage/discount-manage.component').then((m) => m.DiscountManageComponent)
           }
         ]
       }

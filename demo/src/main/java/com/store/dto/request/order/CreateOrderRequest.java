@@ -31,6 +31,9 @@ public class CreateOrderRequest {
 
     private PaymentMethod paymentMethod;
 
+    @Size(max = 50, message = "Mã giảm giá không vượt quá 50 ký tự")
+    private String discountCode;
+
     @Size(max = 500, message = "Note must not exceed 500 characters")
     private String note;
 }

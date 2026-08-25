@@ -253,13 +253,15 @@
               <div class="step-badge">3</div>
               <h2 class="section-title">Ghi Chú Đơn Hàng</h2>
             </div>
-            <form [formGroup]="checkoutForm">
-              <textarea 
-                formControlName="note" 
-                class="form-control" 
-                rows="3" 
-                placeholder="Ghi chú về thời gian giao hàng, hướng dẫn chỉ đường cụ thể (tùy chọn)..."
-              ></textarea>
+            <form [formGroup]="checkoutForm" class="note-form">
+              <div class="form-group" style="margin-bottom: 0;">
+                <textarea 
+                  formControlName="note" 
+                  class="form-control order-note-textarea" 
+                  rows="3" 
+                  placeholder="Ghi chú về thời gian giao hàng, hướng dẫn chỉ đường cụ thể (tùy chọn)..."
+                ></textarea>
+              </div>
             </form>
           </section>
         </div>
@@ -288,6 +290,72 @@
 
             <div class="summary-divider"></div>
 
+            <!-- Coupon Code Section -->
+            <div class="coupon-section">
+              <label class="coupon-label">Mã khuyến mãi / Voucher</label>
+              @if (appliedDiscount()) {
+                <div class="applied-coupon-tag">
+                  <div class="tag-left">
+                    <span class="coupon-badge-code">{{ appliedDiscount()!.code }}</span>
+                    <span class="coupon-badge-desc">{{ appliedDiscount()!.description || ('Giảm ' + formatPrice(appliedDiscount()!.discountAmount)) }}</span>
+                  </div>
+                  <button type="button" class="btn-remove-coupon" (click)="removeCoupon()" aria-label="Gỡ mã giảm giá">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              } @else {
+                <div class="coupon-input-group">
+                  <input 
+                    type="text" 
+                    class="form-control coupon-input" 
+                    placeholder="Nhập mã giảm giá..."
+                    [value]="couponInput()"
+                    (input)="couponInput.set($any($event.target).value)"
+                    (keyup.enter)="applyCoupon()"
+                  />
+                  <button 
+                    type="button" 
+                    class="btn btn-apply-coupon" 
+                    [disabled]="isValidatingCoupon() || !couponInput().trim()"
+                    (click)="applyCoupon()"
+                  >
+                    @if (isValidatingCoupon()) {
+                      <span class="spinner-sm"></span>
+                    } @else {
+                      Áp dụng
+                    }
+                  </button>
+                </div>
+              }
+
+              @if (couponError()) {
+                <div class="coupon-msg error-msg">{{ couponError() }}</div>
+              }
+              @if (couponSuccess()) {
+                <div class="coupon-msg success-msg">{{ couponSuccess() }}</div>
+              }
+
+              <!-- Public coupon suggestions -->
+              @if (!appliedDiscount() && publicDiscounts().length > 0) {
+                <div class="public-coupons">
+                  <span class="suggestions-title">Mã giảm giá khả dụng:</span>
+                  <div class="coupon-chips">
+                    @for (disc of publicDiscounts(); track disc.discountId) {
+                      <button type="button" class="coupon-chip" (click)="applyCoupon(disc.code)">
+                        <strong class="chip-code">{{ disc.code }}</strong>
+                        <span class="chip-val">{{ disc.discountType === 'percent' ? ('-' + disc.discountValue + '%') : ('-' + formatPrice(disc.discountValue)) }}</span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="summary-divider"></div>
+
             <!-- Price Breakdown -->
             <div class="pricing-rows">
               <div class="price-row">
@@ -300,8 +368,14 @@
               </div>
               @if (cartService.savingsAmount() > 0) {
                 <div class="price-row text-success">
-                  <span>Tiết kiệm</span>
+                  <span>Tiết kiệm sản phẩm</span>
                   <span>-{{ formatPrice(cartService.savingsAmount()) }}</span>
+                </div>
+              }
+              @if (appliedDiscount()) {
+                <div class="price-row text-success discount-row">
+                  <span>Giảm giá voucher ({{ appliedDiscount()!.code }})</span>
+                  <span>-{{ formatPrice(appliedDiscount()!.discountAmount) }}</span>
                 </div>
               }
             </div>
@@ -311,7 +385,7 @@
             <!-- Total -->
             <div class="total-row">
               <span class="total-label">Tổng thanh toán</span>
-              <span class="total-amount">{{ formatPrice(cartService.totalAmount()) }}</span>
+              <span class="total-amount">{{ formatPrice(finalTotal) }}</span>
             </div>
 
             <!-- Submit Button -->

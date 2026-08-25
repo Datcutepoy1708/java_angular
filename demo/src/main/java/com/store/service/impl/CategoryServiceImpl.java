@@ -385,6 +385,18 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.countByParent_CategoryId(parentId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Set<Integer> getCategoryAndDescendantIds(Integer rootId) {
+        if (rootId == null) return java.util.Collections.emptySet();
+        List<Category> subtree = collectSubtree(rootId);
+        java.util.Set<Integer> ids = new java.util.HashSet<>();
+        for (Category c : subtree) {
+            ids.add(c.getCategoryId());
+        }
+        return ids;
+    }
+
     /** @deprecated Use softDeleteCategory instead */
     @Override
     @Deprecated

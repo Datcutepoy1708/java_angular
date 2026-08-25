@@ -43,6 +43,7 @@ export interface Order {
   shippingFee: number;
   totalAmount: number;
   discountId?: number;
+  discountCode?: string;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
@@ -63,6 +64,7 @@ export interface CreateOrderRequest {
   ward?: string;
   detailAddress?: string;
   paymentMethod: PaymentMethod;
+  discountCode?: string;
   note?: string;
 }
 

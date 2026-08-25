@@ -34,6 +34,7 @@ public class OrderResponse {
     private BigDecimal shippingFee;
     private BigDecimal totalAmount;
     private Long discountId;
+    private String discountCode;
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus;
     private OrderStatus orderStatus;
@@ -48,6 +49,10 @@ public class OrderResponse {
     private List<OrderStatusHistoryResponse> statusHistory = new ArrayList<>();
 
     public static OrderResponse fromEntity(Order order, List<OrderItemResponse> itemResponses, List<OrderStatusHistoryResponse> historyResponses) {
+        return fromEntity(order, itemResponses, historyResponses, null);
+    }
+
+    public static OrderResponse fromEntity(Order order, List<OrderItemResponse> itemResponses, List<OrderStatusHistoryResponse> historyResponses, String discountCode) {
         if (order == null) return null;
         var user = order.getUser();
 
@@ -66,6 +71,7 @@ public class OrderResponse {
                 .shippingFee(order.getShippingFee())
                 .totalAmount(order.getTotalAmount())
                 .discountId(order.getDiscountId())
+                .discountCode(discountCode)
                 .paymentMethod(order.getPaymentMethod())
                 .paymentStatus(order.getPaymentStatus())
                 .orderStatus(order.getOrderStatus())
