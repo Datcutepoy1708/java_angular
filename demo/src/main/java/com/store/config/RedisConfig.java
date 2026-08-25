@@ -62,6 +62,9 @@ public class RedisConfig implements CachingConfigurer {
         configs.put("productReviews", defaultConfig.entryTtl(Duration.ofMinutes(15)));
         configs.put("systemSettings", defaultConfig.entryTtl(Duration.ofHours(24)));
         configs.put("statistics", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        configs.put("suppliers", defaultConfig.entryTtl(Duration.ofHours(2)));
+        configs.put("roles", defaultConfig.entryTtl(Duration.ofHours(2)));
+        configs.put("permissions", defaultConfig.entryTtl(Duration.ofHours(2)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(defaultConfig)

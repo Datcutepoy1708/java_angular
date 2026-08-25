@@ -28,4 +28,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     boolean existsBySkuAndProductIdNot(String sku, Long productId);
     boolean existsByCategory_CategoryId(Integer categoryId);
     boolean existsByBrand_BrandId(Integer brandId);
+    boolean existsBySupplier_SupplierId(Integer supplierId);
+    long countBySupplier_SupplierId(Integer supplierId);
 }

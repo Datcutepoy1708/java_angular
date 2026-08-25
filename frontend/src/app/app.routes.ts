@@ -121,6 +121,31 @@ export const routes: Routes = [
             path: 'statistics',
             loadComponent: () =>
               import('./features/admin/statistics/statistics.component').then((m) => m.StatisticsComponent)
+          },
+          {
+            path: 'suppliers',
+            loadComponent: () =>
+              import('./features/admin/supplier-manage/supplier-manage.component').then((m) => m.SupplierManageComponent)
+          },
+          {
+            path: 'customers',
+            loadComponent: () =>
+              import('./features/admin/customer-manage/customer-manage.component').then((m) => m.CustomerManageComponent)
+          },
+          {
+            path: 'staff',
+            loadComponent: () =>
+              import('./features/admin/staff-manage/staff-manage.component').then((m) => m.StaffManageComponent)
+          },
+          {
+            path: 'roles',
+            loadComponent: () =>
+              import('./features/admin/role-manage/role-manage.component').then((m) => m.RoleManageComponent)
+          },
+          {
+            path: 'users',
+            redirectTo: 'staff',
+            pathMatch: 'full'
           }
         ]
       }

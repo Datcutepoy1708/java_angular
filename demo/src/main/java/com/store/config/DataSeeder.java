@@ -82,22 +82,53 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedPermissionsAndRoles() {
-        List<String> permissionCodes = List.of(
-                "PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_DELETE", "PRODUCT_VIEW",
-                "CATEGORY_MANAGE", "BRAND_MANAGE",
-                "ORDER_VIEW", "ORDER_MANAGE",
-                "USER_VIEW", "USER_MANAGE"
-        );
+        java.util.Map<String, String> permissionDefs = new java.util.LinkedHashMap<>();
+        // 1. Sản phẩm & Danh mục
+        permissionDefs.put("PRODUCT_VIEW", "Xem danh sách và chi tiết sản phẩm");
+        permissionDefs.put("PRODUCT_CREATE", "Thêm mới sản phẩm và biến thể");
+        permissionDefs.put("PRODUCT_UPDATE", "Chỉnh sửa thông tin sản phẩm và giá");
+        permissionDefs.put("PRODUCT_DELETE", "Xóa sản phẩm khỏi hệ thống");
+        permissionDefs.put("CATEGORY_MANAGE", "Quản lý danh mục và thông số kỹ thuật");
+        permissionDefs.put("BRAND_MANAGE", "Quản lý thương hiệu sản phẩm");
+
+        // 2. Kho hàng & Nhà cung cấp
+        permissionDefs.put("INVENTORY_VIEW", "Xem tồn kho và lịch sử điều chỉnh");
+        permissionDefs.put("INVENTORY_MANAGE", "Nhập xuất kho và điều chỉnh tồn kho");
+        permissionDefs.put("SUPPLIER_MANAGE", "Quản lý danh sách nhà cung cấp");
+
+        // 3. Đơn hàng & Đánh giá
+        permissionDefs.put("ORDER_VIEW", "Xem danh sách và chi tiết đơn hàng");
+        permissionDefs.put("ORDER_MANAGE", "Cập nhật trạng thái và xử lý đơn hàng");
+        permissionDefs.put("REVIEW_MANAGE", "Duyệt và phản hồi đánh giá sản phẩm");
+
+        // 4. Khuyến mãi & Tiếp thị
+        permissionDefs.put("DISCOUNT_MANAGE", "Tạo và quản lý mã giảm giá");
+        permissionDefs.put("BANNER_MANAGE", "Quản lý banner quảng cáo trang chủ");
+        permissionDefs.put("NEWS_MANAGE", "Đăng và quản lý bài viết tin tức");
+
+        // 5. Khách hàng, Nhân sự & Phân quyền
+        permissionDefs.put("CUSTOMER_VIEW", "Xem danh sách và hồ sơ khách hàng");
+        permissionDefs.put("CUSTOMER_MANAGE", "Khóa / mở khóa tài khoản khách hàng");
+        permissionDefs.put("STAFF_MANAGE", "Quản lý tài khoản nhân viên nội bộ");
+        permissionDefs.put("ROLE_MANAGE", "Quản lý chức vụ và ma trận phân quyền");
+
+        // 6. Báo cáo & Cài đặt hệ thống
+        permissionDefs.put("STATISTICS_VIEW", "Xem thống kê doanh thu và báo cáo");
+        permissionDefs.put("SETTING_MANAGE", "Cấu hình cài đặt hệ thống");
 
         Set<Permission> allPermissions = new HashSet<>();
-        for (String code : permissionCodes) {
-            Permission perm = permissionRepository.findByPermissionCode(code)
+        for (java.util.Map.Entry<String, String> entry : permissionDefs.entrySet()) {
+            Permission perm = permissionRepository.findByPermissionCode(entry.getKey())
                     .orElseGet(() -> permissionRepository.save(
                             Permission.builder()
-                                    .permissionCode(code)
-                                    .description("Permission for " + code)
+                                    .permissionCode(entry.getKey())
+                                    .description(entry.getValue())
                                     .build()
                     ));
+            if (perm.getDescription() == null || !perm.getDescription().equals(entry.getValue())) {
+                perm.setDescription(entry.getValue());
+                permissionRepository.save(perm);
+            }
             allPermissions.add(perm);
         }
 
@@ -105,29 +136,35 @@ public class DataSeeder implements CommandLineRunner {
                 .orElseGet(() -> roleRepository.save(
                         Role.builder()
                                 .roleName("ROLE_ADMIN")
-                                .description("Full administrative access")
+                                .description("Quản trị viên toàn quyền hệ thống")
                                 .permissions(allPermissions)
                                 .build()
                 ));
-        if (adminRole.getPermissions().isEmpty()) {
-            adminRole.setPermissions(allPermissions);
-            roleRepository.save(adminRole);
-        }
+        adminRole.setPermissions(allPermissions);
+        roleRepository.save(adminRole);
 
-        roleRepository.findByRoleName("ROLE_STAFF")
+        Set<Permission> staffPermissions = allPermissions.stream()
+                .filter(p -> !p.getPermissionCode().equals("ROLE_MANAGE") && !p.getPermissionCode().equals("SETTING_MANAGE"))
+                .collect(java.util.stream.Collectors.toSet());
+
+        Role staffRole = roleRepository.findByRoleName("ROLE_STAFF")
                 .orElseGet(() -> roleRepository.save(
                         Role.builder()
                                 .roleName("ROLE_STAFF")
-                                .description("Staff member access")
-                                .permissions(new HashSet<>(allPermissions))
+                                .description("Nhân viên vận hành và bán hàng")
+                                .permissions(staffPermissions)
                                 .build()
                 ));
+        if (staffRole.getPermissions().isEmpty()) {
+            staffRole.setPermissions(staffPermissions);
+            roleRepository.save(staffRole);
+        }
 
         roleRepository.findByRoleName("ROLE_CUSTOMER")
                 .orElseGet(() -> roleRepository.save(
                         Role.builder()
                                 .roleName("ROLE_CUSTOMER")
-                                .description("Standard shopping customer")
+                                .description("Khách hàng mua sắm trực tuyến")
                                 .build()
                 ));
     }

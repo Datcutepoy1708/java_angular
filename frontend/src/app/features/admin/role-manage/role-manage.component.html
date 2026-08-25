@@ -1,0 +1,413 @@
+<div class="role-manage-container">
+  <!-- Header & Actions -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Quản Lý Chức Vụ & Ma Trận Phân Quyền</h1>
+      <p class="page-subtitle">Định nghĩa các chức vụ nội bộ và phân quyền truy cập chi tiết cho từng vai trò</p>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="header-actions">
+      <div class="tab-switcher">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'roles'"
+          (click)="switchTab('roles')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 100-8 4 4 0 000 8z M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75" />
+          </svg>
+          <span>Danh Sách Chức Vụ</span>
+          <span class="tab-badge">{{ roles().length }}</span>
+        </button>
+
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'matrix'"
+          (click)="switchTab('matrix')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          <span>Ma Trận Phân Quyền</span>
+          @if (isMatrixDirty()) {
+            <span class="dirty-dot" title="Có thay đổi chưa lưu"></span>
+          }
+        </button>
+      </div>
+
+      @if (activeTab() === 'roles') {
+        <button class="btn btn-primary btn-create" (click)="openCreateModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>Tạo Chức Vụ Mới</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Toast Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- ================= TAB 1: DANH SÁCH CHỨC VỤ ================= -->
+  @if (activeTab() === 'roles') {
+    <div class="roles-grid">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Đang tải danh sách chức vụ...</span>
+        </div>
+      } @else {
+        @for (role of roles(); track role.roleId) {
+          <div class="role-card" [class.system-card]="role.isSystemRole">
+            <div class="card-header">
+              <div class="role-badge-row">
+                <span class="role-tag" [class.tag-system]="role.isSystemRole" [class.tag-custom]="!role.isSystemRole">
+                  {{ role.isSystemRole ? 'Hệ Thống' : 'Tùy Chỉnh' }}
+                </span>
+                <span class="user-count-badge" [class.has-users]="role.userCount > 0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <span>{{ role.userCount }} nhân sự</span>
+                </span>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn-icon" title="Chỉnh sửa chức vụ" (click)="openEditModal(role)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+
+                <!-- Delete button (Guard: System roles or userCount > 0 disabled) -->
+                <button
+                  class="btn-icon btn-delete"
+                  [disabled]="role.isSystemRole || role.userCount > 0"
+                  [title]="role.isSystemRole ? 'Không thể xóa chức vụ hệ thống mặc định' : (role.userCount > 0 ? 'Không thể xóa chức vụ đang có ' + role.userCount + ' nhân sự sử dụng' : 'Xóa chức vụ')"
+                  (click)="openConfirmDelete(role)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <h3 class="role-name">{{ role.description || role.roleName }}</h3>
+              <span class="role-code font-mono">{{ role.roleName }}</span>
+
+              <div class="permissions-summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <span>Được cấp <strong>{{ role.permissionCodes.length }}</strong> quyền trong hệ thống</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <button class="btn-matrix-link" (click)="switchTab('matrix')">
+                <span>Xem trên ma trận phân quyền</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- ================= TAB 2: MA TRẬN PHÂN QUYỀN (PERMISSION MATRIX) ================= -->
+  @if (activeTab() === 'matrix') {
+    <!-- Floating / Sticky Save Toolbar when dirty -->
+    @if (isMatrixDirty()) {
+      <div class="matrix-save-bar">
+        <div class="save-bar-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Bạn có thay đổi ma trận phân quyền chưa lưu</span>
+        </div>
+        <div class="save-bar-actions">
+          <button class="btn btn-secondary" (click)="resetMatrixChanges()">Hủy Thay Đổi</button>
+          <button class="btn btn-primary" [disabled]="isLoading()" (click)="saveMatrixChanges()">
+            Lưu Ma Trận Phân Quyền
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="matrix-card">
+      <div class="matrix-scroll-wrapper">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th class="col-perm-title sticky-left">
+                <span>Chức Năng & Quyền Hạn</span>
+              </th>
+              @for (role of roles(); track role.roleId) {
+                <th class="col-role-header text-center">
+                  <div class="role-header-cell">
+                    <span class="header-role-name">{{ role.description || role.roleName }}</span>
+                    <span class="header-role-code font-mono">{{ role.roleName }}</span>
+                  </div>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (group of permissionGroups(); track group.groupCode) {
+              <!-- Module Group Header Row -->
+              <tr class="group-header-row">
+                <td class="group-title sticky-left">
+                  <div class="group-title-content">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                      <polyline points="2 17 12 22 22 17" />
+                      <polyline points="2 12 12 17 22 12" />
+                    </svg>
+                    <span>{{ group.groupName }}</span>
+                  </div>
+                </td>
+                @for (role of roles(); track role.roleId) {
+                  <td class="group-actions text-center">
+                    <div class="quick-toggle-btns">
+                      <button
+                        type="button"
+                        class="btn-toggle-all"
+                        title="Chọn tất cả quyền nhóm này cho chức vụ"
+                        (click)="toggleGroupForRole(group, role.roleId, true)"
+                      >
+                        Bật hết
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-toggle-none"
+                        title="Bỏ chọn tất cả quyền nhóm này"
+                        [disabled]="role.roleName === 'ROLE_ADMIN'"
+                        (click)="toggleGroupForRole(group, role.roleId, false)"
+                      >
+                        Tắt hết
+                      </button>
+                    </div>
+                  </td>
+                }
+              </tr>
+
+              <!-- Permission Items inside Group -->
+              @for (perm of group.permissions; track perm.permissionId) {
+                <tr class="perm-row">
+                  <!-- Permission Info (Sticky Left) -->
+                  <td class="col-perm-title sticky-left">
+                    <div class="perm-cell">
+                      <span class="perm-desc">{{ perm.description }}</span>
+                      <span class="perm-code font-mono">{{ perm.permissionCode }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Role Checkboxes -->
+                  @for (role of roles(); track role.roleId) {
+                    <td class="col-matrix-check text-center">
+                      <div class="checkbox-wrapper">
+                        @if (isPermissionDisabled(role, perm.permissionCode)) {
+                          <!-- Protected Permission Icon for Admin -->
+                          <div class="lock-indicator" title="Quyền quản trị cốt lõi được bảo vệ">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </div>
+                        } @else {
+                          <input
+                            type="checkbox"
+                            [checked]="isPermissionChecked(role.roleId, perm.permissionCode)"
+                            (change)="toggleMatrixPermission(role.roleId, perm.permissionCode)"
+                          />
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ================= MODAL: TẠO CHỨC VỤ MỚI ================= -->
+@if (isCreateModalOpen()) {
+  <div class="modal-backdrop" (click)="isCreateModalOpen.set(false)">
+    <div class="modal-container modal-create-role" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Tạo Chức Vụ / Vai Trò Mới</h2>
+        <button class="btn-close" (click)="isCreateModalOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="createRoleForm" (ngSubmit)="submitCreateRole()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="role-display-name">Tên Chức Vụ <span class="text-danger">*</span></label>
+            <input
+              id="role-display-name"
+              type="text"
+              formControlName="displayName"
+              class="form-control"
+              placeholder="VD: Trưởng kho, Kế toán, Chăm sóc khách hàng..."
+              (input)="onDisplayNameChange($any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="role-code">Mã Vai Trò (Tự động chuẩn hóa) <span class="text-danger">*</span></label>
+            <input
+              id="role-code"
+              type="text"
+              formControlName="roleCode"
+              class="form-control font-mono"
+              placeholder="ROLE_TRUONG_KHO"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="role-desc">Mô Tả Nhiệm Vụ</label>
+            <input
+              id="role-desc"
+              type="text"
+              formControlName="description"
+              class="form-control"
+              placeholder="Chịu trách nhiệm quản lý nhập xuất kho..."
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="isCreateModalOpen.set(false)">Hủy</button>
+          <button type="submit" class="btn btn-primary" [disabled]="createRoleForm.invalid || isLoading()">
+            Tạo Chức Vụ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL: CHỈNH SỬA CHỨC VỤ ================= -->
+@if (isEditModalOpen()) {
+  <div class="modal-backdrop" (click)="isEditModalOpen.set(false)">
+    <div class="modal-container modal-edit-role" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Chỉnh Sửa Chức Vụ</h2>
+        <button class="btn-close" (click)="isEditModalOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="editRoleForm" (ngSubmit)="submitEditRole()">
+        <div class="modal-body">
+          @if (selectedRole(); as r) {
+            <div class="form-group">
+              <label for="edit-role-name">Mã Chức Vụ</label>
+              <input
+                id="edit-role-name"
+                type="text"
+                formControlName="roleName"
+                class="form-control font-mono"
+                [readOnly]="r.isSystemRole"
+              />
+              @if (r.isSystemRole) {
+                <small class="text-muted">Chức vụ hệ thống mặc định không thể sửa mã.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="edit-role-desc">Tên / Mô Tả Chức Vụ</label>
+              <input
+                id="edit-role-desc"
+                type="text"
+                formControlName="description"
+                class="form-control"
+              />
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="isEditModalOpen.set(false)">Hủy</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editRoleForm.invalid || isLoading()">
+            Lưu Thay Đổi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL: XÁC NHẬN XÓA CHỨC VỤ ================= -->
+@if (isConfirmDeleteOpen()) {
+  <div class="modal-backdrop" (click)="isConfirmDeleteOpen.set(false)">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Xác Nhận Xóa Chức Vụ</h2>
+        <button class="btn-close" (click)="isConfirmDeleteOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>
+          Bạn có chắc chắn muốn xóa chức vụ <strong>{{ selectedRole()?.description || selectedRole()?.roleName }}</strong> ({{ selectedRole()?.roleName }})?
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="isConfirmDeleteOpen.set(false)">Hủy</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDeleteRole()">
+          Xác Nhận Xóa
+        </button>
+      </div>
+    </div>
+  </div>
+}

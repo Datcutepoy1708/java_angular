@@ -1,0 +1,775 @@
+<div class="user-manage-container">
+  <!-- ═══════════════════════════════════════════
+       PAGE HEADER
+  ═══════════════════════════════════════════ -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Quản Lý Người Dùng & Phân Quyền</h1>
+      <p class="page-subtitle">Quản lý tài khoản nhân viên, quản trị viên, phân quyền RBAC và danh sách khách hàng</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" (click)="openCreateModal()" type="button" id="btn-add-user">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/>
+          <line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+        <span>Thêm Tài Khoản Mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       METRICS CARDS
+  ═══════════════════════════════════════════ -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon total">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Tổng Tài Khoản</span>
+        <span class="metric-value">{{ totalElements() }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon staff">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+          <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Admin & Nhân Viên</span>
+        <span class="metric-value">{{ staffAdminCount() }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon customer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Khách Hàng Active</span>
+        <span class="metric-value">{{ activeCustomersCount() }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon locked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Tài Khoản Bị Khóa</span>
+        <span class="metric-value">{{ lockedCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       ALERTS
+  ═══════════════════════════════════════════ -->
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <path d="M5 13l4 4L19 7"/>
+      </svg>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-error" role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       FILTERS BAR
+  ═══════════════════════════════════════════ -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon" width="18" height="18">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Tìm kiếm họ tên, email, số điện thoại..."
+        [value]="searchKeyword()"
+        (input)="onSearch($event)"
+      />
+    </div>
+
+    <div class="filter-actions">
+      <select class="form-select filter-select" [value]="filterRole()" (change)="onFilterRole($event)">
+        <option value="all">Tất cả vai trò</option>
+        <option value="ROLE_ADMIN">Quản trị viên (ADMIN)</option>
+        <option value="ROLE_STAFF">Nhân viên (STAFF)</option>
+        <option value="ROLE_CUSTOMER">Khách hàng (CUSTOMER)</option>
+      </select>
+
+      <select class="form-select filter-select" [value]="filterStatus()" (change)="onFilterStatus($event)">
+        <option value="all">Tất cả trạng thái</option>
+        <option value="active">Đang hoạt động</option>
+        <option value="inactive">Tạm ngưng</option>
+        <option value="banned">Bị khóa (Banned)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       DATA TABLE
+  ═══════════════════════════════════════════ -->
+  <div class="table-container">
+    @if (isLoading()) {
+      <div class="table-loading">
+        <div class="spinner"></div>
+        <span>Đang tải danh sách người dùng...</span>
+      </div>
+    } @else if (users().length === 0) {
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+        </svg>
+        <p class="empty-title">Không tìm thấy tài khoản người dùng nào</p>
+        <p class="empty-desc">Thử tìm kiếm với từ khóa khác hoặc bấm nút thêm tài khoản mới.</p>
+      </div>
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-user">Người Dùng</th>
+            <th class="col-contact">Liên Hệ</th>
+            <th class="col-roles">Vai Trò</th>
+            <th class="col-orders text-center">Đơn Hàng</th>
+            <th class="col-status text-center">Trạng Thái</th>
+            <th class="col-actions text-right">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track u.userId) {
+            <tr>
+              <!-- User Info (Avatar + Full Name + Joined Date) -->
+              <td class="col-user">
+                <div class="user-cell">
+                  <div class="user-avatar" [class.avatar-admin]="u.roles.includes('ROLE_ADMIN')" [class.avatar-staff]="u.roles.includes('ROLE_STAFF')">
+                    @if (u.avatarUrl) {
+                      <img [src]="u.avatarUrl" [alt]="u.fullName" class="avatar-img"/>
+                    } @else {
+                      <span>{{ getUserInitials(u.fullName) }}</span>
+                    }
+                  </div>
+                  <div class="user-meta">
+                    <span class="user-name font-semibold" (click)="openDetailModal(u)">
+                      {{ u.fullName }}
+                      @if (u.userId === currentAuthUser()?.userId) {
+                        <span class="badge-you">(Bạn)</span>
+                      }
+                    </span>
+                    <span class="user-joined">Đã tham gia: {{ formatDate(u.createdAt) }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Contact (Email + Phone) -->
+              <td class="col-contact">
+                <div class="contact-cell">
+                  <div class="email-row">
+                    <span class="email-text">{{ u.email }}</span>
+                    @if (u.emailVerified) {
+                      <span class="verified-glyph" title="Email đã xác thực">✓</span>
+                    }
+                  </div>
+                  <span class="phone-text font-mono">{{ u.phone || 'Chưa có SĐT' }}</span>
+                </div>
+              </td>
+
+              <!-- Roles Badges -->
+              <td class="col-roles">
+                <div class="roles-badges">
+                  @for (r of u.roles; track r) {
+                    <span
+                      class="role-pill"
+                      [class.role-admin]="r === 'ROLE_ADMIN'"
+                      [class.role-staff]="r === 'ROLE_STAFF'"
+                      [class.role-customer]="r === 'ROLE_CUSTOMER'"
+                    >
+                      {{ r === 'ROLE_ADMIN' ? 'Admin' : (r === 'ROLE_STAFF' ? 'Staff' : 'Khách hàng') }}
+                    </span>
+                  }
+                </div>
+              </td>
+
+              <!-- Order Stats -->
+              <td class="col-orders text-center">
+                <div class="order-stats">
+                  <span class="order-count">{{ u.totalOrders }} đơn</span>
+                  <span class="spend-amount">{{ formatPrice(u.totalSpend) }}</span>
+                </div>
+              </td>
+
+              <!-- Status Badge -->
+              <td class="col-status text-center">
+                <span
+                  class="status-badge"
+                  [class.status-active]="u.status === 'active'"
+                  [class.status-inactive]="u.status === 'inactive'"
+                  [class.status-banned]="u.status === 'banned'"
+                >
+                  {{ u.status === 'active' ? 'Hoạt động' : (u.status === 'banned' ? 'Đã khóa' : 'Tạm ngưng') }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td class="col-actions text-right">
+                <div class="action-buttons">
+                  <!-- Edit Profile / Roles -->
+                  <button
+                    class="btn-icon btn-edit"
+                    (click)="openEditModal(u)"
+                    title="Chỉnh sửa tài khoản & phân quyền"
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+
+                  <!-- Lock / Unlock Toggle -->
+                  <button
+                    class="btn-icon"
+                    [class.btn-lock]="u.status === 'active'"
+                    [class.btn-unlock]="u.status !== 'active'"
+                    (click)="toggleUserStatus(u)"
+                    [title]="u.status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
+                    type="button"
+                    [disabled]="u.userId === currentAuthUser()?.userId"
+                  >
+                    @if (u.status === 'active') {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 019.9-1"/>
+                      </svg>
+                    }
+                  </button>
+
+                  <!-- Reset Password -->
+                  <button
+                    class="btn-icon btn-key"
+                    (click)="openResetPasswordModal(u)"
+                    title="Đặt lại mật khẩu"
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M21 2l-2 2m-1.5 1.5L19 7l-3 3-4-4 7-7zM3 21l3-3m0 0l4-4m-4 4l-3-3m7 7l4-4"/>
+                    </svg>
+                  </button>
+
+                  <!-- View Details -->
+                  <button
+                    class="btn-icon btn-view"
+                    (click)="openDetailModal(u)"
+                    title="Xem chi tiết"
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+
+                  <!-- Delete -->
+                  <button
+                    class="btn-icon btn-delete"
+                    (click)="openConfirmDelete(u)"
+                    title="Xóa tài khoản"
+                    type="button"
+                    [disabled]="u.userId === currentAuthUser()?.userId"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          [totalElements]="totalElements()"
+          [pageSize]="pageSize()"
+          (pageChanged)="onPageChange($event)"
+        />
+      </div>
+    }
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: CREATE USER / STAFF
+  ═══════════════════════════════════════════ -->
+  @if (isCreateModalOpen()) {
+    <div class="modal-backdrop" (click)="closeCreateModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Tạo Tài Khoản Người Dùng Mới</h2>
+          <button class="btn-close" (click)="closeCreateModal()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label" for="c-fullname">
+                Họ và Tên <span class="required">*</span>
+              </label>
+              <input
+                id="c-fullname"
+                type="text"
+                class="form-control"
+                placeholder="VD: Nguyễn Văn A"
+                formControlName="fullName"
+              />
+              @if (createForm.get('fullName')?.touched && createForm.get('fullName')?.invalid) {
+                <span class="field-error">Họ tên là bắt buộc (tối đa 150 ký tự)</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label class="form-label" for="c-email">
+                  Email <span class="required">*</span>
+                </label>
+                <input
+                  id="c-email"
+                  type="email"
+                  class="form-control"
+                  placeholder="VD: staff@complexus.com"
+                  formControlName="email"
+                />
+                @if (createForm.get('email')?.touched && createForm.get('email')?.invalid) {
+                  <span class="field-error">Email hợp lệ là bắt buộc</span>
+                }
+              </div>
+              <div class="form-group col-half">
+                <label class="form-label" for="c-phone">Số Điện Thoại</label>
+                <input
+                  id="c-phone"
+                  type="text"
+                  class="form-control"
+                  placeholder="VD: 0988776655"
+                  formControlName="phone"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="label-with-action">
+                <label class="form-label" for="c-password">
+                  Mật Khẩu Ban Đầu <span class="required">*</span>
+                </label>
+                <button
+                  type="button"
+                  class="btn-link"
+                  (click)="createForm.patchValue({ password: generateRandomPassword() })"
+                >
+                  Tạo Mật Khẩu Ngẫu Nhiên
+                </button>
+              </div>
+              <div class="input-with-copy">
+                <input
+                  id="c-password"
+                  type="text"
+                  class="form-control font-mono"
+                  formControlName="password"
+                />
+                <button
+                  type="button"
+                  class="btn-copy"
+                  (click)="copyPassword(createForm.get('password')?.value)"
+                  title="Sao chép mật khẩu"
+                >
+                  Copy
+                </button>
+              </div>
+              @if (createForm.get('password')?.touched && createForm.get('password')?.invalid) {
+                <span class="field-error">Mật khẩu từ 6 đến 50 ký tự</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label class="form-label" for="c-gender">Giới Tính</label>
+                <select id="c-gender" class="form-select" formControlName="gender">
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+              <div class="form-group col-half">
+                <label class="form-label" for="c-status">Trạng Thái</label>
+                <select id="c-status" class="form-select" formControlName="status">
+                  <option value="active">Đang hoạt động</option>
+                  <option value="inactive">Tạm ngưng</option>
+                  <option value="banned">Bị khóa</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Role Assignment Checkboxes -->
+            <div class="form-group">
+              <label class="form-label">Phân Quyền Vai Trò <span class="required">*</span></label>
+              <div class="role-checkboxes">
+                @for (role of rolesList(); track role.roleId) {
+                  <label class="checkbox-card" [class.selected]="isRoleSelected(createForm, role.roleName)">
+                    <input
+                      type="checkbox"
+                      [checked]="isRoleSelected(createForm, role.roleName)"
+                      (change)="toggleRole(createForm, role.roleName)"
+                    />
+                    <div class="checkbox-info">
+                      <span class="role-title">{{ role.roleName }}</span>
+                      <span class="role-desc">{{ role.description }}</span>
+                    </div>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Hủy Bỏ</button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <span class="btn-spinner"></span>
+                <span>Đang lưu...</span>
+              } @else {
+                <span>Tạo Tài Khoản</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: EDIT USER & ROLES
+  ═══════════════════════════════════════════ -->
+  @if (isEditModalOpen()) {
+    <div class="modal-backdrop" (click)="closeEditModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Chỉnh Sửa Hồ Sơ & Phân Quyền</h2>
+          <button class="btn-close" (click)="closeEditModal()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label" for="e-fullname">
+                Họ và Tên <span class="required">*</span>
+              </label>
+              <input
+                id="e-fullname"
+                type="text"
+                class="form-control"
+                formControlName="fullName"
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label class="form-label" for="e-phone">Số Điện Thoại</label>
+                <input
+                  id="e-phone"
+                  type="text"
+                  class="form-control"
+                  formControlName="phone"
+                />
+              </div>
+              <div class="form-group col-half">
+                <label class="form-label" for="e-gender">Giới Tính</label>
+                <select id="e-gender" class="form-select" formControlName="gender">
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="e-status">Trạng Thái Tài Khoản</label>
+              <select id="e-status" class="form-select" formControlName="status">
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Tạm ngưng</option>
+                <option value="banned">Bị khóa (Banned)</option>
+              </select>
+            </div>
+
+            <!-- Role Assignment Checkboxes -->
+            <div class="form-group">
+              <label class="form-label">Vai Trò Hệ Thống <span class="required">*</span></label>
+              <div class="role-checkboxes">
+                @for (role of rolesList(); track role.roleId) {
+                  <label class="checkbox-card" [class.selected]="isRoleSelected(editForm, role.roleName)">
+                    <input
+                      type="checkbox"
+                      [checked]="isRoleSelected(editForm, role.roleName)"
+                      (change)="toggleRole(editForm, role.roleName)"
+                    />
+                    <div class="checkbox-info">
+                      <span class="role-title">{{ role.roleName }}</span>
+                      <span class="role-desc">{{ role.description }}</span>
+                    </div>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Hủy Bỏ</button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <span class="btn-spinner"></span>
+                <span>Đang lưu...</span>
+              } @else {
+                <span>Lưu Thay Đổi</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: RESET PASSWORD
+  ═══════════════════════════════════════════ -->
+  @if (isResetPasswordModalOpen()) {
+    <div class="modal-backdrop" (click)="closeResetPasswordModal()">
+      <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Đặt Lại Mật Khẩu</h2>
+          <button class="btn-close" (click)="closeResetPasswordModal()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="resetPasswordForm" (ngSubmit)="submitResetPassword()">
+          <div class="modal-body">
+            <p class="reset-prompt">
+              Đặt lại mật khẩu cho tài khoản <strong>"{{ selectedUser()?.fullName }}"</strong> ({{ selectedUser()?.email }}):
+            </p>
+
+            <div class="form-group">
+              <div class="label-with-action">
+                <label class="form-label" for="r-pwd">Mật Khẩu Mới</label>
+                <button
+                  type="button"
+                  class="btn-link"
+                  (click)="resetPasswordForm.patchValue({ newPassword: generateRandomPassword() })"
+                >
+                  Tạo Ngẫu Nhiên
+                </button>
+              </div>
+              <div class="input-with-copy">
+                <input
+                  id="r-pwd"
+                  type="text"
+                  class="form-control font-mono"
+                  formControlName="newPassword"
+                />
+                <button
+                  type="button"
+                  class="btn-copy"
+                  (click)="copyPassword(resetPasswordForm.get('newPassword')?.value)"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeResetPasswordModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <span class="btn-spinner"></span>
+                <span>Đang cập nhật...</span>
+              } @else {
+                <span>Đổi Mật Khẩu</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: USER DETAIL
+  ═══════════════════════════════════════════ -->
+  @if (isDetailModalOpen()) {
+    <div class="modal-backdrop" (click)="closeDetailModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">Chi Tiết Tài Khoản</h2>
+          <button class="btn-close" (click)="closeDetailModal()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (selectedUser(); as u) {
+            <div class="detail-header">
+              <div class="detail-avatar" [class.avatar-admin]="u.roles.includes('ROLE_ADMIN')">
+                @if (u.avatarUrl) {
+                  <img [src]="u.avatarUrl" [alt]="u.fullName"/>
+                } @else {
+                  <span>{{ getUserInitials(u.fullName) }}</span>
+                }
+              </div>
+              <div class="detail-name-block">
+                <h3>{{ u.fullName }}</h3>
+                <span class="text-sub">{{ u.email }}</span>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="item-label">Mã Người Dùng</span>
+                <span class="item-value font-mono">#{{ u.userId }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Số Điện Thoại</span>
+                <span class="item-value font-mono">{{ u.phone || 'Chưa cập nhật' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Giới Tính</span>
+                <span class="item-value">{{ u.gender === 'male' ? 'Nam' : (u.gender === 'female' ? 'Nữ' : 'Khác') }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Phương Thức Đăng Nhập</span>
+                <span class="item-value font-semibold">{{ u.provider.toUpperCase() }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Trạng Thái Email</span>
+                <span class="item-value">{{ u.emailVerified ? 'Đã xác thực ✓' : 'Chưa xác thực' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Ngày Đăng Ký</span>
+                <span class="item-value">{{ formatDate(u.createdAt) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Tổng Đơn Hàng Đã Mua</span>
+                <span class="item-value text-primary font-semibold">{{ u.totalOrders }} đơn</span>
+              </div>
+              <div class="detail-item">
+                <span class="item-label">Tổng Chi Tiêu Tích Lũy</span>
+                <span class="item-value text-success font-semibold">{{ formatPrice(u.totalSpend) }}</span>
+              </div>
+            </div>
+
+            <div class="detail-roles">
+              <span class="item-label">Vai Trò Đang Sở Hữu:</span>
+              <div class="roles-badges mt-1">
+                @for (r of u.roles; track r) {
+                  <span class="role-pill" [class.role-admin]="r === 'ROLE_ADMIN'" [class.role-staff]="r === 'ROLE_STAFF'">
+                    {{ r }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeDetailModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: CONFIRM DELETE
+  ═══════════════════════════════════════════ -->
+  @if (isConfirmDeleteOpen()) {
+    <div class="modal-backdrop" (click)="closeConfirmDelete()">
+      <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title text-danger">Xác Nhận Xóa Tài Khoản</h2>
+          <button class="btn-close" (click)="closeConfirmDelete()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Bạn có chắc chắn muốn xóa tài khoản
+            <strong>"{{ selectedUser()?.fullName }}"</strong> ({{ selectedUser()?.email }})?
+          </p>
+          <div class="delete-warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/>
+            </svg>
+            <span>Thao tác này sẽ xóa vĩnh viễn dữ liệu tài khoản và không thể hoàn tác.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeConfirmDelete()">Hủy</button>
+          <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting()">
+            @if (isDeleting()) {
+              <span class="btn-spinner"></span>
+              <span>Đang xóa...</span>
+            } @else {
+              <span>Xác Nhận Xóa</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

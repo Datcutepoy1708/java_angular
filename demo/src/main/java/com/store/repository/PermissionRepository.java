@@ -12,4 +12,6 @@ public interface PermissionRepository extends JpaRepository<Permission, Integer>
     Optional<Permission> findByPermissionCode(String permissionCode);
 
     boolean existsByPermissionCode(String permissionCode);
+
+    java.util.List<Permission> findAllByOrderByPermissionCodeAsc();
 }

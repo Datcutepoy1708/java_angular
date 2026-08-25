@@ -1,0 +1,462 @@
+<div class="customer-manage-container">
+  <!-- Header Title -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Quản Lý Khách Hàng</h1>
+      <p class="page-subtitle">Theo dõi hồ sơ thành viên, tổng chi tiêu tích lũy và kiểm soát trạng thái tài khoản</p>
+    </div>
+  </div>
+
+  <!-- Toast Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Metric / Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card card-total">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 100-8 4 4 0 000 8z M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Tổng Khách Hàng</span>
+        <span class="stat-value">{{ totalElements() }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card card-active">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Đang Hoạt Động (Trang này)</span>
+        <span class="stat-value">{{ activeCustomersCount() }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card card-banned">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-label">Bị Khóa (Trang này)</span>
+        <span class="stat-value">{{ bannedCustomersCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="table-card">
+    <div class="toolbar">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Tìm theo họ tên, email hoặc số điện thoại..."
+          [value]="searchKeyword()"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+
+      <div class="filter-group">
+        <select [value]="selectedStatus()" (change)="onStatusFilter($any($event.target).value)">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Đang hoạt động</option>
+          <option value="inactive">Tạm dừng</option>
+          <option value="banned">Đã khóa</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Customers Data Table -->
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-user">Khách Hàng</th>
+            <th class="col-contact">Liên Hệ</th>
+            <th class="col-orders text-center">Đơn Hàng</th>
+            <th class="col-spend text-right">Tổng Chi Tiêu</th>
+            <th class="col-status text-center">Trạng Thái</th>
+            <th class="col-actions text-right">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="6" class="text-center loading-cell">
+                <div class="spinner"></div>
+                <span>Đang tải dữ liệu khách hàng...</span>
+              </td>
+            </tr>
+          } @else if (customers().length === 0) {
+            <tr>
+              <td colspan="6" class="empty-cell">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 100-8 4 4 0 000 8z" />
+                </svg>
+                <p>Không tìm thấy khách hàng nào phù hợp với điều kiện lọc</p>
+              </td>
+            </tr>
+          } @else {
+            @for (c of customers(); track c.userId) {
+              <tr class="table-row">
+                <!-- Customer Info (Avatar + Name + ID) -->
+                <td class="col-user">
+                  <div class="user-cell">
+                    <div class="user-avatar avatar-customer">
+                      @if (c.avatarUrl) {
+                        <img [src]="c.avatarUrl" [alt]="c.fullName" class="avatar-img"/>
+                      } @else {
+                        <span>{{ getUserInitials(c.fullName) }}</span>
+                      }
+                    </div>
+                    <div class="user-meta">
+                      <div class="user-name">
+                        <span class="font-bold">{{ c.fullName }}</span>
+                        <span class="user-id">#{{ c.userId }}</span>
+                      </div>
+                      <span class="user-joined">Đăng ký: {{ c.createdAt | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Contact (Email + Phone) -->
+                <td class="col-contact">
+                  <div class="contact-cell">
+                    <div class="email-line">
+                      <span>{{ c.email }}</span>
+                      @if (c.emailVerified) {
+                        <svg class="verified-icon" title="Email đã xác thực" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                      }
+                    </div>
+                    <span class="phone-line">{{ c.phone || 'Chưa cập nhật SĐT' }}</span>
+                  </div>
+                </td>
+
+                <!-- Orders Count -->
+                <td class="col-orders text-center">
+                  <span class="badge-orders">{{ c.totalOrders || 0 }} đơn</span>
+                </td>
+
+                <!-- Total Spend -->
+                <td class="col-spend text-right">
+                  <span class="spend-amount">{{ (c.totalSpend || 0) | currency:'VND':'symbol':'1.0-0' }}</span>
+                </td>
+
+                <!-- Status -->
+                <td class="col-status text-center">
+                  <span class="status-chip" [class]="'status-' + c.status">
+                    {{ c.status === 'active' ? 'Hoạt động' : (c.status === 'banned' ? 'Bị khóa' : 'Tạm dừng') }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="col-actions text-right">
+                  <div class="action-buttons">
+                    <!-- View details -->
+                    <button class="btn-action btn-view" title="Xem hồ sơ & lịch sử đơn hàng" (click)="openDetailModal(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+
+                    <!-- Edit Profile -->
+                    <button class="btn-action btn-edit" title="Chỉnh sửa hồ sơ" (click)="openEditModal(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+
+                    <!-- Reset Password -->
+                    <button class="btn-action btn-key" title="Đặt lại mật khẩu" (click)="openResetPasswordModal(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 2l-2 2m-1.5 1.5L14 9a5 5 0 1 0-7 7l3.5-3.5" />
+                        <circle cx="7.5" cy="16.5" r="1.5" />
+                      </svg>
+                    </button>
+
+                    <!-- Lock / Unlock Account -->
+                    <button
+                      class="btn-action"
+                      [class.btn-lock]="c.status === 'active'"
+                      [class.btn-unlock]="c.status !== 'active'"
+                      [title]="c.status === 'active' ? 'Khóa tài khoản khách hàng' : 'Mở khóa tài khoản'"
+                      (click)="promptToggleStatus(c)"
+                    >
+                      @if (c.status === 'active') {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                        </svg>
+                      }
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Component -->
+    @if (totalPages() > 1) {
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          [totalElements]="totalElements()"
+          [pageSize]="pageSize()"
+          (pageChanged)="onPageChange($event)"
+        />
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ================= MODAL: XEM CHI TIẾT KHÁCH HÀNG ================= -->
+@if (isDetailModalOpen()) {
+  <div class="modal-backdrop" (click)="isDetailModalOpen.set(false)">
+    <div class="modal-container modal-detail" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Hồ Sơ Khách Hàng</h2>
+        <button class="btn-close" (click)="isDetailModalOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (selectedCustomer(); as c) {
+          <div class="detail-header">
+            <div class="detail-avatar avatar-customer">
+              @if (c.avatarUrl) {
+                <img [src]="c.avatarUrl" [alt]="c.fullName"/>
+              } @else {
+                <span>{{ getUserInitials(c.fullName) }}</span>
+              }
+            </div>
+            <div class="detail-name-block">
+              <h3>{{ c.fullName }}</h3>
+              <span class="text-sub">{{ c.email }}</span>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="item-label">Mã Khách Hàng</span>
+              <span class="item-value font-mono">#{{ c.userId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Số Điện Thoại</span>
+              <span class="item-value font-mono">{{ c.phone || 'Chưa cập nhật' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Giới Tính</span>
+              <span class="item-value">{{ c.gender === 'male' ? 'Nam' : (c.gender === 'female' ? 'Nữ' : 'Khác') }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Phương Thức Đăng Nhập</span>
+              <span class="item-value font-semibold">{{ c.provider.toUpperCase() }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Trạng Thái Email</span>
+              <span class="item-value" [class.text-success]="c.emailVerified" [class.text-muted]="!c.emailVerified">
+                {{ c.emailVerified ? 'Đã xác thực' : 'Chưa xác thực' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Ngày Gia Nhập</span>
+              <span class="item-value">{{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Tổng Đơn Hàng</span>
+              <span class="item-value font-bold">{{ c.totalOrders || 0 }} đơn</span>
+            </div>
+            <div class="detail-item">
+              <span class="item-label">Tổng Chi Tiêu Tích Lũy</span>
+              <span class="item-value font-bold text-primary">{{ (c.totalSpend || 0) | currency:'VND':'symbol':'1.0-0' }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="isDetailModalOpen.set(false)">Đóng</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL: CHỈNH SỬA HỒ SƠ KHÁCH HÀNG ================= -->
+@if (isEditModalOpen()) {
+  <div class="modal-backdrop" (click)="isEditModalOpen.set(false)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Chỉnh Sửa Hồ Sơ Khách Hàng</h2>
+        <button class="btn-close" (click)="isEditModalOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-fullname">Họ và Tên <span class="text-danger">*</span></label>
+            <input id="edit-fullname" type="text" formControlName="fullName" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-phone">Số Điện Thoại</label>
+            <input id="edit-phone" type="text" formControlName="phone" class="form-control" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="edit-gender">Giới Tính</label>
+              <select id="edit-gender" formControlName="gender" class="form-control">
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+
+            <div class="form-group col-half">
+              <label for="edit-status">Trạng Thái</label>
+              <select id="edit-status" formControlName="status" class="form-control">
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Tạm dừng</option>
+                <option value="banned">Bị khóa</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="isEditModalOpen.set(false)">Hủy</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isLoading()">
+            Lưu Thay Đổi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL: ĐẶT LẠI MẬT KHẨU ================= -->
+@if (isResetPasswordModalOpen()) {
+  <div class="modal-backdrop" (click)="isResetPasswordModalOpen.set(false)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Đặt Lại Mật Khẩu Khách Hàng</h2>
+        <button class="btn-close" (click)="isResetPasswordModalOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="resetPasswordForm" (ngSubmit)="submitResetPassword()">
+        <div class="modal-body">
+          <p class="modal-desc">
+            Đặt lại mật khẩu mới cho tài khoản: <strong>{{ selectedCustomer()?.email }}</strong>
+          </p>
+
+          <div class="form-group">
+            <label for="new-customer-password">Mật Khẩu Mới <span class="text-danger">*</span></label>
+            <input
+              id="new-customer-password"
+              type="text"
+              formControlName="newPassword"
+              class="form-control"
+              placeholder="Tối thiểu 8 ký tự..."
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="isResetPasswordModalOpen.set(false)">Hủy</button>
+          <button type="submit" class="btn btn-primary" [disabled]="resetPasswordForm.invalid || isLoading()">
+            Cập Nhật Mật Khẩu
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL: XÁC NHẬN KHÓA / MỞ KHÓA ================= -->
+@if (isConfirmStatusOpen()) {
+  <div class="modal-backdrop" (click)="isConfirmStatusOpen.set(false)">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Xác Nhận {{ statusActionTarget()?.nextStatus === 'active' ? 'Mở Khóa' : 'Khóa' }} Tài Khoản</h2>
+        <button class="btn-close" (click)="isConfirmStatusOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>
+          Bạn có chắc chắn muốn <strong>{{ statusActionTarget()?.nextStatus === 'active' ? 'mở khóa' : 'khóa' }}</strong> tài khoản khách hàng
+          <strong>{{ statusActionTarget()?.customer?.fullName }}</strong> ({{ statusActionTarget()?.customer?.email }})?
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="isConfirmStatusOpen.set(false)">Hủy</button>
+        <button
+          type="button"
+          class="btn"
+          [class.btn-danger]="statusActionTarget()?.nextStatus === 'banned'"
+          [class.btn-success]="statusActionTarget()?.nextStatus === 'active'"
+          (click)="confirmToggleStatus()"
+        >
+          Xác Nhận
+        </button>
+      </div>
+    </div>
+  </div>
+}

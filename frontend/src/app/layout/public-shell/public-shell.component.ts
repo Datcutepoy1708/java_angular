@@ -12,6 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
 import { SettingService } from '../../core/services/setting.service';
 import { CategoryResponse } from '../../core/models/category.model';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-public-shell',
@@ -26,7 +27,10 @@ export class PublicShellComponent implements OnInit {
   private readonly settingService = inject(SettingService);
   readonly authService = inject(AuthService);
   readonly cartService = inject(CartService);
+  readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
+
+  readonly isDark = this.themeService.isDark;
 
   // State
   readonly categoriesTree = signal<CategoryResponse[]>([]);
@@ -59,6 +63,10 @@ export class PublicShellComponent implements OnInit {
 
   closeMegaMenu(): void {
     this.isMegaMenuOpen.set(false);
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
   onSearchSubmit(): void {

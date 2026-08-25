@@ -55,5 +55,10 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Query("SELECT o.orderStatus, COUNT(o) FROM Order o WHERE o.createdAt >= :start AND o.createdAt <= :end GROUP BY o.orderStatus")
     List<Object[]> countOrdersByStatusBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
+    long countByUserUserId(Long userId);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.user.userId = :userId AND o.orderStatus = com.store.entity.order.OrderStatus.COMPLETED")
+    BigDecimal sumTotalSpendByUserId(@Param("userId") Long userId);
+
     boolean existsByOrderCode(String orderCode);
 }

@@ -1,0 +1,366 @@
+<div class="supplier-manage-container">
+  <!-- ═══════════════════════════════════════════
+       HEADER SECTION
+  ═══════════════════════════════════════════ -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Quản Lý Nhà Cung Cấp</h1>
+      <p class="page-subtitle">Quản lý danh sách đối tác cung ứng linh kiện, máy tính và thiết bị công nghệ</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" (click)="openCreateModal()" type="button" id="btn-add-supplier">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Thêm Nhà Cung Cấp</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       METRICS CARDS
+  ═══════════════════════════════════════════ -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon total">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Tổng Nhà Cung Cấp</span>
+        <span class="metric-value">{{ totalElements() }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Đang Hợp Tác</span>
+        <span class="metric-value">{{ activeCount() }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon products">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" width="22" height="22">
+          <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Sản Phẩm Cung Ứng</span>
+        <span class="metric-value">{{ totalLinkedProducts() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TOAST ALERTS
+  ═══════════════════════════════════════════ -->
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <path d="M5 13l4 4L19 7"/>
+      </svg>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-error" role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       FILTERS BAR
+  ═══════════════════════════════════════════ -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon" width="18" height="18">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Tìm kiếm theo tên nhà cung cấp, người liên hệ, SĐT, email..."
+        [value]="searchKeyword()"
+        (input)="onSearch($event)"
+      />
+    </div>
+
+    <div class="filter-actions">
+      <select class="form-select filter-select" [value]="filterStatus()" (change)="onFilterStatus($event)">
+        <option value="all">Tất cả trạng thái</option>
+        <option value="active">Đang hoạt động</option>
+        <option value="inactive">Tạm ngưng</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       DATA TABLE
+  ═══════════════════════════════════════════ -->
+  <div class="table-container">
+    @if (isLoading()) {
+      <div class="table-loading">
+        <div class="spinner"></div>
+        <span>Đang nạp dữ liệu nhà cung cấp...</span>
+      </div>
+    } @else if (suppliers().length === 0) {
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+          <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        <p class="empty-title">Không tìm thấy nhà cung cấp nào</p>
+        <p class="empty-desc">Thử thay đổi từ khóa tìm kiếm hoặc bấm "Thêm Nhà Cung Cấp" để tạo mới.</p>
+      </div>
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-id">Mã</th>
+            <th class="col-name">Tên Nhà Cung Cấp</th>
+            <th class="col-contact">Người Liên Hệ</th>
+            <th class="col-phone">Số Điện Thoại</th>
+            <th class="col-email">Email</th>
+            <th class="col-products text-center">Sản Phẩm</th>
+            <th class="col-status text-center">Trạng Thái</th>
+            <th class="col-actions text-right">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of suppliers(); track s.supplierId) {
+            <tr>
+              <td class="col-id font-mono">#{{ s.supplierId }}</td>
+              <td class="col-name font-semibold text-primary">
+                {{ s.name }}
+                @if (s.address) {
+                  <span class="address-subtext">{{ s.address }}</span>
+                }
+              </td>
+              <td class="col-contact">{{ s.contactName || '—' }}</td>
+              <td class="col-phone font-mono">{{ s.phone || '—' }}</td>
+              <td class="col-email">{{ s.email || '—' }}</td>
+              <td class="col-products text-center">
+                <span class="product-count-badge">
+                  {{ s.productCount }} SP
+                </span>
+              </td>
+              <td class="col-status text-center">
+                <span
+                  class="status-badge"
+                  [class.status-active]="s.status === 'active'"
+                  [class.status-inactive]="s.status === 'inactive'"
+                >
+                  {{ s.status === 'active' ? 'Hoạt động' : 'Tạm ngưng' }}
+                </span>
+              </td>
+              <td class="col-actions text-right">
+                <div class="action-buttons">
+                  <button
+                    class="btn-icon btn-edit"
+                    (click)="openEditModal(s)"
+                    title="Chỉnh sửa"
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="btn-icon btn-delete"
+                    (click)="openConfirmDelete(s)"
+                    title="Xóa nhà cung cấp"
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          [totalElements]="totalElements()"
+          [pageSize]="pageSize()"
+          (pageChanged)="onPageChange($event)"
+        />
+      </div>
+    }
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL: CREATE / EDIT SUPPLIER
+  ═══════════════════════════════════════════ -->
+  @if (isModalOpen()) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            {{ isEditing() ? 'Cập Nhật Nhà Cung Cấp' : 'Thêm Nhà Cung Cấp Mới' }}
+          </h2>
+          <button class="btn-close" (click)="closeModal()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="supplierForm" (ngSubmit)="saveSupplier()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label" for="supplier-name">
+                Tên Nhà Cung Cấp <span class="required">*</span>
+              </label>
+              <input
+                id="supplier-name"
+                type="text"
+                class="form-control"
+                placeholder="VD: Công ty TNHH ASUS Việt Nam"
+                formControlName="name"
+              />
+              @if (supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid) {
+                <span class="field-error">Tên nhà cung cấp là bắt buộc (tối đa 200 ký tự)</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label class="form-label" for="contact-name">Người Liên Hệ</label>
+                <input
+                  id="contact-name"
+                  type="text"
+                  class="form-control"
+                  placeholder="VD: Nguyễn Văn A"
+                  formControlName="contactName"
+                />
+              </div>
+              <div class="form-group col-half">
+                <label class="form-label" for="supplier-phone">Số Điện Thoại</label>
+                <input
+                  id="supplier-phone"
+                  type="text"
+                  class="form-control"
+                  placeholder="VD: 0901234567"
+                  formControlName="phone"
+                />
+                @if (supplierForm.get('phone')?.touched && supplierForm.get('phone')?.invalid) {
+                  <span class="field-error">Số điện thoại không hợp lệ</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label class="form-label" for="supplier-email">Email</label>
+                <input
+                  id="supplier-email"
+                  type="email"
+                  class="form-control"
+                  placeholder="VD: contact@asus.vn"
+                  formControlName="email"
+                />
+                @if (supplierForm.get('email')?.touched && supplierForm.get('email')?.invalid) {
+                  <span class="field-error">Email không đúng định dạng</span>
+                }
+              </div>
+              <div class="form-group col-half">
+                <label class="form-label" for="supplier-status">Trạng Thái</label>
+                <select id="supplier-status" class="form-select" formControlName="status">
+                  <option value="active">Đang hoạt động</option>
+                  <option value="inactive">Tạm ngưng</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="supplier-address">Địa Chỉ Trụ Sở / Kho</label>
+              <textarea
+                id="supplier-address"
+                class="form-control textarea"
+                rows="2"
+                placeholder="VD: Tòa nhà Viettel, 285 Cách Mạng Tháng Tám, P.12, Q.10, TP.HCM"
+                formControlName="address"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy Bỏ</button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <span class="btn-spinner"></span>
+                <span>Đang lưu...</span>
+              } @else {
+                <span>{{ isEditing() ? 'Lưu Thay Đổi' : 'Tạo Nhà Cung Cấp' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════
+       CONFIRM DELETE DIALOG
+  ═══════════════════════════════════════════ -->
+  @if (isConfirmDeleteOpen()) {
+    <div class="modal-backdrop" (click)="closeConfirmDelete()">
+      <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title text-danger">Xác Nhận Xóa Nhà Cung Cấp</h2>
+          <button class="btn-close" (click)="closeConfirmDelete()" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Bạn có chắc chắn muốn xóa nhà cung cấp
+            <strong>"{{ deletingSupplier()?.name }}"</strong>?
+          </p>
+          @if ((deletingSupplier()?.productCount || 0) > 0) {
+            <div class="delete-warning">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/>
+              </svg>
+              <span>Nhà cung cấp này đang liên kết với <strong>{{ deletingSupplier()?.productCount }}</strong> sản phẩm. Hệ thống sẽ chặn xóa nếu còn sản phẩm.</span>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeConfirmDelete()">Hủy</button>
+          <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting()">
+            @if (isDeleting()) {
+              <span class="btn-spinner"></span>
+              <span>Đang xóa...</span>
+            } @else {
+              <span>Xác Nhận Xóa</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
