@@ -302,27 +302,222 @@
             </div>
           }
 
-          <!-- Tab 3: Reviews (Authentic Empty State - Phase 7 Ready) -->
+          <!-- Tab 3: Reviews (Integrated Reviews & Ratings - Phase 8) -->
           @if (activeTab() === 'reviews') {
             <div class="reviews-tab-pane">
-              <div class="reviews-empty-state">
-                <div class="review-empty-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="chat-svg">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
+              <!-- Rating Summary Block -->
+              <div class="rating-summary-card">
+                <div class="score-col">
+                  <div class="score-number">{{ (ratingSummary()?.averageRating || 0) | number:'1.1-1' }}</div>
+                  <div class="score-stars">
+                    <app-rating-stars [rating]="ratingSummary()?.averageRating || 0" [maxStars]="5" size="lg" />
+                  </div>
+                  <div class="score-total">{{ ratingSummary()?.totalReviews || 0 }} nhận xét</div>
                 </div>
-                <h4 class="empty-review-title">Chưa có đánh giá nào cho sản phẩm này</h4>
-                <p class="empty-review-desc">
-                  Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét thực tế về sản phẩm <strong>{{ p.name }}</strong>!
-                </p>
-                <button type="button" class="btn-write-review" (click)="activeTab.set('reviews')">
-                  Viết nhận xét của bạn
-                </button>
+
+                <div class="bars-col">
+                  @for (star of [5, 4, 3, 2, 1]; track star) {
+                    <div class="rating-bar-row">
+                      <span class="star-label">{{ star }} sao</span>
+                      <div class="bar-track">
+                        <div
+                          class="bar-fill"
+                          [style.width.%]="ratingSummary()?.starPercentages?.[star] || 0"
+                        ></div>
+                      </div>
+                      <span class="count-label">{{ ratingSummary()?.ratingCounts?.[star] || 0 }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="action-col">
+                  <p class="cta-tip">Bạn đã từng trải nghiệm sản phẩm này?</p>
+                  <button type="button" class="btn-write-review" (click)="openWriteReviewModal()">
+                    Viết nhận xét của bạn
+                  </button>
+                </div>
               </div>
+
+              <!-- Star Filter Bar -->
+              <div class="reviews-filter-bar">
+                <span class="filter-title">Lọc theo:</span>
+                <button
+                  type="button"
+                  class="filter-chip"
+                  [class.active]="selectedRatingFilter() === null"
+                  (click)="filterReviewsByRating(null)"
+                >
+                  Tất cả ({{ ratingSummary()?.totalReviews || 0 }})
+                </button>
+                @for (star of [5, 4, 3, 2, 1]; track star) {
+                  <button
+                    type="button"
+                    class="filter-chip"
+                    [class.active]="selectedRatingFilter() === star"
+                    (click)="filterReviewsByRating(star)"
+                  >
+                    {{ star }} sao ({{ ratingSummary()?.ratingCounts?.[star] || 0 }})
+                  </button>
+                }
+              </div>
+
+              <!-- Review List -->
+              @if (reviews().length > 0) {
+                <div class="reviews-list">
+                  @for (rev of reviews(); track rev.reviewId) {
+                    <div class="review-item-card">
+                      <div class="review-header">
+                        <div class="user-meta">
+                          <div class="user-avatar-circle">
+                            {{ (rev.userFullName || 'K')[0] | uppercase }}
+                          </div>
+                          <div class="user-info">
+                            <h4 class="user-name">{{ rev.userFullName || 'Khách hàng Complexus' }}</h4>
+                            <div class="badges-row">
+                              @if (rev.isVerifiedPurchase) {
+                                <span class="verified-badge">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="verified-svg">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                  Đã mua hàng tại Complexus
+                                </span>
+                              }
+                              <span class="review-date">{{ rev.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="review-stars">
+                          <app-rating-stars [rating]="rev.rating" [maxStars]="5" size="sm" />
+                        </div>
+                      </div>
+
+                      @if (rev.title) {
+                        <h5 class="review-title">{{ rev.title }}</h5>
+                      }
+                      <p class="review-comment">{{ rev.comment }}</p>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="reviews-empty-state">
+                  <div class="review-empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="chat-svg">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </div>
+                  <h4 class="empty-review-title">Chưa có đánh giá nào cho bộ lọc này</h4>
+                  <p class="empty-review-desc">
+                    Hãy là người đầu tiên trải nghiệm và chia sẻ nhận xét thực tế về sản phẩm <strong>{{ p.name }}</strong>!
+                  </p>
+                  <button type="button" class="btn-write-review" (click)="openWriteReviewModal()">
+                    Viết nhận xét của bạn
+                  </button>
+                </div>
+              }
             </div>
           }
         </div>
       </section>
+
+      <!-- ── Write Review Modal ────────────────────────────────────── -->
+      @if (showWriteReviewModal()) {
+        <div class="modal-overlay" (click)="closeWriteReviewModal()">
+          <div class="modal-card review-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3 class="modal-title">Đánh giá sản phẩm</h3>
+              <button type="button" class="modal-close-btn" (click)="closeWriteReviewModal()" aria-label="Đóng">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="close-svg">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <div class="product-mini-preview">
+                <span class="preview-name">{{ p.name }}</span>
+              </div>
+
+              <!-- Interactive Star Selector -->
+              <div class="form-group star-select-group">
+                <label class="form-label">Chọn mức độ hài lòng:</label>
+                <div class="interactive-stars">
+                  @for (star of [1, 2, 3, 4, 5]; track star) {
+                    <button
+                      type="button"
+                      class="star-btn"
+                      [class.active]="reviewFormRating() >= star"
+                      (click)="setReviewRating(star)"
+                    >
+                      <svg viewBox="0 0 24 24" class="star-icon" [attr.fill]="reviewFormRating() >= star ? '#eab308' : 'none'" stroke="#eab308" stroke-width="1.5">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    </button>
+                  }
+                  <span class="rating-text-label">
+                    @switch (reviewFormRating()) {
+                      @case (5) { Tuyệt vời }
+                      @case (4) { Hài lòng }
+                      @case (3) { Bình thường }
+                      @case (2) { Tạm được }
+                      @case (1) { Không hài lòng }
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <!-- Title Input -->
+              <div class="form-group">
+                <label class="form-label">Tiêu đề nhận xét (không bắt buộc):</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="Ví dụ: Máy dùng mượt mà, build rất chắc chắn"
+                  [ngModel]="reviewFormTitle()"
+                  (ngModelChange)="reviewFormTitle.set($event)"
+                />
+              </div>
+
+              <!-- Comment Input -->
+              <div class="form-group">
+                <label class="form-label">Nội dung nhận xét chi tiết: <span class="required">*</span></label>
+                <textarea
+                  rows="4"
+                  class="form-textarea"
+                  placeholder="Hãy chia sẻ trải nghiệm thực tế về hiệu năng, thiết kế, nhiệt độ khi sử dụng sản phẩm..."
+                  [ngModel]="reviewFormComment()"
+                  (ngModelChange)="reviewFormComment.set($event)"
+                ></textarea>
+              </div>
+
+              @if (reviewErrorMessage()) {
+                <div class="alert-box error">{{ reviewErrorMessage() }}</div>
+              }
+              @if (reviewSuccessMessage()) {
+                <div class="alert-box success">{{ reviewSuccessMessage() }}</div>
+              }
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" (click)="closeWriteReviewModal()" [disabled]="submittingReview()">
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                class="btn-submit"
+                (click)="submitReview()"
+                [disabled]="submittingReview() || !reviewFormComment().trim()"
+              >
+                @if (submittingReview()) {
+                  <span>Đang gửi...</span>
+                } @else {
+                  <span>Gửi nhận xét</span>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- ── Related Products Section ──────────────────────────────── -->
       @if (relatedProducts().length > 0) {

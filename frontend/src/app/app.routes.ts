@@ -96,6 +96,21 @@ export const routes: Routes = [
             path: 'discounts',
             loadComponent: () =>
               import('./features/admin/discount-manage/discount-manage.component').then((m) => m.DiscountManageComponent)
+          },
+          {
+            path: 'banners',
+            loadComponent: () =>
+              import('./features/admin/banner-manage/banner-manage.component').then((m) => m.BannerManageComponent)
+          },
+          {
+            path: 'news',
+            loadComponent: () =>
+              import('./features/admin/news-manage/news-manage.component').then((m) => m.NewsManageComponent)
+          },
+          {
+            path: 'reviews',
+            loadComponent: () =>
+              import('./features/admin/review-manage/review-manage.component').then((m) => m.ReviewManageComponent)
           }
         ]
       }
@@ -147,6 +162,16 @@ export const routes: Routes = [
         path: 'account/orders',
         loadComponent: () =>
           import('./features/shop/order-history/order-history.component').then((m) => m.OrderHistoryComponent),
+      },
+      {
+        path: 'news',
+        loadComponent: () =>
+          import('./features/shop/news-listing/news-listing.component').then((m) => m.NewsListingComponent),
+      },
+      {
+        path: 'news/:slug',
+        loadComponent: () =>
+          import('./features/shop/news-detail/news-detail.component').then((m) => m.NewsDetailComponent),
       },
     ],
   },

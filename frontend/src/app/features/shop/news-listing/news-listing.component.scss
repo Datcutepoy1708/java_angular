@@ -1,0 +1,349 @@
+$primary: #2563eb;
+$primary-dark: #1d4ed8;
+$primary-light: #eff6ff;
+$on-surface: #0f172a;
+$on-surface-variant: #64748b;
+$surface: #ffffff;
+$surface-subtle: #f8fafc;
+$border-color: #e2e8f0;
+$border: #e2e8f0;
+$radius: 12px;
+
+.news-listing-page {
+  padding: 24px 0 64px 0;
+  background: $surface-subtle;
+  min-height: 80vh;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.825rem;
+  color: $on-surface-variant;
+  margin-bottom: 20px;
+
+  .bc-link {
+    color: $on-surface-variant;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $primary;
+    }
+  }
+
+  .bc-sep {
+    opacity: 0.4;
+  }
+
+  .bc-current {
+    color: $on-surface;
+    font-weight: 600;
+  }
+}
+
+.page-header {
+  margin-bottom: 24px;
+
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: $on-surface;
+    margin: 0 0 6px 0;
+  }
+
+  .page-subtitle {
+    font-size: 0.95rem;
+    color: $on-surface-variant;
+    margin: 0;
+  }
+}
+
+.category-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid $border-color;
+
+  .cat-tab-btn {
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid $border-color;
+    background: $surface;
+    color: $on-surface-variant;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      border-color: $primary;
+      color: $primary;
+    }
+
+    &.active {
+      background: $primary;
+      border-color: $primary;
+      color: #ffffff;
+      font-weight: 700;
+    }
+  }
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 36px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.news-card {
+  background: $surface;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .news-thumb-wrap {
+    position: relative;
+    width: 100%;
+    height: 190px;
+    overflow: hidden;
+    display: block;
+    background: $surface-subtle;
+
+    .news-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .news-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: $primary;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, $primary-light 0%, #e2e8f0 100%);
+    }
+
+    .news-cat-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      font-size: 0.725rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    &:hover .news-thumb-img {
+      transform: scale(1.05);
+    }
+  }
+
+  .news-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: $on-surface-variant;
+      margin-bottom: 8px;
+
+      .meta-dot {
+        opacity: 0.5;
+      }
+    }
+
+    .news-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin: 0 0 10px 0;
+
+      a {
+        color: $on-surface;
+        text-decoration: none;
+        transition: color 0.15s ease;
+
+        &:hover {
+          color: $primary;
+        }
+      }
+    }
+
+    .news-summary {
+      font-size: 0.85rem;
+      color: $on-surface-variant;
+      line-height: 1.5;
+      margin: 0 0 16px 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .news-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+
+      .read-more-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: $primary;
+        text-decoration: none;
+        transition: gap 0.15s ease;
+
+        .arrow-icon {
+          width: 16px;
+          height: 16px;
+        }
+
+        &:hover {
+          gap: 8px;
+        }
+      }
+    }
+  }
+}
+
+.news-grid-skeleton {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  .card-skeleton {
+    height: 320px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+
+  .page-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid $border-color;
+    background: $surface;
+    color: $on-surface;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: $primary;
+      color: #ffffff;
+      border-color: $primary;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-indicator {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $on-surface-variant;
+  }
+}
+
+.news-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: $surface;
+  border-radius: 12px;
+  border: 1px solid $border-color;
+
+  .empty-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: $primary-light;
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+
+    .doc-svg {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: $on-surface;
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: $on-surface-variant;
+    margin: 0;
+  }
+}

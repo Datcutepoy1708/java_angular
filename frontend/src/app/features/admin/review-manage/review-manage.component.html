@@ -1,0 +1,239 @@
+<div class="admin-page-container">
+  <!-- Page Header -->
+  <div class="page-header-row">
+    <div class="header-titles">
+      <h1 class="page-main-title">Kiểm Duyệt & Quản Lý Đánh Giá</h1>
+      <p class="page-sub-title">Theo dõi phản hồi của khách hàng, điểm rating sản phẩm và kiểm duyệt nội dung vi phạm</p>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="table-toolbar-card">
+    <div class="toolbar-filters">
+      <!-- Search Input -->
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Tìm theo sản phẩm, khách hàng, nội dung..."
+          [value]="filterKeyword()"
+          (input)="filterKeyword.set($any($event.target).value)"
+          (keyup.enter)="onSearch()"
+        />
+      </div>
+
+      <!-- Rating Filter -->
+      <select
+        class="filter-select"
+        [value]="filterRating() ?? ''"
+        (change)="filterRating.set($any($event.target).value ? +$any($event.target).value : null); onSearch()"
+      >
+        <option value="">Tất cả số sao</option>
+        <option value="5">5 Sao (Tuyệt vời)</option>
+        <option value="4">4 Sao (Hài lòng)</option>
+        <option value="3">3 Sao (Bình thường)</option>
+        <option value="2">2 Sao (Tạm được)</option>
+        <option value="1">1 Sao (Không hài lòng)</option>
+      </select>
+
+      <!-- Status Filter -->
+      <select
+        class="filter-select"
+        [value]="filterStatus()"
+        (change)="filterStatus.set($any($event.target).value); onSearch()"
+      >
+        <option value="">Tất cả trạng thái</option>
+        <option value="APPROVED">Đã duyệt (Hiển thị)</option>
+        <option value="PENDING">Chờ duyệt</option>
+        <option value="HIDDEN">Đã ẩn (Vi phạm)</option>
+      </select>
+
+      <button type="button" class="btn-filter-action" (click)="onSearch()">Lọc</button>
+      <button type="button" class="btn-reset-action" (click)="resetFilter()">Đặt lại</button>
+    </div>
+
+    <div class="toolbar-stats">
+      Tổng số: <strong>{{ totalElements() }}</strong> đánh giá
+    </div>
+  </div>
+
+  <!-- Reviews Table -->
+  <div class="data-table-card">
+    @if (loading()) {
+      <div class="table-loading-state">
+        <div class="spinner"></div>
+        <span>Đang tải danh sách đánh giá...</span>
+      </div>
+    } @else if (reviews().length > 0) {
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">STT</th>
+              <th style="width: 220px;">Sản phẩm</th>
+              <th style="width: 180px;">Khách hàng</th>
+              <th style="width: 130px;">Số sao</th>
+              <th>Tiêu đề & Nhận xét</th>
+              <th style="width: 120px; text-align: center;">Trạng thái</th>
+              <th style="width: 130px;">Thời gian</th>
+              <th style="width: 150px; text-align: right;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rev of reviews(); track rev.reviewId; let idx = $index) {
+              <tr>
+                <td class="cell-index">{{ currentPage() * pageSize() + idx + 1 }}</td>
+                <td>
+                  <span class="product-name-link">{{ rev.productName || 'Sản phẩm #' + rev.productId }}</span>
+                </td>
+                <td>
+                  <div class="customer-cell">
+                    <strong class="c-name">{{ rev.userFullName || 'Khách hàng' }}</strong>
+                    <span class="c-email">{{ rev.userEmail || '' }}</span>
+                    @if (rev.isVerifiedPurchase) {
+                      <span class="verified-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="verified-svg">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Đã mua hàng tại Complexus
+                      </span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <app-rating-stars [rating]="rev.rating" [maxStars]="5" size="sm" />
+                </td>
+                <td>
+                  <div class="comment-cell">
+                    @if (rev.title) {
+                      <strong class="c-title">{{ rev.title }}</strong>
+                    }
+                    <p class="c-comment">{{ rev.comment }}</p>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="status-badge" [attr.data-status]="rev.status">
+                    @switch (rev.status) {
+                      @case ('APPROVED') { Đã duyệt }
+                      @case ('PENDING') { Chờ duyệt }
+                      @case ('HIDDEN') { Đã ẩn }
+                    }
+                  </span>
+                </td>
+                <td>
+                  <span class="date-text">{{ rev.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </td>
+                <td style="text-align: right;">
+                  <div class="action-buttons-group">
+                    @if (rev.status !== 'APPROVED') {
+                      <button
+                        type="button"
+                        class="btn-action approve"
+                        (click)="updateStatus(rev.reviewId, 'APPROVED')"
+                        title="Duyệt hiển thị"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-svg">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </button>
+                    }
+                    @if (rev.status !== 'HIDDEN') {
+                      <button
+                        type="button"
+                        class="btn-action hide"
+                        (click)="updateStatus(rev.reviewId, 'HIDDEN')"
+                        title="Ẩn đánh giá này"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-svg">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="btn-action delete"
+                      (click)="openDeleteModal(rev)"
+                      title="Xóa đánh giá"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-svg">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="table-pagination-row">
+          <span class="pagination-info">
+            Hiển thị {{ currentPage() * pageSize() + 1 }} - {{ (currentPage() + 1) * pageSize() > totalElements() ? totalElements() : (currentPage() + 1) * pageSize() }} trên tổng số {{ totalElements() }} đánh giá
+          </span>
+
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="page-btn"
+              [disabled]="currentPage() === 0"
+              (click)="goToPage(currentPage() - 1)"
+            >
+              Trang trước
+            </button>
+            <span class="page-num">{{ currentPage() + 1 }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-btn"
+              [disabled]="currentPage() >= totalPages() - 1"
+              (click)="goToPage(currentPage() + 1)"
+            >
+              Trang sau
+            </button>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="empty-state-box">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-svg">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <h3>Không có đánh giá nào</h3>
+        <p>Hiện tại chưa có đánh giá nào phù hợp với bộ lọc hiện tại.</p>
+      </div>
+    }
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  @if (showDeleteModal()) {
+    <div class="admin-modal-backdrop" (click)="closeDeleteModal()">
+      <div class="admin-modal-card confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="warn-svg">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <h3 class="confirm-title">Xác nhận xóa đánh giá</h3>
+        <p class="confirm-desc">
+          Bạn có chắc chắn muốn xóa đánh giá của <strong>{{ deletingCustomerName() }}</strong> không? Thao tác này không thể hoàn tác.
+        </p>
+        <div class="confirm-actions">
+          <button type="button" class="btn-secondary" (click)="closeDeleteModal()">Hủy</button>
+          <button type="button" class="btn-danger" (click)="confirmDelete()">Xóa vĩnh viễn</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -57,9 +57,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/variants/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/attributes/**").permitAll()
-                        // Static uploads & Upload API
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/v1/upload/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/banners/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/news/**").permitAll()
+                        // Static uploads public read
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        // Upload API (Restricted to ADMIN/STAFF)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/upload/**").hasAnyRole("ADMIN", "STAFF")
                         // Auth APIs
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // OpenAPI / Swagger

@@ -1115,6 +1115,125 @@ LOCK TABLES `warranty_claims` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `banners`
+--
+
+DROP TABLE IF EXISTS `banners`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `banners` (
+  `banner_id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `link_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `position` enum('homepage_slider','sidebar','popup','category_top') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'homepage_slider',
+  `sort_order` int NOT NULL DEFAULT '0',
+  `start_date` datetime DEFAULT NULL,
+  `end_date` datetime DEFAULT NULL,
+  `status` enum('active','inactive') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`banner_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `banners`
+--
+
+LOCK TABLES `banners` WRITE;
+/*!40000 ALTER TABLE `banners` DISABLE KEYS */;
+INSERT INTO `banners` VALUES 
+(1,'SIÊU HỘI LAPTOP GAMING & AI RTX 40-SERIES','https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=1600&auto=format&fit=crop','/products?category=laptop-gaming','homepage_slider',1,'2026-01-01 00:00:00','2028-12-31 23:59:59','active',NOW(),NOW()),
+(2,'BUILD PC WORKSTATION & GAMING CAO CẤP - TẶNG TẢN NHIỆT AIO 360','https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1600&auto=format&fit=crop','/products?category=pc-gaming-streamer','homepage_slider',2,'2026-01-01 00:00:00','2028-12-31 23:59:59','active',NOW(),NOW()),
+(3,'APPLE MACBOOK M3 SERIES CHÍNH HÃNG - TRỢ GIÁ ĐỔI CŨ LẤY MỚI','https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1600&auto=format&fit=crop','/products?category=macbook-apple','homepage_slider',3,'2026-01-01 00:00:00','2028-12-31 23:59:59','active',NOW(),NOW()),
+(4,'TUẦN LỄ LINH KIỆN PC: VGA RTX 4070 SUPER, RAM DDR5, SSD GEN 4 GIẢM 35%','https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1600&auto=format&fit=crop','/products?category=linh-kien-may-tinh','homepage_slider',4,'2026-01-01 00:00:00','2028-12-31 23:59:59','active',NOW(),NOW()),
+(5,'MÀN HÌNH GAMING FAST IPS 2K 240HZ - TRẢI NGHIỆM ĐỒ HỌA ĐỈNH CAO','https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=1000&auto=format&fit=crop','/products?category=man-hinh-may-tinh','sidebar',1,'2026-01-01 00:00:00','2028-12-31 23:59:59','active',NOW(),NOW());
+/*!40000 ALTER TABLE `banners` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `news_categories`
+--
+
+DROP TABLE IF EXISTS `news_categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `news_categories` (
+  `news_cat_id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(180) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT '0',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`news_cat_id`),
+  UNIQUE KEY `uk_news_cat_slug` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `news_categories`
+--
+
+LOCK TABLES `news_categories` WRITE;
+/*!40000 ALTER TABLE `news_categories` DISABLE KEYS */;
+INSERT INTO `news_categories` VALUES 
+(1,'Đánh giá & Review','danh-gia-review','Chuyên mục đánh giá chi tiết phần cứng, laptop, linh kiện PC và phụ kiện công nghệ thực tế',1,'active',NOW(),NOW()),
+(2,'Thủ thuật & Hướng dẫn','thu-thuat-huong-dan','Hướng dẫn lắp ráp máy tính (Build PC), tối ưu Windows, khắc phục lỗi phần cứng và phần mềm',2,'active',NOW(),NOW()),
+(3,'Tin tức Công nghệ','tin-tuc-cong-nghe','Cập nhật xu hướng vi xử lý, card đồ họa, AI, bộ nhớ và các sự kiện công nghệ toàn cầu',3,'active',NOW(),NOW()),
+(4,'Tư vấn Cấu hình','tu-van-cau-hinh','Tư vấn lựa chọn cấu hình máy tính gaming, làm đồ họa, workstation phù hợp từng mức ngân sách',4,'active',NOW(),NOW());
+/*!40000 ALTER TABLE `news_categories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `news`
+--
+
+DROP TABLE IF EXISTS `news`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `news` (
+  `news_id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(280) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `news_cat_id` bigint DEFAULT NULL,
+  `user_id` bigint DEFAULT NULL,
+  `thumbnail_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `summary` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `view_count` int NOT NULL DEFAULT '0',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
+  `published_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`news_id`),
+  UNIQUE KEY `uk_news_slug` (`slug`),
+  KEY `fk_news_cat` (`news_cat_id`),
+  KEY `fk_news_author` (`user_id`),
+  CONSTRAINT `fk_news_author` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_news_cat` FOREIGN KEY (`news_cat_id`) REFERENCES `news_categories` (`news_cat_id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `news`
+--
+
+LOCK TABLES `news` WRITE;
+/*!40000 ALTER TABLE `news` DISABLE KEYS */;
+INSERT INTO `news` VALUES 
+(1,'Đánh giá chi tiết NVIDIA GeForce RTX 4070 Super: \"Ông vua\" đồ họa 2K và Gaming đỉnh cao 2026','danh-gia-nvidia-geforce-rtx-4070-super-ong-vua-do-hoa-2k',1,1,'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1000&auto=format&fit=crop','GeForce RTX 4070 Super mang đến bước nhảy vọt về hiệu năng nhờ kiến trúc Ada Lovelace, 12GB VRAM GDDR6X cùng DLSS 3.5 Frame Generation, cân mượt mọi tựa game AAA ở độ phân giải 2K 144Hz.','<h2>Tổng quan về NVIDIA GeForce RTX 4070 Super</h2><p>Kể từ khi ra mắt, dòng sản phẩm RTX 40-Series Super của NVIDIA đã nhanh chóng định hình lại phân khúc card màn hình tầm trung - cận cao cấp. Trong đó, <strong>RTX 4070 Super</strong> là cái tên nổi bật nhất nhờ mức hiệu năng tiệm cận với RTX 4070 Ti nhưng sở hữu mức giá hấp dẫn hơn đáng kể.</p><h3>1. Thông số kỹ thuật ấn tượng</h3><ul><li><strong>Số nhân CUDA:</strong> 7.168 nhân.</li><li><strong>Xung nhịp Boost:</strong> Lên đến 2.475 MHz.</li><li><strong>Bộ nhớ VRAM:</strong> 12GB GDDR6X tốc độ 21 Gbps, bus 192-bit.</li><li><strong>Mức tiêu thụ điện năng (TDP):</strong> 220W.</li></ul>',1420,'published',NOW(),NOW(),NOW()),
+(2,'So sánh Intel Core Gen 14th vs AMD Ryzen 9000 Series: Đâu là CPU tối ưu nhất cho Gaming và Render?','so-sanh-intel-gen-14-vs-amd-ryzen-9000-series',3,1,'https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=1000&auto=format&fit=crop','Cuộc chạm trán nảy lửa giữa kiến trúc Raptor Lake Refresh của Intel và Zen 5 của AMD. Phân tích chi tiết mức tiêu thụ điện năng, nhiệt độ và hiệu năng đơn nhân/đa nhân thực tế.','<h2>Cuộc đua vi xử lý năm 2026: Intel hay AMD?</h2><p>Thị trường CPU máy tính để bàn chứng kiến sự cạnh tranh quyết liệt giữa dòng chip <strong>Intel Core Gen 14th</strong> và đối thủ <strong>AMD Ryzen 9000 Series</strong>.</p>',980,'published',NOW(),NOW(),NOW()),
+(3,'Tư vấn cấu hình Build PC Gaming & Đồ họa tầm giá 20 - 25 triệu đồng: Cân mượt game AAA và thiết kế 4K','tu-van-cau-hinh-pc-gaming-do-hoa-20-25-trieu',4,1,'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=1000&auto=format&fit=crop','Bật mí danh sách linh kiện cân đối nhất phân khúc 20-25 triệu: CPU Intel Core i5-13400F, Card đồ họa RTX 4060 8GB, 32GB RAM DDR5 và nguồn 650W chuẩn Bronze.','<h2>Phân khúc 20 - 25 triệu: Cấu hình chuẩn cho mọi nhu cầu</h2><p>Với ngân sách từ 20 đến 25 triệu đồng, người dùng hoàn toàn có thể xây dựng một bộ case PC thế hệ mới chạy nền tảng RAM DDR5.</p>',2150,'published',NOW(),NOW(),NOW()),
+(4,'Top 5 sai lầm tai hại khi tự lắp ráp máy tính (Build PC) tại nhà mà người mới nhất định phải tránh','top-5-sai-lam-khi-tu-lap-rap-may-tinh-pc-tai-nha',2,1,'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000&auto=format&fit=crop','Quên bôi keo tản nhiệt, gắn sai khe RAM kênh đôi (Dual Channel), lắp quạt case ngược hướng lưu thông khí hay chọn nguồn công suất ảo khiến máy bị sập nguồn, quá nhiệt.','<h2>Tự ráp PC tại nhà: Dễ nhưng đừng chủ quan!</h2><p>Tự tay lắp ráp một cỗ máy tính theo ý thích là trải nghiệm vô cùng thú vị nhưng cần tránh các sai lầm cơ bản.</p>',3200,'published',NOW(),NOW(),NOW()),
+(5,'Đánh giá MacBook Pro M3 Max: \"Quái vật hiệu năng\" đồ họa di động, pin trâu vượt trội cho Creator','danh-gia-macbook-pro-m3-max-quai-vat-hieu-nang',1,1,'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1000&auto=format&fit=crop','Trải nghiệm thực tế sức mạnh của chip Apple Silicon M3 Max với 16 nhân CPU và 40 nhân GPU: Dựng phim 8K ProRes mượt mà, thời lượng pin liên tục hơn 18 tiếng.','<h2>MacBook Pro M3 Max: Đỉnh cao máy tính xách tay chuyên nghiệp</h2><p>Dòng chip Apple M3 Max được sản xuất trên tiến trình 3 nanomet đột phá của TSMC.</p>',1670,'published',NOW(),NOW(),NOW()),
+(6,'Ổ cứng SSD PCIe 5.0 NVMe tốc độ 14.000 MB/s: Liệu người dùng phổ thông và Game thủ có thực sự cần?','o-cung-ssd-pcie-5-0-nvme-toc-do-14000-mbs-co-can-thiet',3,1,'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?q=80&w=1000&auto=format&fit=crop','Khám phá chuẩn giao tiếp PCIe 5.0 x4 với băng thông gấp đôi PCIe 4.0. Đánh giá tốc độ load game DirectStorage, thời gian khởi động Windows và yêu cầu tản nhiệt tản đồng kèm quạt.','<h2>Sự bùng nổ của chuẩn lưu trữ PCIe Gen 5</h2><p>Các mẫu ổ cứng SSD PCIe 5.0 NVMe M.2 mới nhất hiện nay đã cán mốc 14.000 MB/s.</p>',850,'published',NOW(),NOW(),NOW());
+/*!40000 ALTER TABLE `news` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Final view structure for view `view_best_selling_products`
 --
 

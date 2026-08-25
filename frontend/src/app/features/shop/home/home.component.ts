@@ -5,13 +5,18 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { BrandService } from '../../../core/services/brand.service';
+import { BannerService } from '../../../core/services/banner.service';
+import { NewsService } from '../../../core/services/news.service';
 import { ProductFilterRequest, ProductResponse } from '../../../core/models/product.model';
 import { CategoryResponse } from '../../../core/models/category.model';
 import { BrandResponse } from '../../../core/models/brand.model';
+import { Banner } from '../../../core/models/banner.model';
+import { News } from '../../../core/models/news.model';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 
 interface HeroSlide {
@@ -19,14 +24,14 @@ interface HeroSlide {
   subtitle: string;
   tag: string;
   link: string;
-  categoryQuery: string;
+  categoryQuery?: string;
   image: string;
 }
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, ProductCardComponent],
+  imports: [RouterLink, DatePipe, ProductCardComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,33 +40,46 @@ export class HomeComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly categoryService = inject(CategoryService);
   private readonly brandService = inject(BrandService);
+  private readonly bannerService = inject(BannerService);
+  private readonly newsService = inject(NewsService);
 
   // ── Hero Slider State ──────────────────────────────────────────
   readonly currentSlideIndex = signal(0);
-  readonly slides: HeroSlide[] = [
+  readonly liveBanners = signal<Banner[]>([]);
+  readonly latestNews = signal<News[]>([]);
+
+  readonly fallbackSlides: HeroSlide[] = [
     {
-      title: 'LAPTOP GAMING & AI THẾ HỆ MỚI',
+      title: 'SIÊU HỘI LAPTOP GAMING & AI THẾ HỆ MỚI',
       subtitle: 'Trang bị RTX 40-Series & CPU Intel Gen 14th / AMD Ryzen AI đỉnh cao',
       tag: 'CÔNG NGHỆ ĐỈNH CAO',
       link: '/products',
       categoryQuery: 'laptop-gaming',
-      image: 'http://localhost:8080/uploads/categories/laptop-gaming.png',
+      image: 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=1600&auto=format&fit=crop',
     },
     {
-      title: 'PC WORKSTATION & GAMING STREAMER',
+      title: 'BUILD PC WORKSTATION & GAMING CAO CẤP',
       subtitle: 'Tối ưu hiệu năng render đồ họa 3D, Premiere, livestream chuyên nghiệp',
       tag: 'HIỆU NĂNG TỐI ĐA',
       link: '/products',
       categoryQuery: 'pc-gaming-streamer',
-      image: 'http://localhost:8080/uploads/categories/pc-gaming-streamer.png',
+      image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1600&auto=format&fit=crop',
     },
     {
-      title: 'HỆ SINH THÁI APPLE CHÍNH HÃNG',
+      title: 'HỆ SINH THÁI APPLE MACBOOK CHÍNH HÃNG',
       subtitle: 'MacBook Air M3, MacBook Pro M3 Max và phụ kiện Apple chính hãng',
       tag: 'CHÍNH HÃNG APPLE',
       link: '/products',
       categoryQuery: 'macbook-apple',
-      image: 'http://localhost:8080/uploads/categories/macbook-apple.jpg',
+      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1600&auto=format&fit=crop',
+    },
+    {
+      title: 'TUẦN LỄ LINH KIỆN PC: VGA, RAM, SSD GIẢM 35%',
+      subtitle: 'Linh kiện máy tính chính hãng từ ASUS, MSI, GIGABYTE, Corsair',
+      tag: 'KHUYẾN MÃI LINH KIỆN',
+      link: '/products',
+      categoryQuery: 'linh-kien-may-tinh',
+      image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1600&auto=format&fit=crop',
     },
   ];
 
@@ -85,11 +103,49 @@ export class HomeComponent implements OnInit {
     { id: 'accessories', label: 'Phụ kiện & Gear', categoryId: 5 },
   ];
 
+  get slides(): HeroSlide[] {
+    const live = this.liveBanners();
+    if (live && live.length > 0) {
+      return live.map((b) => ({
+        title: b.title || 'ƯU ĐÃI ĐẶC BIỆT',
+        subtitle: 'Khám phá ngay các dòng sản phẩm máy tính và linh kiện cao cấp tại Complexus',
+        tag: 'KHUYẾN MÃI NỔI BẬT',
+        link: b.linkUrl || '/products',
+        image: b.imageUrl,
+      }));
+    }
+    return this.fallbackSlides;
+  }
+
   ngOnInit(): void {
+    this.loadBanners();
+    this.loadLatestNews();
     this.loadCategories();
     this.loadHotDeals();
     this.loadBestSellers(null);
     this.loadBrands();
+  }
+
+  loadBanners(): void {
+    this.bannerService.getPublicBanners('homepage_slider').subscribe({
+      next: (res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          this.liveBanners.set(res.data);
+        }
+      },
+      error: (err) => console.error('Error loading banners:', err)
+    });
+  }
+
+  loadLatestNews(): void {
+    this.newsService.getPublicNews(undefined, 0, 3).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.latestNews.set(res.data.content);
+        }
+      },
+      error: (err) => console.error('Error loading news:', err)
+    });
   }
 
   loadCategories(): void {
@@ -104,7 +160,6 @@ export class HomeComponent implements OnInit {
     this.loadingDeals.set(true);
     this.productService.getProducts({ page: 0, size: 20 }).subscribe({
       next: (res) => {
-        // Filter products that have at least 1 variant on sale (salePrice < price)
         const deals = res.data.content.filter((p) =>
           p.variants?.some((v) => v.status === 'active' && v.salePrice != null && v.salePrice > 0 && v.salePrice < v.price)
         );

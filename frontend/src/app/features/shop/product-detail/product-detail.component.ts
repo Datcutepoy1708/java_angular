@@ -7,20 +7,25 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../core/services/product.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { CartService } from '../../../core/services/cart.service';
+import { ReviewService } from '../../../core/services/review.service';
+import { AuthService } from '../../../core/services/auth.service';
 import {
   ProductResponse,
   ProductVariantResponse,
 } from '../../../core/models/product.model';
 import { VariantStockSummary } from '../../../core/models/inventory.model';
+import { RatingSummary, Review } from '../../../core/models/review.model';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
+import { RatingStarsComponent } from '../../../shared/components/rating-stars/rating-stars.component';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ProductCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ProductCardComponent, RatingStarsComponent],
   templateUrl: './product-detail.component.html',
   styleUrl: './product-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +34,8 @@ export class ProductDetailComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly inventoryService = inject(InventoryService);
   private readonly cartService = inject(CartService);
+  private readonly reviewService = inject(ReviewService);
+  readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -41,6 +48,18 @@ export class ProductDetailComponent implements OnInit {
   readonly activeTab = signal<'desc' | 'specs' | 'reviews'>('desc');
   readonly relatedProducts = signal<ProductResponse[]>([]);
   readonly loading = signal(true);
+
+  // ── Review Signals ─────────────────────────────────────────────
+  readonly ratingSummary = signal<RatingSummary | null>(null);
+  readonly reviews = signal<Review[]>([]);
+  readonly selectedRatingFilter = signal<number | null>(null);
+  readonly showWriteReviewModal = signal<boolean>(false);
+  readonly reviewFormRating = signal<number>(5);
+  readonly reviewFormTitle = signal<string>('');
+  readonly reviewFormComment = signal<string>('');
+  readonly submittingReview = signal<boolean>(false);
+  readonly reviewSuccessMessage = signal<string | null>(null);
+  readonly reviewErrorMessage = signal<string | null>(null);
 
   ngOnInit(): void {
     this.route.params.subscribe((params) => {
@@ -79,6 +98,10 @@ export class ProductDetailComponent implements OnInit {
 
         this.loading.set(false);
 
+        // Load reviews & rating summary
+        this.loadRatingSummary(prod.productId);
+        this.loadReviews(prod.productId);
+
         // Load related products in the same category
         if (prod.categoryId) {
           this.loadRelatedProducts(prod.categoryId, prod.productId);
@@ -88,6 +111,91 @@ export class ProductDetailComponent implements OnInit {
         console.error('Error loading product:', err);
         this.loading.set(false);
       },
+    });
+  }
+
+  loadRatingSummary(productId: number): void {
+    this.reviewService.getProductRatingSummary(productId).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.ratingSummary.set(res.data);
+        }
+      },
+      error: (err) => console.error('Error loading rating summary:', err)
+    });
+  }
+
+  loadReviews(productId: number, rating?: number): void {
+    this.reviewService.getProductReviews(productId, rating, 0, 20).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.reviews.set(res.data.content);
+        }
+      },
+      error: (err) => console.error('Error loading reviews:', err)
+    });
+  }
+
+  filterReviewsByRating(rating: number | null): void {
+    this.selectedRatingFilter.set(rating);
+    const prod = this.product();
+    if (prod) {
+      this.loadReviews(prod.productId, rating !== null ? rating : undefined);
+    }
+  }
+
+  openWriteReviewModal(): void {
+    if (!this.authService.currentUser()) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    this.reviewFormRating.set(5);
+    this.reviewFormTitle.set('');
+    this.reviewFormComment.set('');
+    this.reviewSuccessMessage.set(null);
+    this.reviewErrorMessage.set(null);
+    this.showWriteReviewModal.set(true);
+  }
+
+  closeWriteReviewModal(): void {
+    this.showWriteReviewModal.set(false);
+  }
+
+  setReviewRating(stars: number): void {
+    this.reviewFormRating.set(stars);
+  }
+
+  submitReview(): void {
+    const prod = this.product();
+    if (!prod) return;
+
+    if (!this.reviewFormComment().trim()) {
+      this.reviewErrorMessage.set('Vui lòng nhập nội dung nhận xét chi tiết.');
+      return;
+    }
+
+    this.submittingReview.set(true);
+    this.reviewErrorMessage.set(null);
+
+    this.reviewService.submitReview(prod.productId, {
+      rating: this.reviewFormRating(),
+      title: this.reviewFormTitle().trim() || undefined,
+      comment: this.reviewFormComment().trim()
+    }).subscribe({
+      next: (res) => {
+        this.submittingReview.set(false);
+        this.reviewSuccessMessage.set('Cảm ơn bạn! Đánh giá của bạn đã được ghi nhận thành công.');
+        this.loadRatingSummary(prod.productId);
+        this.loadReviews(prod.productId, this.selectedRatingFilter() ?? undefined);
+        setTimeout(() => {
+          this.closeWriteReviewModal();
+        }, 1500);
+      },
+      error: (err) => {
+        this.submittingReview.set(false);
+        const msg = err.error?.message || 'Không thể gửi đánh giá. Vui lòng thử lại sau.';
+        this.reviewErrorMessage.set(msg);
+      }
     });
   }
 

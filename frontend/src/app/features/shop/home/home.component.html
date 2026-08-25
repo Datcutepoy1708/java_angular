@@ -212,7 +212,57 @@
     </div>
   </section>
 
-  <!-- ── 6. Value Propositions (Cam kết chất lượng) ────────────────── -->
+  <!-- ── 6. Latest Tech News Section ──────────────────────────────── -->
+  @if (latestNews().length > 0) {
+    <section class="section news-section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Tin tức công nghệ & Thủ thuật</h2>
+            <p class="section-subtitle">Cập nhật xu hướng phần cứng máy tính và tin tức mới nhất</p>
+          </div>
+          <a routerLink="/news" class="view-all-link">
+            Xem tất cả tin tức
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </a>
+        </div>
+
+        <div class="news-grid">
+          @for (article of latestNews(); track article.newsId) {
+            <article class="news-card">
+              <a [routerLink]="['/news', article.slug]" class="news-thumb-wrap">
+                @if (article.thumbnailUrl) {
+                  <img [src]="article.thumbnailUrl" [alt]="article.title" loading="lazy" class="news-thumb-img" />
+                } @else {
+                  <div class="news-thumb-placeholder">Complexus Tech</div>
+                }
+                @if (article.categoryName) {
+                  <span class="news-cat-badge">{{ article.categoryName }}</span>
+                }
+              </a>
+              <div class="news-body">
+                <div class="news-meta">
+                  <span class="news-date">{{ article.publishedAt || article.createdAt | date:'dd/MM/yyyy' }}</span>
+                  <span class="meta-dot">•</span>
+                  <span class="news-views">{{ article.viewCount || 0 }} lượt xem</span>
+                </div>
+                <h3 class="news-title">
+                  <a [routerLink]="['/news', article.slug]">{{ article.title }}</a>
+                </h3>
+                @if (article.summary) {
+                  <p class="news-summary">{{ article.summary }}</p>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ── 7. Value Propositions (Cam kết chất lượng) ────────────────── -->
   <section class="section commitments-section">
     <div class="container">
       <div class="commitments-grid">
