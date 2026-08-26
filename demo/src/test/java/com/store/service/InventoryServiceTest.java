@@ -37,6 +37,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -365,5 +368,56 @@ class InventoryServiceTest {
         assertThatThrownBy(() -> inventoryService.deductCompletedStock(request, 1L))
                 .isInstanceOf(InsufficientStockException.class)
                 .hasMessageContaining("Số lượng tồn kho hoặc số lượng giữ chỗ không đủ để trừ hoàn tất đơn hàng");
+    }
+
+    @Test
+    @DisplayName("restockReturnedItemAtomic should increase stock and log RETURN for salable condition (NEW_SEAL/OPENED)")
+    void testRestockReturnedItemAtomic_Salable_Success() {
+        when(inventoryRepository.increaseStockAtomic(1L, 1, 3)).thenReturn(1);
+        when(productVariantRepository.getReferenceById(1L)).thenReturn(variant);
+        when(warehouseRepository.getReferenceById(1)).thenReturn(warehouse1);
+        when(userRepository.getReferenceById(10L)).thenReturn(adminUser);
+
+        inventoryService.restockReturnedItemAtomic(1L, 1, 3, "OPENED", 100L, "RET-20260826-0001", 10L);
+
+        verify(inventoryRepository).increaseStockAtomic(1L, 1, 3);
+        verify(inventoryLogRepository).save(argThat(log ->
+                log.getChangeType() == InventoryChangeType.RETURN &&
+                log.getQuantityChange() == 3 &&
+                log.getReferenceType().equals("RETURN_RMA")
+        ));
+    }
+
+    @Test
+    @DisplayName("restockReturnedItemAtomic should insert new Inventory if rows updated is 0")
+    void testRestockReturnedItemAtomic_InsertIfNotExists_Success() {
+        when(inventoryRepository.increaseStockAtomic(1L, 1, 2)).thenReturn(0);
+        when(productVariantRepository.findById(1L)).thenReturn(Optional.of(variant));
+        when(warehouseRepository.findById(1)).thenReturn(Optional.of(warehouse1));
+        when(productVariantRepository.getReferenceById(1L)).thenReturn(variant);
+        when(warehouseRepository.getReferenceById(1)).thenReturn(warehouse1);
+
+        inventoryService.restockReturnedItemAtomic(1L, 1, 2, "NEW_SEAL", 100L, "RET-20260826-0001", null);
+
+        verify(inventoryRepository).save(argThat(inv ->
+                inv.getQuantity() == 2 && inv.getReservedQty() == 0
+        ));
+        verify(inventoryLogRepository).save(any(InventoryLog.class));
+    }
+
+    @Test
+    @DisplayName("restockReturnedItemAtomic should log ADJUST without increasing stock for DEFECTIVE/DAMAGED items")
+    void testRestockReturnedItemAtomic_Defective_NoStockIncrease() {
+        when(productVariantRepository.getReferenceById(1L)).thenReturn(variant);
+        when(warehouseRepository.getReferenceById(1)).thenReturn(warehouse1);
+
+        inventoryService.restockReturnedItemAtomic(1L, 1, 1, "DEFECTIVE", 100L, "RET-20260826-0001", null);
+
+        verify(inventoryRepository, times(0)).increaseStockAtomic(anyLong(), any(), anyInt());
+        verify(inventoryLogRepository).save(argThat(log ->
+                log.getChangeType() == InventoryChangeType.ADJUST &&
+                log.getQuantityChange() == 0 &&
+                log.getNote().contains("bảo hành/NCC")
+        ));
     }
 }

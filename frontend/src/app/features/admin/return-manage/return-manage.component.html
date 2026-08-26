@@ -1,0 +1,543 @@
+<div class="return-manage-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Quản Lý Đổi Trả & Hoàn Tiền (RMA)</h1>
+      <p class="page-subtitle">Xử lý quy trình trả hàng, đánh giá tình trạng tại kho, hoàn tiền ngân hàng và hoàn nhập tồn kho atomic</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="loadRequests(currentPage()); loadMetrics()" [disabled]="isLoading()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span>Làm mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Metrics Cards -->
+  @if (metrics(); as m) {
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-info">
+          <span class="metric-label">Tổng Yêu Cầu</span>
+          <span class="metric-value">{{ m.totalRequests }}</span>
+        </div>
+      </div>
+      <div class="metric-card border-warning">
+        <div class="metric-info">
+          <span class="metric-label">Chờ Duyệt</span>
+          <span class="metric-value text-warning">{{ m.pendingReviewCount }}</span>
+        </div>
+      </div>
+      <div class="metric-card border-info">
+        <div class="metric-info">
+          <span class="metric-label">Chờ Nhận Hàng</span>
+          <span class="metric-value text-info">{{ m.awaitingItemCount }}</span>
+        </div>
+      </div>
+      <div class="metric-card border-success">
+        <div class="metric-info">
+          <span class="metric-label">Đã Hoàn Tiền</span>
+          <span class="metric-value text-success">{{ m.refundedCount }}</span>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-info">
+          <span class="metric-label">Tổng Tiền Đã Hoàn</span>
+          <span class="metric-value font-mono">{{ m.totalRefundedAmount | number:'1.0-0' }} đ</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Success & Error Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success mt-3">
+      {{ successMessage() }}
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert-error mt-3">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Status Tabs -->
+  <div class="status-tabs-card mt-4">
+    <div class="tabs-nav">
+      @for (tab of statusTabs; track tab.value) {
+        <button
+          class="tab-btn"
+          [class.active]="filter.status === tab.value"
+          (click)="onTabChange(tab.value)"
+        >
+          <span>{{ tab.label }}</span>
+          @if (tab.countKey && metrics(); as m) {
+            <span class="tab-badge">{{ m[tab.countKey] }}</span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-card">
+    <div class="filter-grid">
+      <div class="form-group">
+        <label class="form-label">Tìm kiếm</label>
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            class="form-control with-icon"
+            placeholder="Mã RMA, email, đơn hàng..."
+            [(ngModel)]="filter.keyword"
+            (keyup.enter)="onFilterChange()"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Từ ngày</label>
+        <input type="date" class="form-control" [(ngModel)]="filter.fromDate" (change)="onFilterChange()" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Đến ngày</label>
+        <input type="date" class="form-control" [(ngModel)]="filter.toDate" (change)="onFilterChange()" />
+      </div>
+
+      <div class="form-group filter-actions">
+        <button class="btn btn-secondary w-100" (click)="resetFilter()">Đặt lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã RMA</th>
+            <th>Đơn hàng</th>
+            <th>Khách hàng</th>
+            <th>Lý do</th>
+            <th>Tiền hoàn</th>
+            <th>Trạng thái</th>
+            <th>Thời gian</th>
+            <th class="text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="8" class="text-center py-5">
+                <div class="spinner"></div>
+                <p class="mt-2 text-muted">Đang tải danh sách đổi trả...</p>
+              </td>
+            </tr>
+          } @else if (requests().length === 0) {
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                Không tìm thấy yêu cầu đổi trả nào.
+              </td>
+            </tr>
+          } @else {
+            @for (req of requests(); track req.returnId) {
+              <tr>
+                <td class="font-mono font-medium whitespace-nowrap">
+                  {{ req.returnCode }}
+                </td>
+                <td class="whitespace-nowrap">
+                  <span class="order-code">#{{ req.orderTrackingNumber }}</span>
+                </td>
+                <td>
+                  <div class="customer-cell">
+                    <span class="customer-name font-medium">{{ req.customerName }}</span>
+                    <span class="customer-email text-muted">{{ req.customerEmail }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="reason-tag">{{ getReasonLabel(req.returnReason) }}</span>
+                </td>
+                <td class="whitespace-nowrap font-mono font-semibold text-primary">
+                  {{ req.refundAmount | number:'1.0-0' }} đ
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="getStatusBadgeClass(req.status)">
+                    {{ getStatusLabel(req.status) }}
+                  </span>
+                </td>
+                <td class="whitespace-nowrap text-xs text-muted">
+                  {{ req.requestedAt | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+                <td class="text-right whitespace-nowrap">
+                  <button class="btn btn-sm btn-outline" (click)="openDetailModal(req, 'DETAIL')">
+                    Xem / Xử lý
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-footer">
+      <div class="pagination-info">
+        Hiển thị {{ requests().length }} trên tổng số <strong>{{ totalElements() }}</strong> yêu cầu (Trang {{ currentPage() + 1 }} / {{ totalPages() || 1 }})
+      </div>
+      <div class="pagination-controls">
+        <button
+          class="btn-page"
+          [disabled]="currentPage() === 0 || isLoading()"
+          (click)="loadRequests(currentPage() - 1)"
+        >
+          Trước
+        </button>
+        <button
+          class="btn-page"
+          [disabled]="currentPage() >= totalPages() - 1 || isLoading()"
+          (click)="loadRequests(currentPage() + 1)"
+        >
+          Sau
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Chi Tiết & Xử Lý Đổi Trả -->
+@if (showDetailModal() && selectedRequest(); as req) {
+  <div class="modal-backdrop" (click)="closeDetailModal()">
+    <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Yêu Cầu Đổi Trả {{ req.returnCode }}</h3>
+          <p class="modal-subtitle">Đơn hàng #{{ req.orderTrackingNumber }} • Khách: {{ req.customerName }} ({{ req.customerEmail }})</p>
+        </div>
+        <button class="btn-close" (click)="closeDetailModal()">✕</button>
+      </div>
+
+      <!-- Action Tabs in Modal -->
+      <div class="modal-tabs">
+        <button class="modal-tab-btn" [class.active]="activeModalTab() === 'DETAIL'" (click)="activeModalTab.set('DETAIL')">
+          1. Thông Tin Chi Tiết
+        </button>
+        @if (req.status === 'REQUESTED') {
+          <button class="modal-tab-btn tab-action" [class.active]="activeModalTab() === 'REVIEW'" (click)="activeModalTab.set('REVIEW')">
+            2. Phê Duyệt / Từ Chối
+          </button>
+        }
+        @if (req.status === 'APPROVED') {
+          <button class="modal-tab-btn tab-action" [class.active]="activeModalTab() === 'RECEIVE'" (click)="activeModalTab.set('RECEIVE')">
+            2. Tiếp Nhận Hàng Tại Kho
+          </button>
+        }
+        @if (req.status === 'ITEM_RECEIVED' || req.status === 'APPROVED') {
+          <button class="modal-tab-btn tab-action" [class.active]="activeModalTab() === 'REFUND'" (click)="activeModalTab.set('REFUND')">
+            3. Hoàn Tiền & Hoàn Kho
+          </button>
+        }
+      </div>
+
+      <div class="modal-body">
+        <!-- TAB 1: DETAIL -->
+        @if (activeModalTab() === 'DETAIL') {
+          <div class="detail-section">
+            <!-- Metadata & Bank Details -->
+            <div class="info-grid">
+              <div class="info-card">
+                <h4 class="card-subtitle">Thông Tin Trả Hàng</h4>
+                <div class="info-row">
+                  <span class="info-label">Trạng thái:</span>
+                  <span class="badge" [ngClass]="getStatusBadgeClass(req.status)">{{ getStatusLabel(req.status) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Lý do:</span>
+                  <span class="info-val font-semibold">{{ getReasonLabel(req.returnReason) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Ghi chú khách:</span>
+                  <span class="info-val">{{ req.customerNote || 'Không có ghi chú' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Thời gian yêu cầu:</span>
+                  <span class="info-val font-mono">{{ req.requestedAt | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+                </div>
+                @if (req.adminNote) {
+                  <div class="info-row">
+                    <span class="info-label">Ghi chú Admin:</span>
+                    <span class="info-val text-primary">{{ req.adminNote }}</span>
+                  </div>
+                }
+              </div>
+
+              <div class="info-card">
+                <h4 class="card-subtitle">Tài Khoản Hoàn Tiền & Kho</h4>
+                <div class="info-row">
+                  <span class="info-label">Số tiền hoàn:</span>
+                  <span class="info-val font-mono font-bold text-success text-lg">{{ req.refundAmount | number:'1.0-0' }} đ</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Ngân hàng:</span>
+                  <span class="info-val">{{ req.bankName || 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Số tài khoản:</span>
+                  <span class="info-val font-mono font-semibold">{{ req.bankAccountNumber || 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Chủ tài khoản:</span>
+                  <span class="info-val font-semibold uppercase">{{ req.bankAccountName || 'N/A' }}</span>
+                </div>
+                @if (req.refundTransactionCode) {
+                  <div class="info-row">
+                    <span class="info-label">Mã GD hoàn tiền:</span>
+                    <span class="info-val font-mono text-primary font-semibold">{{ req.refundTransactionCode }}</span>
+                  </div>
+                }
+                @if (req.restockWarehouseName) {
+                  <div class="info-row">
+                    <span class="info-label">Kho nhận hàng:</span>
+                    <span class="info-val">{{ req.restockWarehouseName }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Items List -->
+            <div class="items-section mt-4">
+              <h4 class="section-title">Danh Sách Mặt Hàng Đổi Trả ({{ req.items.length }})</h4>
+              <div class="items-table-wrapper">
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th>SKU</th>
+                      <th>Số lượng</th>
+                      <th>Đơn giá</th>
+                      <th>Thành tiền</th>
+                      <th>Tình trạng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of req.items; track item.id) {
+                      <tr>
+                        <td>
+                          <div class="product-cell">
+                            @if (item.imageUrl) {
+                              <img [src]="item.imageUrl" class="prod-thumb" alt="thumb" />
+                            }
+                            <div>
+                              <div class="prod-name font-medium">{{ item.productName }}</div>
+                              @if (item.variantName) {
+                                <div class="prod-variant text-muted text-xs">{{ item.variantName }}</div>
+                              }
+                            </div>
+                          </div>
+                        </td>
+                        <td class="font-mono text-xs">{{ item.skuVariant || '—' }}</td>
+                        <td class="font-semibold text-center">{{ item.quantity }}</td>
+                        <td class="font-mono">{{ item.unitPrice | number:'1.0-0' }} đ</td>
+                        <td class="font-mono font-semibold text-primary">{{ item.totalPrice | number:'1.0-0' }} đ</td>
+                        <td>
+                          <span class="condition-chip" [class.condition-defect]="item.itemCondition === 'DEFECTIVE' || item.itemCondition === 'DAMAGED'">
+                            {{ getConditionLabel(item.itemCondition) }}
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Proof Images Gallery -->
+            @if (req.imageUrls && req.imageUrls.length > 0) {
+              <div class="images-section mt-4">
+                <h4 class="section-title">Hình Ảnh Bằng Chứng ({{ req.imageUrls.length }})</h4>
+                <div class="image-gallery">
+                  @for (img of req.imageUrls; track img) {
+                    <div class="image-thumb" (click)="openImagePreview(img)">
+                      <img [src]="img" alt="Bằng chứng" />
+                      <div class="image-overlay">
+                        <span>Phóng to</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- TAB 2: REVIEW (APPROVE / REJECT) -->
+        @if (activeModalTab() === 'REVIEW') {
+          <div class="action-form-section">
+            <div class="alert alert-info">
+              Kiểm tra lý do đổi trả và hình ảnh bằng chứng của khách hàng trước khi quyết định phê duyệt.
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Quyết định kiểm duyệt</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="approved" [value]="true" [(ngModel)]="reviewForm.approved" />
+                  <span class="text-success font-semibold">Chấp thuận (APPROVED) — Cho phép khách gửi hàng về kho</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="approved" [value]="false" [(ngModel)]="reviewForm.approved" />
+                  <span class="text-danger font-semibold">Từ chối (REJECTED) — Không chấp nhận yêu cầu này</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Ghi chú của Admin gửi khách hàng</label>
+              <textarea
+                class="form-control"
+                rows="3"
+                placeholder="Nhập hướng dẫn gửi hàng hoặc lý do từ chối..."
+                [(ngModel)]="reviewForm.adminNote"
+              ></textarea>
+            </div>
+
+            <div class="form-actions mt-4">
+              <button class="btn btn-primary" (click)="submitReview()" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Đang xử lý...' : (reviewForm.approved ? 'Xác Nhận Phê Duyệt' : 'Xác Nhận Từ Chối') }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- TAB 3: RECEIVE AT WAREHOUSE -->
+        @if (activeModalTab() === 'RECEIVE') {
+          <div class="action-form-section">
+            <div class="alert alert-info">
+              Xác nhận hàng đã về tới kho và kiểm tra thực tế tình trạng từng sản phẩm để phân loại kho bán hoặc kho cách ly bảo hành.
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Kho tiếp nhận hàng hoàn</label>
+              <select class="form-control" [(ngModel)]="receiveForm.warehouseId">
+                @for (wh of warehouses(); track wh.warehouseId) {
+                  <option [value]="wh.warehouseId">{{ wh.name }} (ID: {{ wh.warehouseId }})</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Tình trạng thực tế từng sản phẩm</label>
+              <div class="condition-items-list">
+                @for (item of req.items; track item.id) {
+                  <div class="condition-item-row">
+                    <div class="prod-desc">
+                      <span class="font-medium">{{ item.productName }}</span>
+                      <span class="text-xs text-muted"> (SL: {{ item.quantity }})</span>
+                    </div>
+                    <select class="form-control select-condition" [(ngModel)]="receiveForm.itemConditions[item.id]">
+                      <option value="NEW_SEAL">Nguyên Seal (Mới 100%) — Hoàn kho bán</option>
+                      <option value="OPENED">Đã mở hộp (Dùng tốt) — Hoàn kho bán</option>
+                      <option value="DEFECTIVE">Lỗi kỹ thuật — Chuyển bảo hành (Không cộng kho bán)</option>
+                      <option value="DAMAGED">Móp vỡ / Hỏng — Chuyển cách ly (Không cộng kho bán)</option>
+                    </select>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Ghi chú tiếp nhận</label>
+              <textarea
+                class="form-control"
+                rows="2"
+                placeholder="Ghi chú thêm về gói hàng hoặc biên bản bàn giao..."
+                [(ngModel)]="receiveForm.adminNote"
+              ></textarea>
+            </div>
+
+            <div class="form-actions mt-4">
+              <button class="btn btn-primary" (click)="submitReceive()" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Đang lưu...' : 'Xác Nhận Đã Nhận Hàng Tại Kho' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- TAB 4: REFUND & ATOMIC RESTOCK -->
+        @if (activeModalTab() === 'REFUND') {
+          <div class="action-form-section">
+            <div class="alert alert-warning">
+              <strong>Thao tác quan trọng:</strong> Hệ thống sẽ thực hiện chuyển tiền hoàn, tự động phục hồi lượt dùng mã giảm giá nếu trả toàn bộ đơn, và thực hiện <strong>Hoàn Kho Atomic</strong> theo phân loại sản phẩm.
+            </div>
+
+            <div class="bank-summary-box mt-3">
+              <div class="bank-line">
+                <span>Số tiền cần hoàn:</span>
+                <strong class="text-lg text-success font-mono">{{ req.refundAmount | number:'1.0-0' }} đ</strong>
+              </div>
+              <div class="bank-line">
+                <span>Ngân hàng thụ hưởng:</span>
+                <strong>{{ req.bankName }}</strong>
+              </div>
+              <div class="bank-line">
+                <span>Số tài khoản:</span>
+                <strong class="font-mono">{{ req.bankAccountNumber }}</strong>
+              </div>
+              <div class="bank-line">
+                <span>Tên tài khoản:</span>
+                <strong class="uppercase">{{ req.bankAccountName }}</strong>
+              </div>
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Mã giao dịch chuyển khoản ngân hàng (Bắt buộc)</label>
+              <input
+                type="text"
+                class="form-control font-mono"
+                placeholder="VD: FT2608269988123"
+                [(ngModel)]="refundForm.refundTransactionCode"
+              />
+            </div>
+
+            <div class="form-group mt-3">
+              <label class="form-label">Ghi chú hoàn tiền</label>
+              <textarea
+                class="form-control"
+                rows="2"
+                placeholder="Ghi chú xác nhận chuyển tiền..."
+                [(ngModel)]="refundForm.adminNote"
+              ></textarea>
+            </div>
+
+            <div class="form-actions mt-4">
+              <button class="btn btn-primary btn-success-action" (click)="submitRefund()" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Đang xử lý hoàn tiền & hoàn kho...' : 'Xác Nhận Đã Hoàn Tiền & Hoàn Kho Atomic' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Image Lightbox Modal -->
+@if (previewImageUrl()) {
+  <div class="lightbox-backdrop" (click)="closeImagePreview()">
+    <div class="lightbox-dialog" (click)="$event.stopPropagation()">
+      <img [src]="previewImageUrl()!" class="lightbox-img" alt="Enlarged proof" />
+      <button class="lightbox-close" (click)="closeImagePreview()">✕</button>
+    </div>
+  </div>
+}

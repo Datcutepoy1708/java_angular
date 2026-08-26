@@ -139,6 +139,7 @@ public class SettingServiceImpl implements SettingService {
             case "DEFAULT_SHIPPING_FEE":
             case "ORDER_AUTO_CANCEL_HOURS":
             case "LOW_STOCK_THRESHOLD":
+            case "RETURN_WINDOW_DAYS":
                 if (!NUMERIC_PATTERN.matcher(value).matches()) {
                     throw new IllegalArgumentException("Cấu hình '" + key + "' phải là số nguyên dương hợp lệ, không chứa ký tự phân cách (nhận được: '" + value + "')");
                 }
@@ -163,7 +164,7 @@ public class SettingServiceImpl implements SettingService {
         if (key.startsWith("STORE_")) {
             return SettingGroup.GENERAL;
         }
-        if (key.startsWith("FREE_SHIPPING") || key.startsWith("DEFAULT_SHIPPING") || key.startsWith("ENABLE_") || key.startsWith("ORDER_")) {
+        if (key.startsWith("FREE_SHIPPING") || key.startsWith("DEFAULT_SHIPPING") || key.startsWith("ENABLE_") || key.startsWith("ORDER_") || key.startsWith("RETURN_")) {
             return SettingGroup.ORDER_SHIPPING;
         }
         if (key.startsWith("META_") || key.startsWith("SEO_")) {
@@ -187,6 +188,21 @@ public class SettingServiceImpl implements SettingService {
                 .createdAt(setting.getCreatedAt())
                 .updatedAt(setting.getUpdatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int getReturnWindowDays() {
+        return settingRepository.findBySettingKey("RETURN_WINDOW_DAYS")
+                .map(Setting::getSettingValue)
+                .map(val -> {
+                    try {
+                        return Integer.parseInt(val.trim());
+                    } catch (NumberFormatException e) {
+                        return 14;
+                    }
+                })
+                .orElse(14);
     }
 
     private Map<String, String> getDefaultSettingsMap() {
@@ -216,6 +232,7 @@ public class SettingServiceImpl implements SettingService {
         map.put("META_DESCRIPTION", "Chuyên cung cấp máy tính để bàn, laptop gaming, card màn hình VGA RTX 40-series, CPU Intel Gen 14, AMD Ryzen chính hãng giá tốt nhất.");
         map.put("LOW_STOCK_THRESHOLD", "5");
         map.put("MAINTENANCE_MODE", "false");
+        map.put("RETURN_WINDOW_DAYS", "14");
         return map;
     }
 }

@@ -50,6 +50,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long>, Jpa
            "AND i.quantity >= :qty AND i.reservedQty >= :qty")
     int deductCompletedStockAtomic(@Param("variantId") Long variantId, @Param("warehouseId") Integer warehouseId, @Param("qty") int qty);
 
+    @Modifying
+    @Query("UPDATE Inventory i SET i.quantity = i.quantity + :qty, i.updatedAt = CURRENT_TIMESTAMP " +
+           "WHERE i.variant.variantId = :variantId AND i.warehouse.warehouseId = :warehouseId")
+    int increaseStockAtomic(@Param("variantId") Long variantId, @Param("warehouseId") Integer warehouseId, @Param("qty") int qty);
+
     @Query("SELECT COALESCE(SUM(i.quantity - i.reservedQty), 0) FROM Inventory i WHERE i.variant.variantId = :variantId")
     Long sumAvailableStockByVariantId(@Param("variantId") Long variantId);
 

@@ -7,6 +7,7 @@ import { AddressService } from '../../../core/services/address.service';
 import { OrderService } from '../../../core/services/order.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReturnService } from '../../../core/services/return.service';
 import { GenderType, UserProfile } from '../../../core/models/user.model';
 import { Address, AddressRequest } from '../../../core/models/address.model';
 import { Order } from '../../../core/models/order.model';
@@ -26,6 +27,7 @@ export class AccountHubComponent implements OnInit {
   private readonly addressService = inject(AddressService);
   private readonly orderService = inject(OrderService);
   private readonly uploadService = inject(UploadService);
+  private readonly returnService = inject(ReturnService);
   readonly authService = inject(AuthService);
 
   readonly activeTab = signal<AccountTab>('profile');
@@ -64,8 +66,9 @@ export class AccountHubComponent implements OnInit {
     isDefault: false
   });
 
-  // Tab 4: My Orders
+  // Tab 4: My Orders & Returns
   readonly orders = signal<Order[]>([]);
+  readonly myReturnRequests = signal<import('../../../core/models/return.model').ReturnDetail[]>([]);
   readonly orderStatusFilter = signal<string>('ALL');
   readonly selectedOrderDetail = signal<Order | null>(null);
   readonly isOrderDetailModalOpen = signal<boolean>(false);
@@ -73,10 +76,150 @@ export class AccountHubComponent implements OnInit {
   readonly orderToCancel = signal<Order | null>(null);
   readonly isCancelModalOpen = signal<boolean>(false);
 
+  // Return & Refund Modal for Customers
+  readonly isReturnModalOpen = signal<boolean>(false);
+  readonly orderForReturn = signal<Order | null>(null);
+  readonly isUploadingReturnImg = signal<boolean>(false);
+  returnForm = {
+    returnReason: 'DEFECTIVE',
+    customerNote: '',
+    bankName: '',
+    bankAccountNumber: '',
+    bankAccountName: '',
+    items: {} as Record<number, { selected: boolean; quantity: number; condition: string }>,
+    imageUrls: [] as string[]
+  };
+
   ngOnInit(): void {
     this.loadProfile();
     this.loadAddresses();
     this.loadOrders();
+    this.loadMyReturns();
+  }
+
+  loadMyReturns(): void {
+    this.returnService.getMyReturnRequests(0, 50).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.myReturnRequests.set(res.data.content || []);
+        }
+      },
+      error: (err) => console.error('Error loading my returns', err)
+    });
+  }
+
+  isEligibleForReturn(order: Order): boolean {
+    const status = (order.orderStatus || '').toLowerCase();
+    if (status !== 'completed' && status !== 'delivered') return false;
+
+    // Check if there is already an active return request
+    const existing = this.myReturnRequests().find(r => r.orderId === order.orderId && r.status !== 'REJECTED' && r.status !== 'CANCELLED');
+    if (existing) return false;
+
+    return true;
+  }
+
+  hasExistingReturn(orderId: number): import('../../../core/models/return.model').ReturnDetail | undefined {
+    return this.myReturnRequests().find(r => r.orderId === orderId);
+  }
+
+  openReturnModal(order: Order): void {
+    this.orderForReturn.set(order);
+    const itemMap: Record<number, { selected: boolean; quantity: number; condition: string }> = {};
+    if (order.items) {
+      for (const item of order.items) {
+        itemMap[item.orderItemId] = {
+          selected: true,
+          quantity: item.quantity,
+          condition: 'OPENED'
+        };
+      }
+    }
+
+    this.returnForm = {
+      returnReason: 'DEFECTIVE',
+      customerNote: '',
+      bankName: '',
+      bankAccountNumber: '',
+      bankAccountName: this.fullName() || '',
+      items: itemMap,
+      imageUrls: []
+    };
+
+    this.isReturnModalOpen.set(true);
+  }
+
+  closeReturnModal(): void {
+    this.isReturnModalOpen.set(false);
+    this.orderForReturn.set(null);
+  }
+
+  onReturnImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.isUploadingReturnImg.set(true);
+      this.uploadService.uploadImage(file).subscribe({
+        next: (url) => {
+          this.returnForm.imageUrls.push(url);
+          this.isUploadingReturnImg.set(false);
+        },
+        error: (err) => {
+          alert('Tải ảnh bằng chứng thất bại: ' + (err?.error?.message || 'Lỗi server'));
+          this.isUploadingReturnImg.set(false);
+        }
+      });
+    }
+  }
+
+  removeReturnImage(index: number): void {
+    this.returnForm.imageUrls.splice(index, 1);
+  }
+
+  submitCustomerReturn(): void {
+    const order = this.orderForReturn();
+    if (!order) return;
+
+    const selectedItems = Object.entries(this.returnForm.items)
+      .filter(([_, val]) => val.selected && val.quantity > 0)
+      .map(([id, val]) => ({
+        orderItemId: Number(id),
+        quantity: val.quantity,
+        itemCondition: val.condition
+      }));
+
+    if (selectedItems.length === 0) {
+      alert('Vui lòng chọn ít nhất 1 sản phẩm cần đổi trả.');
+      return;
+    }
+
+    if (!this.returnForm.bankAccountNumber.trim() || !this.returnForm.bankName.trim() || !this.returnForm.bankAccountName.trim()) {
+      alert('Vui lòng điền đầy đủ thông tin tài khoản ngân hàng để nhận tiền hoàn.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.returnService.createReturnRequest({
+      orderId: order.orderId,
+      returnReason: this.returnForm.returnReason,
+      customerNote: this.returnForm.customerNote,
+      items: selectedItems,
+      imageUrls: this.returnForm.imageUrls,
+      bankName: this.returnForm.bankName.trim(),
+      bankAccountNumber: this.returnForm.bankAccountNumber.trim(),
+      bankAccountName: this.returnForm.bankAccountName.trim().toUpperCase()
+    }).subscribe({
+      next: (res) => {
+        this.isLoading.set(false);
+        this.closeReturnModal();
+        this.loadMyReturns();
+        this.successMessage.set(`Yêu cầu đổi trả mã ${res.data?.returnCode} đã được gửi thành công. Vui lòng chờ nhân viên kiểm duyệt.`);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        alert(err?.error?.message || 'Không thể tạo yêu cầu đổi trả.');
+      }
+    });
   }
 
   setTab(tab: AccountTab): void {

@@ -143,6 +143,16 @@ export const routes: Routes = [
               import('./features/admin/role-manage/role-manage.component').then((m) => m.RoleManageComponent)
           },
           {
+            path: 'returns',
+            loadComponent: () =>
+              import('./features/admin/return-manage/return-manage.component').then((m) => m.ReturnManageComponent)
+          },
+          {
+            path: 'audit-logs',
+            loadComponent: () =>
+              import('./features/admin/audit-log/audit-log.component').then((m) => m.AuditLogComponent)
+          },
+          {
             path: 'users',
             redirectTo: 'staff',
             pathMatch: 'full'

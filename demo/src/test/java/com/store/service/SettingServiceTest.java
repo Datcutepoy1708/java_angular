@@ -183,4 +183,18 @@ class SettingServiceTest {
         boolean isNowActive = settingService.isMaintenanceModeActive();
         assertThat(isNowActive).isTrue();
     }
+
+    @Test
+    @DisplayName("getReturnWindowDays returns value from setting or defaults to 14")
+    void getReturnWindowDays_returnsValueOrDefault() {
+        when(settingRepository.findBySettingKey("RETURN_WINDOW_DAYS"))
+                .thenReturn(Optional.of(Setting.builder().settingKey("RETURN_WINDOW_DAYS").settingValue("30").build()));
+
+        int days = settingService.getReturnWindowDays();
+        assertThat(days).isEqualTo(30);
+
+        when(settingRepository.findBySettingKey("RETURN_WINDOW_DAYS")).thenReturn(Optional.empty());
+        int defaultDays = settingService.getReturnWindowDays();
+        assertThat(defaultDays).isEqualTo(14);
+    }
 }

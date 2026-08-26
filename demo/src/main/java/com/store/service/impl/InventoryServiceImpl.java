@@ -30,6 +30,7 @@ import com.store.service.InventoryService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -556,5 +557,61 @@ public class InventoryServiceImpl implements InventoryService {
                 .outOfStockItemsCount(outOfStock)
                 .totalPhysicalQuantity(totalPhysical)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = {"inventory", "products", "productDetail"}, allEntries = true)
+    public void restockReturnedItemAtomic(Long variantId, Integer warehouseId, int quantity, String itemCondition, Long returnId, String returnCode, Long currentUserId) {
+        log.info("Restocking returned item: variantId={}, warehouseId={}, qty={}, condition={}, returnCode={}",
+                variantId, warehouseId, quantity, itemCondition, returnCode);
+
+        boolean isSalable = "NEW_SEAL".equalsIgnoreCase(itemCondition) || "OPENED".equalsIgnoreCase(itemCondition);
+
+        if (isSalable) {
+            int updatedRows = inventoryRepository.increaseStockAtomic(variantId, warehouseId, quantity);
+            if (updatedRows == 0) {
+                // Safe insert-if-not-exists
+                ProductVariant variant = productVariantRepository.findById(variantId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Biến thể không tồn tại: " + variantId));
+                Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Kho không tồn tại: " + warehouseId));
+
+                Inventory newInv = Inventory.builder()
+                        .variant(variant)
+                        .warehouse(warehouse)
+                        .quantity(quantity)
+                        .reservedQty(0)
+                        .build();
+                inventoryRepository.save(newInv);
+                log.info("Created new Inventory record for variantId={} in warehouseId={} with qty={}", variantId, warehouseId, quantity);
+            }
+
+            InventoryLog auditLog = InventoryLog.builder()
+                    .variant(productVariantRepository.getReferenceById(variantId))
+                    .warehouse(warehouseRepository.getReferenceById(warehouseId))
+                    .changeType(InventoryChangeType.RETURN)
+                    .quantityChange(quantity)
+                    .referenceType("RETURN_RMA")
+                    .referenceId(returnId)
+                    .note("Hoàn nhập kho hàng đổi trả: " + returnCode + " (Tình trạng: " + itemCondition + ")")
+                    .createdBy(currentUserId != null ? userRepository.getReferenceById(currentUserId) : null)
+                    .build();
+            inventoryLogRepository.save(auditLog);
+        } else {
+            // Defective / Damaged items - DO NOT ADD TO AVAILABLE QUANTITY
+            InventoryLog auditLog = InventoryLog.builder()
+                    .variant(productVariantRepository.getReferenceById(variantId))
+                    .warehouse(warehouseRepository.getReferenceById(warehouseId))
+                    .changeType(InventoryChangeType.ADJUST)
+                    .quantityChange(0)
+                    .referenceType("RETURN_RMA")
+                    .referenceId(returnId)
+                    .note("Tiếp nhận hàng lỗi/hỏng từ đổi trả: " + returnCode + " (Tình trạng: " + itemCondition + ") - Chuyển khu vực bảo hành/NCC")
+                    .createdBy(currentUserId != null ? userRepository.getReferenceById(currentUserId) : null)
+                    .build();
+            inventoryLogRepository.save(auditLog);
+            log.info("Recorded defective return for variantId={} in RMA {} without increasing available stock", variantId, returnCode);
+        }
     }
 }

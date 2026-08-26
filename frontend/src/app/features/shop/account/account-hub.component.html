@@ -411,6 +411,12 @@
                       @if (order.orderStatus === 'pending' || order.orderStatus === 'confirmed') {
                         <button class="btn-cancel" (click)="openCancelModal(order)">Hủy đơn</button>
                       }
+                      @if (isEligibleForReturn(order)) {
+                        <button class="btn-return" (click)="openReturnModal(order)">Yêu Cầu Đổi Trả</button>
+                      }
+                      @if (hasExistingReturn(order.orderId); as ret) {
+                        <span class="badge-rma">Đổi trả: {{ ret.status }}</span>
+                      }
                     </div>
                   </div>
                 </div>
@@ -583,6 +589,127 @@
         <div class="modal-footer">
           <button class="btn-cancel-modal" (click)="closeCancelModal()">Quay lại</button>
           <button class="btn-danger-modal" (click)="confirmCancelOrder()">Xác Nhận Hủy Đơn</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- MODAL: CUSTOMER RETURN & REFUND REQUEST        -->
+  <!-- ══════════════════════════════════════════════ -->
+  @if (isReturnModalOpen() && orderForReturn(); as retOrder) {
+    <div class="modal-overlay" (click)="closeReturnModal()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Yêu Cầu Đổi Trả / Hoàn Tiền</h3>
+            <p class="modal-subtitle">Đơn hàng #{{ retOrder.orderCode }} • Đã hoàn tất</p>
+          </div>
+          <button class="modal-close" (click)="closeReturnModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Step 1: Items Selection -->
+          <div class="modal-section-title">1. Chọn sản phẩm cần đổi trả:</div>
+          <div class="return-items-selection">
+            @for (item of retOrder.items; track item.orderItemId) {
+              <div class="return-item-check-row">
+                <label class="item-checkbox-label">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="returnForm.items[item.orderItemId].selected"
+                  />
+                  <div class="item-info-preview">
+                    @if (item.imageUrl) {
+                      <img [src]="item.imageUrl" class="prod-thumb" alt="Product" />
+                    }
+                    <div>
+                      <div class="prod-name font-medium">{{ item.productName }}</div>
+                      <div class="prod-variant text-muted text-xs">{{ item.variantName }} (Mua: {{ item.quantity }})</div>
+                    </div>
+                  </div>
+                </label>
+
+                @if (returnForm.items[item.orderItemId].selected) {
+                  <div class="item-qty-input">
+                    <label class="text-xs text-muted">Số lượng trả:</label>
+                    <input
+                      type="number"
+                      class="form-input text-center"
+                      min="1"
+                      [max]="item.quantity"
+                      [(ngModel)]="returnForm.items[item.orderItemId].quantity"
+                    />
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Step 2: Reason & Note -->
+          <div class="modal-section-title mt-4">2. Lý do đổi trả:</div>
+          <div class="modal-row">
+            <select [(ngModel)]="returnForm.returnReason" class="form-input select-input">
+              <option value="DEFECTIVE">Lỗi kỹ thuật / Sản phẩm bị hỏng</option>
+              <option value="WRONG_ITEM">Giao sai sản phẩm / Phiên bản</option>
+              <option value="DAMAGED_IN_TRANSIT">Hư hại trong quá trình vận chuyển</option>
+              <option value="NOT_AS_DESCRIBED">Sản phẩm không đúng mô tả trên website</option>
+              <option value="CHANGE_OF_MIND">Đổi ý không có nhu cầu sử dụng</option>
+              <option value="OTHER">Lý do khác</option>
+            </select>
+          </div>
+
+          <div class="modal-row mt-2">
+            <label class="form-label">Mô tả chi tiết vấn đề:</label>
+            <textarea
+              class="form-input"
+              rows="3"
+              placeholder="Vui lòng mô tả cụ thể tình trạng lỗi hoặc vấn đề gặp phải..."
+              [(ngModel)]="returnForm.customerNote"
+            ></textarea>
+          </div>
+
+          <!-- Step 3: Proof Images -->
+          <div class="modal-section-title mt-4">3. Hình ảnh / Video bằng chứng:</div>
+          <div class="return-image-upload-wrap">
+            <div class="proof-thumbnails">
+              @for (url of returnForm.imageUrls; track url; let idx = $index) {
+                <div class="proof-thumb-box">
+                  <img [src]="url" alt="Bằng chứng" />
+                  <button type="button" class="btn-remove-thumb" (click)="removeReturnImage(idx)">✕</button>
+                </div>
+              }
+            </div>
+
+            <label class="btn-upload-proof" [class.disabled]="isUploadingReturnImg()">
+              <input type="file" accept="image/*" (change)="onReturnImageSelected($event)" [disabled]="isUploadingReturnImg()" hidden />
+              <span>{{ isUploadingReturnImg() ? 'Đang tải ảnh...' : '+ Thêm ảnh bằng chứng' }}</span>
+            </label>
+          </div>
+
+          <!-- Step 4: Bank Account for Refund -->
+          <div class="modal-section-title mt-4">4. Thông tin tài khoản nhận tiền hoàn:</div>
+          <div class="modal-grid-3">
+            <div class="modal-row">
+              <label class="form-label">Ngân hàng <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="returnForm.bankName" class="form-input" placeholder="VD: Vietcombank, MB..." />
+            </div>
+            <div class="modal-row">
+              <label class="form-label">Số tài khoản <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="returnForm.bankAccountNumber" class="form-input" placeholder="Số tài khoản ngân hàng" />
+            </div>
+            <div class="modal-row">
+              <label class="form-label">Chủ tài khoản <span class="req">*</span></label>
+              <input type="text" [(ngModel)]="returnForm.bankAccountName" class="form-input" placeholder="NGUYEN VAN A" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" (click)="closeReturnModal()">Hủy bỏ</button>
+          <button class="btn-primary" (click)="submitCustomerReturn()" [disabled]="isLoading() || isUploadingReturnImg()">
+            {{ isLoading() ? 'Đang gửi...' : 'Gửi Yêu Cầu Đổi Trả' }}
+          </button>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { AddressService } from '../../../core/services/address.service';
 import { OrderService } from '../../../core/services/order.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReturnService } from '../../../core/services/return.service';
 import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
@@ -71,6 +72,11 @@ describe('AccountHubComponent', () => {
       logout: vi.fn()
     };
 
+    const returnServiceMock = {
+      getMyReturnRequests: vi.fn().mockReturnValue(of({ success: true, data: { content: [], totalElements: 0 } })),
+      createReturnRequest: vi.fn().mockReturnValue(of({ success: true, data: { returnId: 1, returnCode: 'RET-1' } }))
+    };
+
     await TestBed.configureTestingModule({
       imports: [AccountHubComponent],
       providers: [
@@ -79,7 +85,8 @@ describe('AccountHubComponent', () => {
         { provide: AddressService, useValue: addressServiceMock },
         { provide: OrderService, useValue: orderServiceMock },
         { provide: UploadService, useValue: uploadServiceMock },
-        { provide: AuthService, useValue: authServiceMock }
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: ReturnService, useValue: returnServiceMock }
       ]
     }).compileComponents();
 

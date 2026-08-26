@@ -1,0 +1,265 @@
+<div class="audit-log-container">
+  <!-- Header & Actions -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Nhật Ký Kiểm Toán (Audit Logs)</h1>
+      <p class="page-subtitle">Ghi vết và giám sát toàn bộ thao tác bảo mật, phân quyền, cấu hình và nghiệp vụ hệ thống</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="exportCsv()" [disabled]="isExporting() || isLoading()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        <span>{{ isExporting() ? 'Đang xuất CSV...' : 'Xuất Báo Cáo CSV' }}</span>
+      </button>
+      <button class="btn btn-primary" (click)="loadLogs(currentPage())" [disabled]="isLoading()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span>Làm mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-card">
+    <div class="filter-grid">
+      <!-- Search Keyword -->
+      <div class="form-group">
+        <label class="form-label">Tìm kiếm</label>
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            class="form-control with-icon"
+            placeholder="Tìm theo email, mô tả, IP..."
+            [(ngModel)]="filter.keyword"
+            (keyup.enter)="onFilterChange()"
+          />
+        </div>
+      </div>
+
+      <!-- Module Filter -->
+      <div class="form-group">
+        <label class="form-label">Phân hệ</label>
+        <select class="form-control" [(ngModel)]="filter.module" (change)="onFilterChange()">
+          @for (m of modules; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Action Type Filter -->
+      <div class="form-group">
+        <label class="form-label">Hành vi</label>
+        <select class="form-control" [(ngModel)]="filter.actionType" (change)="onFilterChange()">
+          @for (a of actionTypes; track a.value) {
+            <option [value]="a.value">{{ a.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Date Range -->
+      <div class="form-group">
+        <label class="form-label">Từ ngày</label>
+        <input type="date" class="form-control" [(ngModel)]="filter.fromDate" (change)="onFilterChange()" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Đến ngày</label>
+        <input type="date" class="form-control" [(ngModel)]="filter.toDate" (change)="onFilterChange()" />
+      </div>
+
+      <!-- Reset Filter -->
+      <div class="form-group filter-actions">
+        <button class="btn btn-secondary w-100" (click)="resetFilter()" title="Xóa bộ lọc">
+          Đặt lại bộ lọc
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (errorMessage()) {
+    <div class="alert alert-error">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Data Table -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Người thực hiện</th>
+            <th>Phân hệ</th>
+            <th>Hành vi</th>
+            <th>Mô tả chi tiết</th>
+            <th>Địa chỉ IP</th>
+            <th>Trạng thái</th>
+            <th class="text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="8" class="text-center py-5">
+                <div class="spinner"></div>
+                <p class="mt-2 text-muted">Đang tải nhật ký kiểm toán...</p>
+              </td>
+            </tr>
+          } @else if (logs().length === 0) {
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                Không tìm thấy bản ghi nhật ký kiểm toán nào phù hợp với bộ lọc.
+              </td>
+            </tr>
+          } @else {
+            @for (log of logs(); track log.logId) {
+              <tr>
+                <td class="whitespace-nowrap font-mono text-xs">
+                  {{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}
+                </td>
+                <td>
+                  <div class="user-cell">
+                    <span class="user-email font-medium">{{ log.userEmail || 'Hệ thống' }}</span>
+                    @if (log.userId) {
+                      <span class="user-id text-muted">ID: {{ log.userId }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="module-chip">{{ log.module }}</span>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="getActionBadgeClass(log.actionType)">
+                    {{ log.actionType }}
+                  </span>
+                </td>
+                <td>
+                  <div class="desc-cell" [title]="log.description">
+                    {{ log.description }}
+                  </div>
+                  @if (log.recordId) {
+                    <div class="record-id text-muted">Mã: {{ log.recordId }}</div>
+                  }
+                </td>
+                <td class="whitespace-nowrap font-mono text-xs text-muted">
+                  {{ log.ipAddress || '—' }}
+                </td>
+                <td>
+                  <span class="status-indicator" [class.status-success]="log.status === 'SUCCESS'" [class.status-failed]="log.status !== 'SUCCESS'">
+                    {{ log.status }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <button class="btn-icon-action" (click)="openDetailModal(log)" title="Xem chi tiết & Snapshot Dữ liệu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-footer">
+      <div class="pagination-info">
+        Hiển thị {{ logs().length }} trên tổng số <strong>{{ totalElements() }}</strong> bản ghi (Trang {{ currentPage() + 1 }} / {{ totalPages() || 1 }})
+      </div>
+      <div class="pagination-controls">
+        <button
+          class="btn-page"
+          [disabled]="currentPage() === 0 || isLoading()"
+          (click)="loadLogs(currentPage() - 1)"
+        >
+          Trước
+        </button>
+        <button
+          class="btn-page"
+          [disabled]="currentPage() >= totalPages() - 1 || isLoading()"
+          (click)="loadLogs(currentPage() + 1)"
+        >
+          Sau
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Xem Chi Tiết & JSON Diff -->
+@if (showDetailModal() && selectedLog(); as log) {
+  <div class="modal-backdrop" (click)="closeDetailModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Chi Tiết Nhật Ký Kiểm Toán #{{ log.logId }}</h3>
+          <p class="modal-subtitle">{{ log.module }} • {{ log.actionType }} • {{ log.createdAt | date:'yyyy-MM-dd HH:mm:ss' }}</p>
+        </div>
+        <button class="btn-close" (click)="closeDetailModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Metadata Grid -->
+        <div class="meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Người thực hiện:</span>
+            <span class="meta-value">{{ log.userEmail || 'Hệ thống' }} (ID: {{ log.userId || 'N/A' }})</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Địa chỉ IP:</span>
+            <span class="meta-value font-mono">{{ log.ipAddress || 'Không xác định' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Mã bản ghi:</span>
+            <span class="meta-value font-mono">{{ log.recordId || 'N/A' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Trạng thái:</span>
+            <span class="meta-value">{{ log.status }}</span>
+          </div>
+          <div class="meta-item full-width">
+            <span class="meta-label">Mô tả:</span>
+            <span class="meta-value">{{ log.description }}</span>
+          </div>
+          @if (log.userAgent) {
+            <div class="meta-item full-width">
+              <span class="meta-label">User-Agent:</span>
+              <span class="meta-value font-mono text-xs">{{ log.userAgent }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Snapshot Diff (Old Value vs New Value) -->
+        <div class="diff-container mt-4">
+          <div class="diff-column">
+            <div class="diff-header">
+              <span>Dữ Liệu Đầu Vào / Giá Trị Trước (Old Value)</span>
+            </div>
+            <pre class="json-viewer">{{ formatJson(log.oldValue) }}</pre>
+          </div>
+
+          <div class="diff-column">
+            <div class="diff-header">
+              <span>Kết Quả Xử Lý / Giá Trị Sau (New Value)</span>
+            </div>
+            <pre class="json-viewer">{{ formatJson(log.newValue) }}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+}

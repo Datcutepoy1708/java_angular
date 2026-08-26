@@ -40,4 +40,6 @@ public interface InventoryService {
     PageResponse<InventoryLogResponse> getInventoryLogs(InventoryLogFilterRequest request);
 
     InventoryMetricsResponse getInventoryMetrics();
+
+    void restockReturnedItemAtomic(Long variantId, Integer warehouseId, int quantity, String itemCondition, Long returnId, String returnCode, Long currentUserId);
 }

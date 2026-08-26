@@ -20,4 +20,6 @@ public interface SettingService {
     void resetToDefaults(Long currentUserId);
 
     boolean isMaintenanceModeActive();
+
+    int getReturnWindowDays();
 }
