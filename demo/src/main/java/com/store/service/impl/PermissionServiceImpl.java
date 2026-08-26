@@ -50,11 +50,11 @@ public class PermissionServiceImpl implements PermissionService {
         }
 
         List<PermissionGroupResponse> result = new ArrayList<>();
-        addIfNotEmpty(result, "PRODUCT", "Sản Phẩm & Danh Mục", groupMap.get("PRODUCT"));
-        addIfNotEmpty(result, "INVENTORY", "Kho Hàng & Nhà Cung Cấp", groupMap.get("INVENTORY"));
-        addIfNotEmpty(result, "ORDER", "Đơn Hàng & Đánh Giá", groupMap.get("ORDER"));
-        addIfNotEmpty(result, "MARKETING", "Khuyến Mãi & Tiếp Thị", groupMap.get("MARKETING"));
-        addIfNotEmpty(result, "USER", "Khách Hàng, Nhân Sự & Phân Quyền", groupMap.get("USER"));
+        addIfNotEmpty(result, "USER", "Quản Trị, Nhân Sự & Khách Hàng", groupMap.get("USER"));
+        addIfNotEmpty(result, "PRODUCT", "Quản Lý Sản Phẩm & Danh Mục", groupMap.get("PRODUCT"));
+        addIfNotEmpty(result, "INVENTORY", "Quản Lý Kho Hàng & Nhà Cung Cấp", groupMap.get("INVENTORY"));
+        addIfNotEmpty(result, "ORDER", "Quản Lý Đơn Hàng & Đánh Giá", groupMap.get("ORDER"));
+        addIfNotEmpty(result, "MARKETING", "Khuyến Mãi, Banner & Tin Tức", groupMap.get("MARKETING"));
         addIfNotEmpty(result, "SYSTEM", "Báo Cáo & Cài Đặt Hệ Thống", groupMap.get("SYSTEM"));
         addIfNotEmpty(result, "OTHER", "Quyền Khác", groupMap.get("OTHER"));
 
@@ -86,7 +86,10 @@ public class PermissionServiceImpl implements PermissionService {
     private String determineGroup(String code) {
         if (code == null) return "OTHER";
         String upper = code.toUpperCase();
-        if (upper.startsWith("PRODUCT_") || upper.startsWith("CATEGORY_") || upper.startsWith("BRAND_")) {
+        if (upper.startsWith("USER_") || upper.startsWith("CUSTOMER_") || upper.startsWith("STAFF_") || upper.startsWith("ROLE_")) {
+            return "USER";
+        }
+        if (upper.startsWith("PRODUCT_") || upper.startsWith("CATEGORY_") || upper.startsWith("BRAND_") || upper.startsWith("ATTRIBUTE_")) {
             return "PRODUCT";
         }
         if (upper.startsWith("INVENTORY_") || upper.startsWith("SUPPLIER_") || upper.startsWith("WAREHOUSE_")) {
@@ -98,10 +101,7 @@ public class PermissionServiceImpl implements PermissionService {
         if (upper.startsWith("DISCOUNT_") || upper.startsWith("BANNER_") || upper.startsWith("NEWS_")) {
             return "MARKETING";
         }
-        if (upper.startsWith("USER_") || upper.startsWith("CUSTOMER_") || upper.startsWith("STAFF_") || upper.startsWith("ROLE_")) {
-            return "USER";
-        }
-        if (upper.startsWith("STATISTICS_") || upper.startsWith("SETTING_") || upper.startsWith("SYSTEM_")) {
+        if (upper.startsWith("STATISTIC") || upper.startsWith("SETTING_") || upper.startsWith("SYSTEM_")) {
             return "SYSTEM";
         }
         return "OTHER";

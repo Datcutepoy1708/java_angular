@@ -11,6 +11,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RoleService } from '../../../core/services/role.service';
 import {
   PermissionGroup,
+  PermissionItem,
   RoleCreateRequest,
   RoleDetail,
   RolePermissionsUpdateRequest,
@@ -29,7 +30,7 @@ export class RoleManageComponent implements OnInit {
   private readonly roleService = inject(RoleService);
   private readonly fb = inject(FormBuilder);
 
-  // Active Tab: 'roles' | 'matrix'
+  // Active Tab: 'roles' | 'matrix' (permissions assignment)
   readonly activeTab = signal<'roles' | 'matrix'>('roles');
 
   readonly roles = signal<RoleDetail[]>([]);
@@ -38,9 +39,31 @@ export class RoleManageComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
-  // Matrix working copy state: roleId -> Set<permissionCode>
+  // Selected role for permission assignment in Tab 2
+  readonly selectedRoleIdForPermissions = signal<number>(1);
+
+  readonly activeRoleForPermissions = computed(() => {
+    const list = this.roles();
+    if (list.length === 0) return null;
+    return list.find(r => r.roleId === this.selectedRoleIdForPermissions()) || list[0];
+  });
+
+  // Working copy state: roleId -> Set<permissionCode>
   readonly matrixDraft = signal<Map<number, Set<string>>>(new Map());
   readonly isMatrixDirty = signal<boolean>(false);
+
+  // Total permissions assigned to the currently selected role
+  readonly activeRoleAssignedPermissionsCount = computed(() => {
+    const role = this.activeRoleForPermissions();
+    if (!role) return 0;
+    const perms = this.matrixDraft().get(role.roleId);
+    return perms ? perms.size : 0;
+  });
+
+  // Total system permissions across all groups
+  readonly totalSystemPermissionsCount = computed(() => {
+    return this.permissionGroups().reduce((acc, g) => acc + (g.permissions?.length || 0), 0);
+  });
 
   // Modals state
   readonly isCreateModalOpen = signal<boolean>(false);
@@ -53,7 +76,7 @@ export class RoleManageComponent implements OnInit {
   createRoleForm!: FormGroup;
   editRoleForm!: FormGroup;
 
-  // Protected permissions for ROLE_ADMIN
+  // Protected permissions for ROLE_ADMIN against lockout
   readonly criticalAdminPermissions = new Set(['ROLE_MANAGE', 'STAFF_MANAGE', 'SETTING_MANAGE']);
 
   ngOnInit(): void {
@@ -84,6 +107,11 @@ export class RoleManageComponent implements OnInit {
         if (rolesRes.success && rolesRes.data) {
           this.roles.set(rolesRes.data);
           this.initMatrixDraft(rolesRes.data);
+
+          // Default selected role
+          if (rolesRes.data.length > 0 && !this.roles().some(r => r.roleId === this.selectedRoleIdForPermissions())) {
+            this.selectedRoleIdForPermissions.set(rolesRes.data[0].roleId);
+          }
         }
 
         this.roleService.getGroupedPermissions().subscribe({
@@ -117,6 +145,11 @@ export class RoleManageComponent implements OnInit {
 
   switchTab(tab: 'roles' | 'matrix'): void {
     this.activeTab.set(tab);
+  }
+
+  selectRoleForPermissions(role: RoleDetail): void {
+    this.selectedRoleIdForPermissions.set(role.roleId);
+    this.activeTab.set('matrix');
   }
 
   // --- Auto generate role code from display name ---
@@ -173,10 +206,13 @@ export class RoleManageComponent implements OnInit {
     };
 
     this.roleService.createRole(req).subscribe({
-      next: () => {
+      next: res => {
         this.isLoading.set(false);
         this.isCreateModalOpen.set(false);
         this.showToast('Tạo chức vụ mới thành công');
+        if (res.data) {
+          this.selectedRoleIdForPermissions.set(res.data.roleId);
+        }
         this.loadData();
       },
       error: err => {
@@ -245,13 +281,14 @@ export class RoleManageComponent implements OnInit {
     });
   }
 
-  // --- Matrix Grid Interactions ---
+  // --- Permission Selection Logic for Active Role ---
   isPermissionChecked(roleId: number, permCode: string): boolean {
     const rolePerms = this.matrixDraft().get(roleId);
     return rolePerms ? rolePerms.has(permCode) : false;
   }
 
-  isPermissionDisabled(role: RoleDetail, permCode: string): boolean {
+  isPermissionDisabled(role: RoleDetail | null, permCode: string): boolean {
+    if (!role) return false;
     if (role.roleName === 'ROLE_ADMIN' && this.criticalAdminPermissions.has(permCode)) {
       return true;
     }
@@ -282,6 +319,12 @@ export class RoleManageComponent implements OnInit {
     this.isMatrixDirty.set(true);
   }
 
+  isGroupAllChecked(group: PermissionGroup, roleId: number): boolean {
+    const rolePerms = this.matrixDraft().get(roleId);
+    if (!rolePerms || group.permissions.length === 0) return false;
+    return group.permissions.every(p => rolePerms.has(p.permissionCode));
+  }
+
   toggleGroupForRole(group: PermissionGroup, roleId: number, checkAll: boolean): void {
     const role = this.roles().find(r => r.roleId === roleId);
     if (!role) return;
@@ -306,46 +349,68 @@ export class RoleManageComponent implements OnInit {
     this.isMatrixDirty.set(true);
   }
 
+  toggleAllPermissionsForActiveRole(checkAll: boolean): void {
+    const role = this.activeRoleForPermissions();
+    if (!role) return;
+
+    const draft = new Map(this.matrixDraft());
+    let perms = draft.get(role.roleId);
+    perms = perms ? new Set<string>(perms) : new Set<string>();
+    draft.set(role.roleId, perms);
+
+    for (const group of this.permissionGroups()) {
+      for (const p of group.permissions) {
+        if (role.roleName === 'ROLE_ADMIN' && this.criticalAdminPermissions.has(p.permissionCode)) {
+          continue;
+        }
+        if (checkAll) {
+          perms.add(p.permissionCode);
+        } else {
+          perms.delete(p.permissionCode);
+        }
+      }
+    }
+
+    this.matrixDraft.set(draft);
+    this.isMatrixDirty.set(true);
+  }
+
   resetMatrixChanges(): void {
     this.initMatrixDraft(this.roles());
   }
 
-  saveMatrixChanges(): void {
+  saveActiveRolePermissions(): void {
+    const role = this.activeRoleForPermissions();
+    if (!role) return;
+
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    const updateCalls: Array<{ roleId: number; req: RolePermissionsUpdateRequest }> = [];
-    for (const role of this.roles()) {
-      const perms = this.matrixDraft().get(role.roleId);
-      if (perms) {
-        updateCalls.push({
-          roleId: role.roleId,
-          req: { permissionCodes: Array.from(perms) }
-        });
+    const perms = this.matrixDraft().get(role.roleId) || new Set<string>();
+    const req: RolePermissionsUpdateRequest = {
+      permissionCodes: Array.from(perms)
+    };
+
+    this.roleService.updateRolePermissions(role.roleId, req).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.isMatrixDirty.set(false);
+        this.showToast(`Lưu quyền hạn cho chức vụ ${role.description || role.roleName} thành công`);
+        this.loadData();
+      },
+      error: err => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Có lỗi xảy ra khi lưu quyền hạn');
       }
-    }
+    });
+  }
 
-    let completed = 0;
-    let hasError = false;
+  saveMatrixChanges(): void {
+    this.saveActiveRolePermissions();
+  }
 
-    for (const call of updateCalls) {
-      this.roleService.updateRolePermissions(call.roleId, call.req).subscribe({
-        next: () => {
-          completed++;
-          if (completed === updateCalls.length && !hasError) {
-            this.isLoading.set(false);
-            this.isMatrixDirty.set(false);
-            this.showToast('Lưu ma trận phân quyền thành công');
-            this.loadData();
-          }
-        },
-        error: err => {
-          hasError = true;
-          this.isLoading.set(false);
-          this.errorMessage.set(err.error?.message || 'Có lỗi xảy ra khi lưu ma trận phân quyền');
-        }
-      });
-    }
+  formatPermissionCode(code: string): string {
+    return code.toLowerCase().replace(/_/g, '.');
   }
 
   private showToast(msg: string): void {

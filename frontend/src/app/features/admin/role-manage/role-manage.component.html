@@ -1,12 +1,12 @@
 <div class="role-manage-container">
-  <!-- Header & Actions -->
+  <!-- Header & Tab Navigation -->
   <div class="page-header">
     <div>
-      <h1 class="page-title">Quản Lý Chức Vụ & Ma Trận Phân Quyền</h1>
-      <p class="page-subtitle">Định nghĩa các chức vụ nội bộ và phân quyền truy cập chi tiết cho từng vai trò</p>
+      <h1 class="page-title">Quản Lý Chức Vụ & Phân Quyền Hệ Thống</h1>
+      <p class="page-subtitle">Định nghĩa chức vụ nội bộ và phân chia quyền hạn theo từng nhóm chức năng trực quan</p>
     </div>
 
-    <!-- Tab Switcher -->
+    <!-- Segmented Tab Switcher -->
     <div class="header-actions">
       <div class="tab-switcher">
         <button
@@ -27,12 +27,12 @@
           (click)="switchTab('matrix')"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" />
-            <rect x="14" y="3" width="7" height="7" />
-            <rect x="14" y="14" width="7" height="7" />
-            <rect x="3" y="14" width="7" height="7" />
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
           </svg>
-          <span>Ma Trận Phân Quyền</span>
+          <span>Phân Quyền Chức Vụ</span>
           @if (isMatrixDirty()) {
             <span class="dirty-dot" title="Có thay đổi chưa lưu"></span>
           }
@@ -70,7 +70,7 @@
     </div>
   }
 
-  <!-- ================= TAB 1: DANH SÁCH CHỨC VỤ ================= -->
+  <!-- ================= TAB 1: DANH SÁCH CHỨC VỤ (ROLES GRID) ================= -->
   @if (activeTab() === 'roles') {
     <div class="roles-grid">
       @if (isLoading()) {
@@ -103,7 +103,7 @@
                   </svg>
                 </button>
 
-                <!-- Delete button (Guard: System roles or userCount > 0 disabled) -->
+                <!-- Delete button (Disabled for system roles or roles with users) -->
                 <button
                   class="btn-icon btn-delete"
                   [disabled]="role.isSystemRole || role.userCount > 0"
@@ -126,13 +126,13 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
-                <span>Được cấp <strong>{{ role.permissionCodes.length }}</strong> quyền trong hệ thống</span>
+                <span>Được cấp <strong>{{ role.permissionCodes.length }}</strong> quyền hạn</span>
               </div>
             </div>
 
             <div class="card-footer">
-              <button class="btn-matrix-link" (click)="switchTab('matrix')">
-                <span>Xem trên ma trận phân quyền</span>
+              <button class="btn-matrix-link" (click)="selectRoleForPermissions(role)">
+                <span>Thiết lập quyền hạn</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
@@ -144,124 +144,166 @@
     </div>
   }
 
-  <!-- ================= TAB 2: MA TRẬN PHÂN QUYỀN (PERMISSION MATRIX) ================= -->
+  <!-- ================= TAB 2: CHỌN QUYỀN HẠN CHO CHỨC VỤ (GROUPED CARDS - EXACT MOCKUP) ================= -->
   @if (activeTab() === 'matrix') {
-    <!-- Floating / Sticky Save Toolbar when dirty -->
-    @if (isMatrixDirty()) {
-      <div class="matrix-save-bar">
-        <div class="save-bar-info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span>Bạn có thay đổi ma trận phân quyền chưa lưu</span>
+    <div class="permissions-view-wrapper">
+      <!-- Top Section: Header & Role Switcher Ribbon -->
+      <div class="permissions-view-header">
+        <div class="view-title-block">
+          <div class="title-with-icon">
+            <svg class="title-grid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <h2>Chọn Quyền Hạn Cho Chức Vụ</h2>
+          </div>
+          <p class="view-subtitle">
+            Chọn chức vụ bên dưới để thiết lập quyền truy cập cho từng phân hệ:
+          </p>
         </div>
-        <div class="save-bar-actions">
-          <button class="btn btn-secondary" (click)="resetMatrixChanges()">Hủy Thay Đổi</button>
-          <button class="btn btn-primary" [disabled]="isLoading()" (click)="saveMatrixChanges()">
-            Lưu Ma Trận Phân Quyền
-          </button>
+
+        <!-- Role Selector Ribbon -->
+        <div class="role-selector-ribbon">
+          @for (role of roles(); track role.roleId) {
+            <button
+              type="button"
+              class="role-pill-btn"
+              [class.active]="activeRoleForPermissions()?.roleId === role.roleId"
+              (click)="selectedRoleIdForPermissions.set(role.roleId)"
+            >
+              <span class="pill-role-title">{{ role.description || role.roleName }}</span>
+              <span class="pill-role-code font-mono">{{ role.roleName }}</span>
+              <span class="pill-badge">
+                {{ (matrixDraft().get(role.roleId)?.size || 0) }} / {{ totalSystemPermissionsCount() }}
+              </span>
+            </button>
+          }
+        </div>
+
+        <!-- Quick Action Bar -->
+        <div class="view-actions-bar">
+          <div class="current-role-badge">
+            <span class="label">Đang phân quyền cho:</span>
+            <span class="name">{{ activeRoleForPermissions()?.description || activeRoleForPermissions()?.roleName }}</span>
+            <span class="count-tag">
+              ({{ activeRoleAssignedPermissionsCount() }}/{{ totalSystemPermissionsCount() }} quyền)
+            </span>
+          </div>
+
+          <div class="global-toggle-actions">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              (click)="toggleAllPermissionsForActiveRole(true)"
+            >
+              Chọn Tất Cả Toàn Bộ
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              [disabled]="activeRoleForPermissions()?.roleName === 'ROLE_ADMIN'"
+              (click)="toggleAllPermissionsForActiveRole(false)"
+            >
+              Bỏ Chọn Hết
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="isLoading()"
+              (click)="saveActiveRolePermissions()"
+            >
+              Lưu Quyền Hạn
+            </button>
+          </div>
         </div>
       </div>
-    }
 
-    <div class="matrix-card">
-      <div class="matrix-scroll-wrapper">
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th class="col-perm-title sticky-left">
-                <span>Chức Năng & Quyền Hạn</span>
-              </th>
-              @for (role of roles(); track role.roleId) {
-                <th class="col-role-header text-center">
-                  <div class="role-header-cell">
-                    <span class="header-role-name">{{ role.description || role.roleName }}</span>
-                    <span class="header-role-code font-mono">{{ role.roleName }}</span>
-                  </div>
-                </th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (group of permissionGroups(); track group.groupCode) {
-              <!-- Module Group Header Row -->
-              <tr class="group-header-row">
-                <td class="group-title sticky-left">
-                  <div class="group-title-content">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                      <polyline points="2 17 12 22 22 17" />
-                      <polyline points="2 12 12 17 22 12" />
-                    </svg>
-                    <span>{{ group.groupName }}</span>
-                  </div>
-                </td>
-                @for (role of roles(); track role.roleId) {
-                  <td class="group-actions text-center">
-                    <div class="quick-toggle-btns">
-                      <button
-                        type="button"
-                        class="btn-toggle-all"
-                        title="Chọn tất cả quyền nhóm này cho chức vụ"
-                        (click)="toggleGroupForRole(group, role.roleId, true)"
-                      >
-                        Bật hết
-                      </button>
-                      <button
-                        type="button"
-                        class="btn-toggle-none"
-                        title="Bỏ chọn tất cả quyền nhóm này"
-                        [disabled]="role.roleName === 'ROLE_ADMIN'"
-                        (click)="toggleGroupForRole(group, role.roleId, false)"
-                      >
-                        Tắt hết
-                      </button>
-                    </div>
-                  </td>
-                }
-              </tr>
+      <!-- Sticky / Floating Save Alert Bar when Dirty -->
+      @if (isMatrixDirty()) {
+        <div class="matrix-save-bar">
+          <div class="save-bar-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Có thay đổi phân quyền chưa lưu cho chức vụ <strong>{{ activeRoleForPermissions()?.description || activeRoleForPermissions()?.roleName }}</strong></span>
+          </div>
+          <div class="save-bar-actions">
+            <button class="btn btn-secondary" (click)="resetMatrixChanges()">Hủy Thay Đổi</button>
+            <button class="btn btn-primary" [disabled]="isLoading()" (click)="saveActiveRolePermissions()">
+              Lưu Quyền Hạn
+            </button>
+          </div>
+        </div>
+      }
 
-              <!-- Permission Items inside Group -->
-              @for (perm of group.permissions; track perm.permissionId) {
-                <tr class="perm-row">
-                  <!-- Permission Info (Sticky Left) -->
-                  <td class="col-perm-title sticky-left">
-                    <div class="perm-cell">
-                      <span class="perm-desc">{{ perm.description }}</span>
-                      <span class="perm-code font-mono">{{ perm.permissionCode }}</span>
-                    </div>
-                  </td>
+      <!-- Grouped Module Cards (Matching User Screenshot Layout) -->
+      @if (activeRoleForPermissions(); as currentRole) {
+        <div class="module-cards-container">
+          @for (group of permissionGroups(); track group.groupCode) {
+            <div class="module-card">
+              <!-- Module Header: Red Folder Icon + Group Name + Select All Checkbox -->
+              <div class="module-card-header">
+                <div class="module-title-wrap">
+                  <svg class="folder-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+                  </svg>
+                  <h3 class="module-title">{{ group.groupName }}</h3>
+                </div>
 
-                  <!-- Role Checkboxes -->
-                  @for (role of roles(); track role.roleId) {
-                    <td class="col-matrix-check text-center">
-                      <div class="checkbox-wrapper">
-                        @if (isPermissionDisabled(role, perm.permissionCode)) {
-                          <!-- Protected Permission Icon for Admin -->
-                          <div class="lock-indicator" title="Quyền quản trị cốt lõi được bảo vệ">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
-                          </div>
-                        } @else {
-                          <input
-                            type="checkbox"
-                            [checked]="isPermissionChecked(role.roleId, perm.permissionCode)"
-                            (change)="toggleMatrixPermission(role.roleId, perm.permissionCode)"
-                          />
+                <label class="select-all-toggle">
+                  <input
+                    type="checkbox"
+                    [checked]="isGroupAllChecked(group, currentRole.roleId)"
+                    (change)="toggleGroupForRole(group, currentRole.roleId, $any($event.target).checked)"
+                  />
+                  <span>Chọn tất cả</span>
+                </label>
+              </div>
+
+              <!-- Module Body: 3-column Responsive Permissions Grid -->
+              <div class="module-card-body">
+                <div class="permissions-grid">
+                  @for (perm of group.permissions; track perm.permissionId) {
+                    <label
+                      class="perm-item-card"
+                      [class.checked]="isPermissionChecked(currentRole.roleId, perm.permissionCode)"
+                      [class.disabled]="isPermissionDisabled(currentRole, perm.permissionCode)"
+                    >
+                      @if (isPermissionDisabled(currentRole, perm.permissionCode)) {
+                        <!-- Padlock icon for protected admin permissions -->
+                        <div class="lock-wrap" title="Quyền hệ thống tối quan trọng được bảo vệ">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </div>
+                      } @else {
+                        <input
+                          type="checkbox"
+                          class="perm-checkbox"
+                          [checked]="isPermissionChecked(currentRole.roleId, perm.permissionCode)"
+                          (change)="toggleMatrixPermission(currentRole.roleId, perm.permissionCode)"
+                        />
+                      }
+
+                      <div class="perm-label-wrap">
+                        <span class="perm-code-text font-mono">{{ formatPermissionCode(perm.permissionCode) }}</span>
+                        @if (perm.description) {
+                          <span class="perm-desc-text">{{ perm.description }}</span>
                         }
                       </div>
-                    </td>
+                    </label>
                   }
-                </tr>
-              }
-            }
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
   }
 </div>
