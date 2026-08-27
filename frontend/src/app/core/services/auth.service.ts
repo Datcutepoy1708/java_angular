@@ -142,6 +142,18 @@ export class AuthService {
     return permissions.some((permission) => this.userPermissions().includes(permission));
   }
 
+  forgotPassword(email: string): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.baseUrl}/forgot-password`, { email });
+  }
+
+  verifyOtp(email: string, otp: string): Observable<ApiResponse<{ resetToken: string; email: string; expiresInSeconds: number }>> {
+    return this.http.post<ApiResponse<{ resetToken: string; email: string; expiresInSeconds: number }>>(`${this.baseUrl}/verify-otp`, { email, otp });
+  }
+
+  resetPassword(data: { email: string; resetToken: string; newPassword: string; confirmPassword: string }): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.baseUrl}/reset-password`, data);
+  }
+
   private handleAuthSuccess(authData: AuthResponse): void {
     this.saveStorage(ACCESS_TOKEN_KEY, authData.accessToken);
     this.saveStorage(REFRESH_TOKEN_KEY, authData.refreshToken);

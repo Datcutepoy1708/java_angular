@@ -19,6 +19,11 @@ export const routes: Routes = [
         path: 'register',
         loadComponent: () =>
           import('./features/auth/register/register.component').then((m) => m.RegisterComponent)
+      },
+      {
+        path: 'forgot-password',
+        loadComponent: () =>
+          import('./features/auth/forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent)
       }
     ]
   },
@@ -26,6 +31,7 @@ export const routes: Routes = [
   // Shorthand aliases
   { path: 'login', redirectTo: 'auth/login', pathMatch: 'full' },
   { path: 'register', redirectTo: 'auth/register', pathMatch: 'full' },
+  { path: 'forgot-password', redirectTo: 'auth/forgot-password', pathMatch: 'full' },
 
   // 2. Admin area — parent route handles both login AND protected dashboard
   {

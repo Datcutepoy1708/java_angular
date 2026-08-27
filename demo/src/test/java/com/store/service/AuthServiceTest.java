@@ -59,6 +59,12 @@ class AuthServiceTest {
     @Mock
     private com.store.security.LoginRateLimiter loginRateLimiter;
 
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private OtpService otpService;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -266,6 +272,113 @@ class AuthServiceTest {
             authService.logout("mock_refresh_token");
 
             verify(authTokenRepository).deleteByToken(anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("Forgot Password & Reset Password Tests")
+    class ForgotPasswordTests {
+
+        @Test
+        @DisplayName("forgotPassword should generate OTP and send email when user exists and active")
+        void forgotPassword_userExists_success() {
+            com.store.dto.request.auth.ForgotPasswordRequest request = com.store.dto.request.auth.ForgotPasswordRequest.builder()
+                    .email(customerUser.getEmail())
+                    .build();
+
+            when(userRepository.findByEmail(customerUser.getEmail())).thenReturn(Optional.of(customerUser));
+            when(otpService.generateAndSaveOtp(customerUser.getEmail())).thenReturn("123456");
+
+            authService.forgotPassword(request);
+
+            verify(otpService).generateAndSaveOtp(customerUser.getEmail());
+            verify(emailService).sendOtpEmail(customerUser.getEmail(), customerUser.getFullName(), "123456");
+        }
+
+        @Test
+        @DisplayName("forgotPassword should silently return when user does not exist")
+        void forgotPassword_userNotFound_silent() {
+            com.store.dto.request.auth.ForgotPasswordRequest request = com.store.dto.request.auth.ForgotPasswordRequest.builder()
+                    .email("unknown@store.com")
+                    .build();
+
+            when(userRepository.findByEmail("unknown@store.com")).thenReturn(Optional.empty());
+
+            authService.forgotPassword(request);
+
+            org.mockito.Mockito.verifyNoInteractions(otpService);
+            org.mockito.Mockito.verifyNoInteractions(emailService);
+        }
+
+        @Test
+        @DisplayName("verifyOtp should return reset token when OTP is valid")
+        void verifyOtp_success() {
+            com.store.dto.request.auth.VerifyOtpRequest request = com.store.dto.request.auth.VerifyOtpRequest.builder()
+                    .email("customer@store.com")
+                    .otp("123456")
+                    .build();
+
+            when(otpService.verifyOtpAndGenerateResetToken("customer@store.com", "123456")).thenReturn("uuid-reset-token");
+
+            com.store.dto.response.auth.VerifyOtpResponse response = authService.verifyOtp(request);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getResetToken()).isEqualTo("uuid-reset-token");
+            assertThat(response.getEmail()).isEqualTo("customer@store.com");
+        }
+
+        @Test
+        @DisplayName("resetPassword should update password and revoke tokens when token is valid")
+        void resetPassword_success() {
+            com.store.dto.request.auth.ResetPasswordRequest request = com.store.dto.request.auth.ResetPasswordRequest.builder()
+                    .email(customerUser.getEmail())
+                    .resetToken("uuid-reset-token")
+                    .newPassword("newSecr3t!")
+                    .confirmPassword("newSecr3t!")
+                    .build();
+
+            when(otpService.validateResetToken(customerUser.getEmail(), "uuid-reset-token")).thenReturn(true);
+            when(userRepository.findByEmail(customerUser.getEmail())).thenReturn(Optional.of(customerUser));
+            when(passwordEncoder.encode("newSecr3t!")).thenReturn("encoded_new_password");
+
+            authService.resetPassword(request);
+
+            verify(userRepository).save(customerUser);
+            assertThat(customerUser.getPasswordHash()).isEqualTo("encoded_new_password");
+            verify(authTokenRepository).deleteByUser_UserIdAndTokenType(customerUser.getUserId(), TokenType.REFRESH_TOKEN);
+            verify(otpService).clearResetToken(customerUser.getEmail(), "uuid-reset-token");
+        }
+
+        @Test
+        @DisplayName("resetPassword should throw exception when confirm password does not match")
+        void resetPassword_passwordMismatch() {
+            com.store.dto.request.auth.ResetPasswordRequest request = com.store.dto.request.auth.ResetPasswordRequest.builder()
+                    .email("customer@store.com")
+                    .resetToken("uuid-reset-token")
+                    .newPassword("newSecr3t!")
+                    .confirmPassword("differentPassword")
+                    .build();
+
+            assertThatThrownBy(() -> authService.resetPassword(request))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Mật khẩu xác nhận không khớp");
+        }
+
+        @Test
+        @DisplayName("resetPassword should throw exception when reset token is invalid")
+        void resetPassword_invalidToken() {
+            com.store.dto.request.auth.ResetPasswordRequest request = com.store.dto.request.auth.ResetPasswordRequest.builder()
+                    .email("customer@store.com")
+                    .resetToken("expired-token")
+                    .newPassword("newSecr3t!")
+                    .confirmPassword("newSecr3t!")
+                    .build();
+
+            when(otpService.validateResetToken("customer@store.com", "expired-token")).thenReturn(false);
+
+            assertThatThrownBy(() -> authService.resetPassword(request))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Phiên đặt lại mật khẩu không hợp lệ");
         }
     }
 }

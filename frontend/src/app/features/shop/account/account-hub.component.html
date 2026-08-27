@@ -436,20 +436,33 @@
     <div class="modal-overlay" (click)="closeAddressModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3 class="modal-title">{{ editingAddressId() ? 'Cập Nhật Địa Chỉ' : 'Thêm Địa Chỉ Mới' }}</h3>
-          <button class="modal-close" (click)="closeAddressModal()">&times;</button>
+          <div class="modal-header-info">
+            <h3 class="modal-title">{{ editingAddressId() ? 'Cập Nhật Địa Chỉ' : 'Thêm Địa Chỉ Mới' }}</h3>
+            <p class="modal-subtitle">Địa chỉ dùng để nhận hàng và tính phí vận chuyển chính xác</p>
+          </div>
+          <button class="modal-close" (click)="closeAddressModal()" aria-label="Đóng">&times;</button>
         </div>
 
         <div class="modal-body">
           <div class="modal-grid-2">
             <div class="modal-row">
               <label class="form-label">Tên người nhận <span class="req">*</span></label>
-              <input type="text" [(ngModel)]="addressForm().receiverName" class="form-input" placeholder="Họ và tên người nhận" />
+              <div class="input-with-icon">
+                <svg class="field-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                </svg>
+                <input type="text" [(ngModel)]="addressForm().receiverName" class="form-input" placeholder="Họ và tên người nhận" />
+              </div>
             </div>
 
             <div class="modal-row">
               <label class="form-label">Số điện thoại <span class="req">*</span></label>
-              <input type="tel" [(ngModel)]="addressForm().phone" class="form-input" placeholder="Số điện thoại nhận hàng" />
+              <div class="input-with-icon">
+                <svg class="field-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 4V3z" />
+                </svg>
+                <input type="tel" [(ngModel)]="addressForm().phone" class="form-input" placeholder="Số điện thoại nhận hàng" />
+              </div>
             </div>
           </div>
 
@@ -470,20 +483,28 @@
 
           <div class="modal-row">
             <label class="form-label">Địa chỉ chi tiết <span class="req">*</span></label>
-            <input type="text" [(ngModel)]="addressForm().detailAddress" class="form-input" placeholder="Số nhà, tên đường, tòa nhà..." />
+            <div class="input-with-icon">
+              <svg class="field-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" />
+              </svg>
+              <input type="text" [(ngModel)]="addressForm().detailAddress" class="form-input" placeholder="Số nhà, tên đường, tòa nhà..." />
+            </div>
           </div>
 
           <div class="modal-row checkbox-row">
             <label class="checkbox-label">
               <input type="checkbox" [(ngModel)]="addressForm().isDefault" />
-              <span>Đặt làm địa chỉ nhận hàng mặc định</span>
+              <div class="checkbox-info">
+                <span class="checkbox-text">Đặt làm địa chỉ nhận hàng mặc định</span>
+                <span class="checkbox-sub">Tự động ưu tiên giao tới địa chỉ này khi tạo đơn hàng mới</span>
+              </div>
             </label>
           </div>
         </div>
 
         <div class="modal-footer">
           <button class="btn-cancel-modal" (click)="closeAddressModal()">Trở lại</button>
-          <button class="btn-primary" (click)="saveAddress()">Hoàn thành</button>
+          <button class="btn-primary-modal" (click)="saveAddress()">Hoàn thành</button>
         </div>
       </div>
     </div>

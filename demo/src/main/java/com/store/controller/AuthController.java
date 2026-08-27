@@ -71,4 +71,25 @@ public class AuthController {
         }
         return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
     }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot Password - Request OTP", description = "Send 6-digit OTP to user's registered email address")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody com.store.dto.request.auth.ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Nếu email tồn tại trên hệ thống, mã OTP đã được gửi đến hộp thư của bạn.", null));
+    }
+
+    @PostMapping("/verify-otp")
+    @Operation(summary = "Forgot Password - Verify OTP", description = "Verify 6-digit OTP and return a one-time password reset token")
+    public ResponseEntity<ApiResponse<com.store.dto.response.auth.VerifyOtpResponse>> verifyOtp(@Valid @RequestBody com.store.dto.request.auth.VerifyOtpRequest request) {
+        com.store.dto.response.auth.VerifyOtpResponse response = authService.verifyOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("Xác thực mã OTP thành công", response));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Forgot Password - Reset Password", description = "Set a new password using the validated reset token")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody com.store.dto.request.auth.ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.", null));
+    }
 }

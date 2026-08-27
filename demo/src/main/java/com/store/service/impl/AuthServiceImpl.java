@@ -3,8 +3,12 @@ package com.store.service.impl;
 import com.store.dto.request.LoginRequest;
 import com.store.dto.request.RefreshTokenRequest;
 import com.store.dto.request.RegisterRequest;
+import com.store.dto.request.auth.ForgotPasswordRequest;
+import com.store.dto.request.auth.ResetPasswordRequest;
+import com.store.dto.request.auth.VerifyOtpRequest;
 import com.store.dto.response.AuthResponse;
 import com.store.dto.response.UserSummaryResponse;
+import com.store.dto.response.auth.VerifyOtpResponse;
 import com.store.entity.auth.AuthToken;
 import com.store.entity.auth.TokenType;
 import com.store.entity.user.AuthProvider;
@@ -20,6 +24,8 @@ import com.store.security.CustomUserDetails;
 import com.store.security.JwtTokenProvider;
 import com.store.security.LoginRateLimiter;
 import com.store.service.AuthService;
+import com.store.service.EmailService;
+import com.store.service.OtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -34,6 +40,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -47,6 +54,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final LoginRateLimiter loginRateLimiter;
+    private final EmailService emailService;
+    private final OtpService otpService;
 
     @Override
     @Transactional
@@ -229,6 +238,77 @@ public class AuthServiceImpl implements AuthService {
                 .expiresIn(jwtTokenProvider.getAccessTokenExpirationMs() / 1000)
                 .user(UserSummaryResponse.fromEntity(user))
                 .build();
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        log.info("Processing forgot password request for email: {}", email);
+
+        // Security best practice: Do not leak account existence to prevent user enumeration
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            log.warn("Forgot password requested for non-existent email: {}", email);
+            return;
+        }
+
+        User user = userOpt.get();
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            log.warn("Forgot password requested for non-active user: {} (status: {})", email, user.getStatus());
+            return;
+        }
+
+        // Generate OTP and store in Redis with rate limits
+        String otp = otpService.generateAndSaveOtp(email);
+
+        // Send OTP email asynchronously
+        emailService.sendOtpEmail(user.getEmail(), user.getFullName(), otp);
+    }
+
+    @Override
+    public VerifyOtpResponse verifyOtp(VerifyOtpRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        log.info("Verifying OTP for email: {}", email);
+
+        String resetToken = otpService.verifyOtpAndGenerateResetToken(email, request.getOtp());
+
+        return VerifyOtpResponse.builder()
+                .resetToken(resetToken)
+                .email(email)
+                .expiresInSeconds(600)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        log.info("Resetting password for email: {}", email);
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Mật khẩu xác nhận không khớp");
+        }
+
+        // Validate reset token from Redis
+        boolean isValidToken = otpService.validateResetToken(email, request.getResetToken());
+        if (!isValidToken) {
+            throw new IllegalArgumentException("Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng thử lại từ đầu.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với email: " + email));
+
+        // Update password with BCrypt
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Revoke all existing refresh tokens for security
+        authTokenRepository.deleteByUser_UserIdAndTokenType(user.getUserId(), TokenType.REFRESH_TOKEN);
+
+        // Clear one-time reset token
+        otpService.clearResetToken(email, request.getResetToken());
+
+        log.info("Successfully reset password and revoked old sessions for user: {}", email);
     }
 
     private String hashToken(String token) {

@@ -3,8 +3,12 @@ package com.store.service;
 import com.store.dto.request.LoginRequest;
 import com.store.dto.request.RefreshTokenRequest;
 import com.store.dto.request.RegisterRequest;
+import com.store.dto.request.auth.ForgotPasswordRequest;
+import com.store.dto.request.auth.ResetPasswordRequest;
+import com.store.dto.request.auth.VerifyOtpRequest;
 import com.store.dto.response.AuthResponse;
 import com.store.dto.response.UserSummaryResponse;
+import com.store.dto.response.auth.VerifyOtpResponse;
 
 public interface AuthService {
 
@@ -19,4 +23,10 @@ public interface AuthService {
     void logout(String refreshToken);
 
     UserSummaryResponse getCurrentUser();
+
+    void forgotPassword(ForgotPasswordRequest request);
+
+    VerifyOtpResponse verifyOtp(VerifyOtpRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 }

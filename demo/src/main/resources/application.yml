@@ -39,6 +39,26 @@ spring:
   cache:
     type: redis
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+
+app:
+  mail:
+    from-address: ${MAIL_FROM_ADDRESS:no-reply@complexus.vn}
+    from-name: ${MAIL_FROM_NAME:Complexus Shop}
+
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:1800000}
