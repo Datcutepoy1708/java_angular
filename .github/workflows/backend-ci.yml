@@ -61,4 +61,8 @@ jobs:
           SPRING_DATA_REDIS_HOST: 127.0.0.1
           SPRING_DATA_REDIS_PORT: 6379
           JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+          MAIL_HOST: smtp.gmail.com
+          MAIL_PORT: 587
+          MAIL_USERNAME: test@store.com
+          MAIL_PASSWORD: dummypassword
         run: ./mvnw -B clean verify

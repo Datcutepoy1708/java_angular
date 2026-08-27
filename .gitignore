@@ -26,3 +26,5 @@ frontend/.nx/cache/
 Thumbs.db
 *.log
 .env
+demo/uploads/
+uploads/
