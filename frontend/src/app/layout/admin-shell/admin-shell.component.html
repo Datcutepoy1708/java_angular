@@ -12,7 +12,7 @@
     <!-- Navigation -->
     <nav class="sidebar-nav" aria-label="Admin navigation">
       <ul>
-        @for (item of navItems; track item.path) {
+        @for (item of visibleNavItems(); track item.path) {
           <li>
             <a
               [routerLink]="item.path"

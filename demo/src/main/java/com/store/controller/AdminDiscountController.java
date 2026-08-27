@@ -31,7 +31,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/discount-codes")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 @Tag(name = "Admin Discounts", description = "Backoffice discount & coupon code management APIs")
 public class AdminDiscountController {
 

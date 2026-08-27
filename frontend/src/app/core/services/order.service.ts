@@ -49,6 +49,11 @@ export class OrderService {
     return this.http.get<ApiResponse<Order>>(`${this.baseUrl}/${encodeURIComponent(orderCode)}`);
   }
 
+  trackGuestOrder(code: string, phone: string): Observable<ApiResponse<Order>> {
+    const params = new HttpParams().set('code', code.trim()).set('phone', phone.trim());
+    return this.http.get<ApiResponse<Order>>(`${this.baseUrl}/track`, { params });
+  }
+
   cancelMyOrder(orderCode: string, reason?: string): Observable<ApiResponse<Order>> {
     return this.http.post<ApiResponse<Order>>(`${this.baseUrl}/${encodeURIComponent(orderCode)}/cancel`, { reason });
   }

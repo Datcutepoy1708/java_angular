@@ -75,6 +75,10 @@ public class DiscountServiceImpl implements DiscountService {
     @Override
     @Transactional(readOnly = true)
     public DiscountValidationResult validateAndCalculate(String code, Long userId, BigDecimal subtotal, List<CartItem> cartItems) {
+        if (userId == null) {
+            throw new InvalidDiscountException("Mã giảm giá chỉ dành riêng cho thành viên đã đăng nhập tài khoản. Vui lòng đăng nhập để áp dụng voucher.");
+        }
+
         if (code == null || code.isBlank()) {
             throw new InvalidDiscountException("Mã giảm giá không được để trống.");
         }

@@ -30,7 +30,7 @@ public class ProductAttributeController {
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Batch save product attributes", description = "Set or update technical specifications for a product")
     public ResponseEntity<ApiResponse<List<ProductAttributeValueResponse>>> saveProductAttributes(
             @PathVariable Long productId,
@@ -41,7 +41,7 @@ public class ProductAttributeController {
     }
 
     @DeleteMapping("/{attributeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PRODUCT_UPDATE')")
     @Operation(summary = "Delete single product attribute", description = "Remove a technical specification from a product")
     public ResponseEntity<ApiResponse<Void>> deleteProductAttribute(
             @PathVariable Long productId,

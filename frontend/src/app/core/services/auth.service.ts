@@ -129,7 +129,17 @@ export class AuthService {
   }
 
   hasPermission(permission: string): boolean {
+    if (this.isAdmin()) {
+      return true;
+    }
     return this.userPermissions().includes(permission);
+  }
+
+  hasAnyPermission(permissions: string[]): boolean {
+    if (this.isAdmin()) {
+      return true;
+    }
+    return permissions.some((permission) => this.userPermissions().includes(permission));
   }
 
   private handleAuthSuccess(authData: AuthResponse): void {

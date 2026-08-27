@@ -62,6 +62,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/banners/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/news/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/settings/public").permitAll()
+                        // Orders public endpoints (Guest Checkout & Order Tracking)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/track").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/{orderCode}").permitAll()
                         // Admin Settings endpoints
                         .requestMatchers("/api/v1/settings/**").hasRole("ADMIN")
                         // Static uploads public read

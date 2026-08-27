@@ -38,7 +38,7 @@ public class AttributeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTRIBUTE_MANAGE')")
     @Operation(summary = "Create attribute", description = "Define a new technical attribute for a category")
     public ResponseEntity<ApiResponse<AttributeResponse>> createAttribute(@Valid @RequestBody AttributeRequest request) {
         AttributeResponse created = attributeService.createAttribute(request);
@@ -47,7 +47,7 @@ public class AttributeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTRIBUTE_MANAGE')")
     @Operation(summary = "Update attribute", description = "Update technical attribute definition")
     public ResponseEntity<ApiResponse<AttributeResponse>> updateAttribute(
             @PathVariable Integer id,
@@ -58,7 +58,7 @@ public class AttributeController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTRIBUTE_MANAGE')")
     @Operation(summary = "Delete attribute", description = "Delete a technical attribute definition")
     public ResponseEntity<ApiResponse<Void>> deleteAttribute(@PathVariable Integer id) {
         attributeService.deleteAttribute(id);

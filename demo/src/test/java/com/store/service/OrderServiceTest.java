@@ -85,6 +85,8 @@ class OrderServiceTest {
     private DiscountCodeRepository discountCodeRepository;
     @Mock
     private DiscountUsageRepository discountUsageRepository;
+    @Mock
+    private com.store.repository.ProductVariantRepository productVariantRepository;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -464,6 +466,129 @@ class OrderServiceTest {
             assertThat(expiredOrder.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
             verify(inventoryRepository).releaseStockAtomic(101L, 1, 3);
             verify(orderRepository).save(expiredOrder);
+        }
+    }
+
+    @Nested
+    @DisplayName("Guest Order Placement & Tracking Tests")
+    class GuestOrderTests {
+
+        @Test
+        @DisplayName("Should successfully place guest order with atomic stock reservation and null user")
+        void testCreateGuestOrder_Success() {
+            com.store.dto.request.order.GuestOrderItemRequest guestItem = com.store.dto.request.order.GuestOrderItemRequest.builder()
+                    .variantId(101L)
+                    .quantity(2)
+                    .build();
+
+            CreateOrderRequest request = CreateOrderRequest.builder()
+                    .receiverName("Khach Vang Lai")
+                    .receiverPhone("0988888888")
+                    .customerEmail("guest@gmail.com")
+                    .shippingAddress("So 10 Pho Hue, Ha Noi")
+                    .paymentMethod(PaymentMethod.COD)
+                    .items(List.of(guestItem))
+                    .build();
+
+            Inventory inventory1 = Inventory.builder()
+                    .warehouse(warehouseHanoi)
+                    .variant(testVariant1)
+                    .quantity(10)
+                    .reservedQty(0)
+                    .build();
+
+            when(productVariantRepository.findById(101L)).thenReturn(Optional.of(testVariant1));
+            when(inventoryRepository.findWarehousesWithAvailableStock(eq(101L), eq(2)))
+                    .thenReturn(List.of(inventory1));
+            when(inventoryRepository.reserveStockAtomic(eq(101L), eq(1), eq(2))).thenReturn(1);
+            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+                Order o = invocation.getArgument(0);
+                o.setOrderId(200L);
+                return o;
+            });
+
+            OrderResponse response = orderService.createOrder(null, request);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getUserId()).isNull();
+            assertThat(response.getUserEmail()).isEqualTo("guest@gmail.com");
+            assertThat(response.getReceiverName()).isEqualTo("Khach Vang Lai");
+            assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+
+            verify(inventoryRepository).reserveStockAtomic(eq(101L), eq(1), eq(2));
+            verify(cartItemRepository, never()).deleteByUserUserId(anyLong());
+        }
+
+        @Test
+        @DisplayName("Should reject guest order with InvalidDiscountException if discount code is provided")
+        void testCreateGuestOrder_WithDiscount_ThrowsInvalidDiscountException() {
+            CreateOrderRequest request = CreateOrderRequest.builder()
+                    .receiverName("Khach Vang Lai")
+                    .receiverPhone("0988888888")
+                    .customerEmail("guest@gmail.com")
+                    .shippingAddress("So 10 Pho Hue, Ha Noi")
+                    .discountCode("DISCOUNT50K")
+                    .items(List.of(com.store.dto.request.order.GuestOrderItemRequest.builder()
+                            .variantId(101L)
+                            .quantity(1)
+                            .build()))
+                    .build();
+
+            assertThatThrownBy(() -> orderService.createOrder(null, request))
+                    .isInstanceOf(com.store.exception.InvalidDiscountException.class)
+                    .hasMessageContaining("Mã giảm giá chỉ dành riêng cho thành viên đã đăng nhập tài khoản");
+
+            verify(inventoryRepository, never()).reserveStockAtomic(anyLong(), anyInt(), anyInt());
+        }
+
+        @Test
+        @DisplayName("Should reject guest order with IllegalStateException if items list is empty")
+        void testCreateGuestOrder_EmptyItems_ThrowsIllegalStateException() {
+            CreateOrderRequest request = CreateOrderRequest.builder()
+                    .receiverName("Khach Vang Lai")
+                    .receiverPhone("0988888888")
+                    .shippingAddress("So 10 Pho Hue, Ha Noi")
+                    .items(Collections.emptyList())
+                    .build();
+
+            assertThatThrownBy(() -> orderService.createOrder(null, request))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Giỏ hàng của bạn đang trống");
+        }
+
+        @Test
+        @DisplayName("Should track guest order when orderCode and receiverPhone match")
+        void testTrackGuestOrder_Success() {
+            Order guestOrder = Order.builder()
+                    .orderId(200L)
+                    .orderCode("ORD-GUEST-123456")
+                    .receiverName("Khach Vang Lai")
+                    .receiverPhone("0988888888")
+                    .customerEmail("guest@gmail.com")
+                    .orderStatus(OrderStatus.CONFIRMED)
+                    .items(new ArrayList<>())
+                    .statusHistory(new ArrayList<>())
+                    .build();
+
+            when(orderRepository.findByOrderCodeAndReceiverPhone("ORD-GUEST-123456", "0988888888"))
+                    .thenReturn(Optional.of(guestOrder));
+
+            OrderResponse response = orderService.trackGuestOrder("ORD-GUEST-123456", "0988888888");
+
+            assertThat(response).isNotNull();
+            assertThat(response.getOrderCode()).isEqualTo("ORD-GUEST-123456");
+            assertThat(response.getReceiverPhone()).isEqualTo("0988888888");
+        }
+
+        @Test
+        @DisplayName("Should fail tracking guest order when phone does not match")
+        void testTrackGuestOrder_MismatchedPhone_ThrowsResourceNotFoundException() {
+            when(orderRepository.findByOrderCodeAndReceiverPhone("ORD-GUEST-123456", "0911111111"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> orderService.trackGuestOrder("ORD-GUEST-123456", "0911111111"))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Không tìm thấy đơn hàng");
         }
     }
 }

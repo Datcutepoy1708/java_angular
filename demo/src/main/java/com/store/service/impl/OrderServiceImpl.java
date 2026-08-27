@@ -28,6 +28,7 @@ import com.store.entity.discount.DiscountUsage;
 import com.store.exception.InsufficientStockException;
 import com.store.exception.InvalidDiscountException;
 import com.store.exception.ResourceNotFoundException;
+import com.store.dto.request.order.GuestOrderItemRequest;
 import com.store.repository.AddressRepository;
 import com.store.repository.CartItemRepository;
 import com.store.repository.DiscountCodeRepository;
@@ -37,6 +38,7 @@ import com.store.repository.OrderItemRepository;
 import com.store.repository.OrderRepository;
 import com.store.repository.OrderStatusHistoryRepository;
 import com.store.repository.ProductImageRepository;
+import com.store.repository.ProductVariantRepository;
 import com.store.repository.UserRepository;
 import com.store.service.DiscountService;
 import com.store.service.OrderService;
@@ -73,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryRepository inventoryRepository;
     private final UserRepository userRepository;
     private final ProductImageRepository productImageRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final DiscountService discountService;
     private final DiscountCodeRepository discountCodeRepository;
     private final DiscountUsageRepository discountUsageRepository;
@@ -83,17 +86,49 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
-        log.info("User {} is creating an order", userId);
+        log.info("Creating order (userId={})", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        User user = null;
+        List<CartItem> cartItems;
 
-        List<CartItem> cartItems = cartItemRepository.findByUserIdWithDetails(userId);
-        if (cartItems == null || cartItems.isEmpty()) {
-            throw new IllegalStateException("Giỏ hàng của bạn đang trống, không thể tiến hành đặt hàng");
+        if (userId != null) {
+            user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+            cartItems = cartItemRepository.findByUserIdWithDetails(userId);
+            if (cartItems == null || cartItems.isEmpty()) {
+                throw new IllegalStateException("Giỏ hàng của bạn đang trống, không thể tiến hành đặt hàng");
+            }
+        } else {
+            // Guest Checkout validation
+            if (request.getDiscountCode() != null && !request.getDiscountCode().isBlank()) {
+                throw new InvalidDiscountException("Mã giảm giá chỉ dành riêng cho thành viên đã đăng nhập tài khoản. Vui lòng đăng nhập để áp dụng voucher.");
+            }
+            if (request.getItems() == null || request.getItems().isEmpty()) {
+                throw new IllegalStateException("Giỏ hàng của bạn đang trống, không thể tiến hành đặt hàng");
+            }
+
+            cartItems = new ArrayList<>();
+            for (GuestOrderItemRequest itemReq : request.getItems()) {
+                if (itemReq.getVariantId() == null || itemReq.getQuantity() == null || itemReq.getQuantity() <= 0) {
+                    continue;
+                }
+                ProductVariant variant = productVariantRepository.findById(itemReq.getVariantId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể sản phẩm với id: " + itemReq.getVariantId()));
+
+                CartItem transientItem = CartItem.builder()
+                        .variant(variant)
+                        .quantity(itemReq.getQuantity())
+                        .build();
+                cartItems.add(transientItem);
+            }
+
+            if (cartItems.isEmpty()) {
+                throw new IllegalStateException("Giỏ hàng của bạn đang trống hoặc không hợp lệ");
+            }
         }
 
-        // Step 1: Read-only Fail-fast pre-validation for Discount Code (if provided)
+        // Step 1: Read-only Fail-fast pre-validation for Discount Code (if provided by authenticated user)
         BigDecimal tentativeSubtotal = BigDecimal.ZERO;
         for (CartItem item : cartItems) {
             tentativeSubtotal = tentativeSubtotal.add(item.getVariant().getEffectivePrice().multiply(BigDecimal.valueOf(item.getQuantity())));
@@ -111,7 +146,7 @@ public class OrderServiceImpl implements OrderService {
         String receiverPhone;
         String shippingAddress;
 
-        if (request.getAddressId() != null) {
+        if (userId != null && request.getAddressId() != null) {
             selectedAddress = addressRepository.findByAddressIdAndUserUserId(request.getAddressId(), userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + request.getAddressId()));
             receiverName = selectedAddress.getReceiverName();
@@ -133,10 +168,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (receiverName == null || receiverName.isBlank()) {
-            receiverName = user.getFullName();
+            receiverName = user != null ? user.getFullName() : null;
         }
         if (receiverPhone == null || receiverPhone.isBlank()) {
-            receiverPhone = user.getPhone();
+            receiverPhone = user != null ? user.getPhone() : null;
+        }
+        if (receiverName == null || receiverName.isBlank()) {
+            throw new IllegalArgumentException("Họ tên người nhận không được để trống");
+        }
+        if (receiverPhone == null || receiverPhone.isBlank()) {
+            throw new IllegalArgumentException("Số điện thoại nhận hàng không được để trống");
         }
         if (shippingAddress == null || shippingAddress.isBlank()) {
             throw new IllegalArgumentException("Địa chỉ giao hàng không được để trống");
@@ -204,7 +245,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         Long discountId = null;
 
-        if (appliedDiscount != null) {
+        if (appliedDiscount != null && userId != null) {
             DiscountValidationResult discountResult = discountService.validateAndCalculate(appliedDiscount.getCode(), userId, subtotal, cartItems);
             discountAmount = discountResult.getDiscountAmount();
             discountId = appliedDiscount.getDiscountId();
@@ -226,6 +267,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .orderCode(orderCode)
                 .user(user)
+                .customerEmail(request.getCustomerEmail())
                 .address(selectedAddress)
                 .receiverName(receiverName)
                 .receiverPhone(receiverPhone)
@@ -248,7 +290,7 @@ public class OrderServiceImpl implements OrderService {
         OrderStatusHistory initialHistory = OrderStatusHistory.builder()
                 .order(order)
                 .status(OrderStatus.PENDING.getValue())
-                .note("Đơn hàng được khởi tạo thành công")
+                .note(user != null ? "Đơn hàng được khởi tạo thành công" : "Đơn hàng được đặt bởi khách vãng lai (Guest)")
                 .changedBy(user)
                 .build();
         order.addStatusHistory(initialHistory);
@@ -256,8 +298,8 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Successfully created order {} (id: {}) for user {}", orderCode, savedOrder.getOrderId(), userId);
 
-        // Step 6: Save DiscountUsage record (if discount was applied)
-        if (appliedDiscount != null) {
+        // Step 6: Save DiscountUsage record (if discount was applied by user)
+        if (appliedDiscount != null && user != null) {
             discountUsageRepository.save(DiscountUsage.builder()
                     .discount(appliedDiscount)
                     .user(user)
@@ -265,8 +307,10 @@ public class OrderServiceImpl implements OrderService {
                     .build());
         }
 
-        // Step 7: Clean up user's cart
-        cartItemRepository.deleteByUserUserId(userId);
+        // Step 7: Clean up user's cart (only for authenticated user)
+        if (userId != null) {
+            cartItemRepository.deleteByUserUserId(userId);
+        }
 
         return mapOrderToResponse(savedOrder);
     }
@@ -281,8 +325,25 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse getOrderByCode(String orderCode, Long userId) {
-        Order order = orderRepository.findByOrderCodeAndUserUserId(orderCode, userId)
+        Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with code: " + orderCode));
+
+        if (order.getUser() != null) {
+            if (userId == null || !order.getUser().getUserId().equals(userId)) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view this order");
+            }
+        }
+        return mapOrderToResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse trackGuestOrder(String orderCode, String receiverPhone) {
+        if (orderCode == null || orderCode.isBlank() || receiverPhone == null || receiverPhone.isBlank()) {
+            throw new IllegalArgumentException("Vui lòng cung cấp cả Mã đơn hàng và Số điện thoại nhận hàng");
+        }
+        Order order = orderRepository.findByOrderCodeAndReceiverPhone(orderCode.trim(), receiverPhone.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã cung cấp"));
         return mapOrderToResponse(order);
     }
 

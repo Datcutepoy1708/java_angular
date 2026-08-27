@@ -17,6 +17,8 @@ public interface OrderService {
 
     OrderResponse getOrderByCode(String orderCode, Long userId);
 
+    OrderResponse trackGuestOrder(String orderCode, String receiverPhone);
+
     OrderResponse cancelOrderByCustomer(String orderCode, Long userId, String reason);
 
     Page<OrderResponse> getAdminOrders(OrderFilterRequest filter);

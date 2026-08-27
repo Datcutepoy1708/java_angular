@@ -120,6 +120,27 @@
                   </div>
                 </div>
 
+                <div class="form-group">
+                  <label for="customerEmail">
+                    Email nhận thông báo đơn hàng 
+                    @if (!isAuthenticated) {
+                      <span class="required">*</span>
+                    } @else {
+                      <span class="text-muted">(tùy chọn)</span>
+                    }
+                  </label>
+                  <input 
+                    type="email" 
+                    id="customerEmail" 
+                    formControlName="customerEmail" 
+                    class="form-control"
+                    placeholder="VD: nguyenvana@example.com"
+                  />
+                  @if (checkoutForm.get('customerEmail')?.touched && checkoutForm.get('customerEmail')?.invalid) {
+                    <div class="form-error">Vui lòng nhập địa chỉ email hợp lệ</div>
+                  }
+                </div>
+
                 <div class="form-row form-row-3">
                   <div class="form-group">
                     <label for="province">Tỉnh / Thành phố <span class="required">*</span></label>
@@ -293,64 +314,83 @@
             <!-- Coupon Code Section -->
             <div class="coupon-section">
               <label class="coupon-label">Mã khuyến mãi / Voucher</label>
-              @if (appliedDiscount()) {
-                <div class="applied-coupon-tag">
-                  <div class="tag-left">
-                    <span class="coupon-badge-code">{{ appliedDiscount()!.code }}</span>
-                    <span class="coupon-badge-desc">{{ appliedDiscount()!.description || ('Giảm ' + formatPrice(appliedDiscount()!.discountAmount)) }}</span>
-                  </div>
-                  <button type="button" class="btn-remove-coupon" (click)="removeCoupon()" aria-label="Gỡ mã giảm giá">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
+
+              @if (!isAuthenticated) {
+                <div class="guest-voucher-notice">
+                  <div class="notice-icon">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
-                  </button>
+                  </div>
+                  <div class="notice-content">
+                    <span class="notice-title">Chỉ áp dụng cho thành viên</span>
+                    <p class="notice-desc">Mã giảm giá chỉ dành cho khách hàng có tài khoản đã đăng nhập.</p>
+                    <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/checkout' }" class="notice-link">
+                      Đăng nhập để dùng voucher →
+                    </a>
+                  </div>
                 </div>
               } @else {
-                <div class="coupon-input-group">
-                  <input 
-                    type="text" 
-                    class="form-control coupon-input" 
-                    placeholder="Nhập mã giảm giá..."
-                    [value]="couponInput()"
-                    (input)="couponInput.set($any($event.target).value)"
-                    (keyup.enter)="applyCoupon()"
-                  />
-                  <button 
-                    type="button" 
-                    class="btn btn-apply-coupon" 
-                    [disabled]="isValidatingCoupon() || !couponInput().trim()"
-                    (click)="applyCoupon()"
-                  >
-                    @if (isValidatingCoupon()) {
-                      <span class="spinner-sm"></span>
-                    } @else {
-                      Áp dụng
-                    }
-                  </button>
-                </div>
-              }
-
-              @if (couponError()) {
-                <div class="coupon-msg error-msg">{{ couponError() }}</div>
-              }
-              @if (couponSuccess()) {
-                <div class="coupon-msg success-msg">{{ couponSuccess() }}</div>
-              }
-
-              <!-- Public coupon suggestions -->
-              @if (!appliedDiscount() && publicDiscounts().length > 0) {
-                <div class="public-coupons">
-                  <span class="suggestions-title">Mã giảm giá khả dụng:</span>
-                  <div class="coupon-chips">
-                    @for (disc of publicDiscounts(); track disc.discountId) {
-                      <button type="button" class="coupon-chip" (click)="applyCoupon(disc.code)">
-                        <strong class="chip-code">{{ disc.code }}</strong>
-                        <span class="chip-val">{{ disc.discountType === 'percent' ? ('-' + disc.discountValue + '%') : ('-' + formatPrice(disc.discountValue)) }}</span>
-                      </button>
-                    }
+                @if (appliedDiscount()) {
+                  <div class="applied-coupon-tag">
+                    <div class="tag-left">
+                      <span class="coupon-badge-code">{{ appliedDiscount()!.code }}</span>
+                      <span class="coupon-badge-desc">{{ appliedDiscount()!.description || ('Giảm ' + formatPrice(appliedDiscount()!.discountAmount)) }}</span>
+                    </div>
+                    <button type="button" class="btn-remove-coupon" (click)="removeCoupon()" aria-label="Gỡ mã giảm giá">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
                   </div>
-                </div>
+                } @else {
+                  <div class="coupon-input-group">
+                    <input 
+                      type="text" 
+                      class="form-control coupon-input" 
+                      placeholder="Nhập mã giảm giá..."
+                      [value]="couponInput()"
+                      (input)="couponInput.set($any($event.target).value)"
+                      (keyup.enter)="applyCoupon()"
+                    />
+                    <button 
+                      type="button" 
+                      class="btn btn-apply-coupon" 
+                      [disabled]="isValidatingCoupon() || !couponInput().trim()"
+                      (click)="applyCoupon()"
+                    >
+                      @if (isValidatingCoupon()) {
+                        <span class="spinner-sm"></span>
+                      } @else {
+                        Áp dụng
+                      }
+                    </button>
+                  </div>
+                }
+
+                @if (couponError()) {
+                  <div class="coupon-msg error-msg">{{ couponError() }}</div>
+                }
+                @if (couponSuccess()) {
+                  <div class="coupon-msg success-msg">{{ couponSuccess() }}</div>
+                }
+
+                <!-- Public coupon suggestions -->
+                @if (!appliedDiscount() && publicDiscounts().length > 0) {
+                  <div class="public-coupons">
+                    <span class="suggestions-title">Mã giảm giá khả dụng:</span>
+                    <div class="coupon-chips">
+                      @for (disc of publicDiscounts(); track disc.discountId) {
+                        <button type="button" class="coupon-chip" (click)="applyCoupon(disc.code)">
+                          <strong class="chip-code">{{ disc.code }}</strong>
+                          <span class="chip-val">{{ disc.discountType === 'percent' ? ('-' + disc.discountValue + '%') : ('-' + formatPrice(disc.discountValue)) }}</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
               }
             </div>
 

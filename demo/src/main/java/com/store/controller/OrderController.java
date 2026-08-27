@@ -21,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.store.security.GuestOrderRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,16 +42,36 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
+    private final GuestOrderRateLimiter guestOrderRateLimiter;
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Submit an order (holds warehouse inventory, creates order, clears user cart)")
+    @Operation(summary = "Submit an order (supports both Member and Guest checkout)")
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody CreateOrderRequest request) {
-        OrderResponse response = orderService.createOrder(userDetails.getUserId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Đặt hàng thành công", response));
+            @Valid @RequestBody CreateOrderRequest request,
+            HttpServletRequest servletRequest) {
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
+        if (userId == null) {
+            String clientIp = extractClientIp(servletRequest);
+            guestOrderRateLimiter.checkRateLimit(clientIp, request.getReceiverPhone());
+            OrderResponse response = orderService.createOrder(null, request);
+            guestOrderRateLimiter.recordOrder(clientIp);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Đặt hàng thành công", response));
+        } else {
+            OrderResponse response = orderService.createOrder(userId, request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Đặt hàng thành công", response));
+        }
+    }
+
+    @GetMapping("/track")
+    @Operation(summary = "Public track guest order by order code and receiver phone number")
+    public ResponseEntity<ApiResponse<OrderResponse>> trackGuestOrder(
+            @RequestParam String code,
+            @RequestParam String phone) {
+        OrderResponse response = orderService.trackGuestOrder(code, phone);
+        return ResponseEntity.ok(ApiResponse.success("Tra cứu thông tin đơn hàng thành công", response));
     }
 
     @GetMapping("/my-orders")
@@ -65,13 +87,26 @@ public class OrderController {
     }
 
     @GetMapping("/{orderCode}")
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get order details and timeline by order code")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrderByCode(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String orderCode) {
-        OrderResponse response = orderService.getOrderByCode(orderCode, userDetails.getUserId());
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
+        OrderResponse response = orderService.getOrderByCode(orderCode, userId);
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn hàng thành công", response));
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        if (request == null) return "unknown";
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader != null && !xfHeader.isBlank()) {
+            return xfHeader.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/{orderCode}/cancel")

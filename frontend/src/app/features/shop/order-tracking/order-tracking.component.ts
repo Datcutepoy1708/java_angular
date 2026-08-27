@@ -24,6 +24,11 @@ export class OrderTrackingComponent implements OnInit {
   readonly isCancelling = signal<boolean>(false);
   readonly cancelSuccessMessage = signal<string | null>(null);
 
+  // Guest lookup signals
+  readonly searchCode = signal<string>('');
+  readonly searchPhone = signal<string>('');
+  readonly isSearching = signal<boolean>(false);
+
   readonly statusSteps: { key: OrderStatus; label: string; stepNumber: number }[] = [
     { key: 'pending', label: 'Chờ xác nhận', stepNumber: 1 },
     { key: 'confirmed', label: 'Đã xác nhận', stepNumber: 2 },
@@ -33,13 +38,45 @@ export class OrderTrackingComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    const code = this.route.snapshot.paramMap.get('orderCode');
+    const code = this.route.snapshot.paramMap ? this.route.snapshot.paramMap.get('orderCode') : null;
+    const phoneQuery = this.route.snapshot.queryParamMap ? this.route.snapshot.queryParamMap.get('phone') : null;
     if (code) {
-      this.loadOrder(code);
+      if (phoneQuery) {
+        this.searchCode.set(code);
+        this.searchPhone.set(phoneQuery);
+        this.lookupGuestOrder();
+      } else {
+        this.loadOrder(code);
+      }
     } else {
       this.isLoading.set(false);
-      this.errorMessage.set('Không tìm thấy mã đơn hàng.');
     }
+  }
+
+  lookupGuestOrder(): void {
+    const code = this.searchCode().trim();
+    const phone = this.searchPhone().trim();
+    if (!code || !phone) {
+      this.errorMessage.set('Vui lòng nhập cả Mã đơn hàng và Số điện thoại nhận hàng.');
+      return;
+    }
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.orderService.trackGuestOrder(code, phone).subscribe({
+      next: (res) => {
+        this.isLoading.set(false);
+        if (res.success && res.data) {
+          this.order.set(res.data);
+        } else {
+          this.errorMessage.set('Không tìm thấy thông tin đơn hàng khớp với yêu cầu.');
+        }
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Không tìm thấy đơn hàng khớp với mã đơn và số điện thoại đã cung cấp.');
+      }
+    });
   }
 
   loadOrder(code: string): void {

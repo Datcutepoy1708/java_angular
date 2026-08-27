@@ -269,4 +269,46 @@ class ReturnServiceTest {
         // Verify order status cancelled
         verify(orderRepository).save(argThat(o -> o.getOrderStatus() == OrderStatus.CANCELLED));
     }
+
+    @Test
+    @DisplayName("processRefund should keep discount usage count and order status unchanged on partial return")
+    void processRefund_PartialReturn_KeepsDiscountAndOrderStatus() {
+        // Setup order with 2 items
+        OrderItem secondItem = OrderItem.builder()
+                .orderItemId(51L)
+                .variant(testVariant)
+                .productNameSnapshot("Chuột Gaming")
+                .priceSnapshot(new BigDecimal("1000000"))
+                .quantity(1)
+                .subtotal(new BigDecimal("1000000"))
+                .build();
+        testOrder.getItems().add(secondItem);
+
+        // Return request only contains the first item (Partial return)
+        sampleReturnRequest.setStatus(ReturnStatus.ITEM_RECEIVED);
+        sampleReturnRequest.setRestockWarehouseId(1);
+        when(returnRequestRepository.findById(1L)).thenReturn(Optional.of(sampleReturnRequest));
+        when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+
+        ReturnProcessRefundRequest refundReq = ReturnProcessRefundRequest.builder()
+                .refundTransactionCode("FT2608269999")
+                .adminNote("Hoàn tiền 1 phần đơn hàng")
+                .build();
+
+        ReturnDetailResponse response = returnService.processRefund(1L, 1L, refundReq);
+
+        assertThat(response.getStatus()).isEqualTo("REFUNDED");
+
+        // Verify Atomic Restock still called for the returned item
+        verify(inventoryService).restockReturnedItemAtomic(
+                eq(100L), eq(1), eq(1), eq("OPENED"), eq(1L), eq("RET-20260826-0001"), eq(1L)
+        );
+
+        // Verify discount usage count is NEVER decremented on partial return
+        verify(discountCodeRepository, never()).decrementUsedCountAtomic(anyLong());
+
+        // Verify order status is NOT changed to CANCELLED
+        verify(orderRepository, never()).save(argThat(o -> o.getOrderStatus() == OrderStatus.CANCELLED));
+        assertThat(testOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
 }

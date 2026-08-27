@@ -61,4 +61,8 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     BigDecimal sumTotalSpendByUserId(@Param("userId") Long userId);
 
     boolean existsByOrderCode(String orderCode);
+
+    Optional<Order> findByOrderCodeAndReceiverPhone(String orderCode, String receiverPhone);
+
+    long countByReceiverPhoneAndOrderStatusAndCreatedAtAfter(String receiverPhone, OrderStatus orderStatus, LocalDateTime after);
 }

@@ -49,12 +49,18 @@ export class CheckoutComponent implements OnInit {
     this.loadPublicDiscounts();
   }
 
+  get isAuthenticated(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
   private initForm(): void {
     const currentUser = this.authService.currentUser();
+    const isAuth = this.authService.isAuthenticated();
 
     this.checkoutForm = this.fb.group({
       receiverName: [currentUser?.fullName || '', [Validators.required, Validators.maxLength(150)]],
       receiverPhone: [currentUser?.phone || '', [Validators.required, Validators.pattern(/^[0-9]{10,11}$/)]],
+      customerEmail: [currentUser?.email || '', isAuth ? [Validators.email, Validators.maxLength(150)] : [Validators.required, Validators.email, Validators.maxLength(150)]],
       province: ['', [Validators.required]],
       district: ['', [Validators.required]],
       ward: ['', [Validators.required]],
@@ -87,6 +93,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadPublicDiscounts(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.publicDiscounts.set([]);
+      return;
+    }
+
     this.discountService.getPublicDiscounts().subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -115,6 +126,11 @@ export class CheckoutComponent implements OnInit {
     const code = (codeToApply || this.couponInput()).trim();
     if (!code) {
       this.couponError.set('Vui lòng nhập mã giảm giá.');
+      return;
+    }
+
+    if (!this.authService.isAuthenticated()) {
+      this.couponError.set('Mã giảm giá chỉ áp dụng cho thành viên. Quý khách vui lòng đăng nhập tài khoản.');
       return;
     }
 
@@ -162,13 +178,14 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
+    const isAuth = this.authService.isAuthenticated();
     const paymentMethod = this.checkoutForm.get('paymentMethod')?.value as PaymentMethod;
     const note = this.checkoutForm.get('note')?.value;
-    const discountCode = this.appliedDiscount() ? this.appliedDiscount()!.code : undefined;
+    const discountCode = isAuth && this.appliedDiscount() ? this.appliedDiscount()!.code : undefined;
 
     let request: CreateOrderRequest;
 
-    if (!this.useNewAddress() && this.selectedAddressId()) {
+    if (isAuth && !this.useNewAddress() && this.selectedAddressId()) {
       request = {
         addressId: this.selectedAddressId()!,
         paymentMethod,
@@ -183,16 +200,22 @@ export class CheckoutComponent implements OnInit {
       }
 
       const formVal = this.checkoutForm.value;
+      const guestItems = !isAuth
+        ? this.cartService.cart().items.map(item => ({ variantId: item.variantId, quantity: item.quantity }))
+        : undefined;
+
       request = {
         receiverName: formVal.receiverName,
         receiverPhone: formVal.receiverPhone,
+        customerEmail: formVal.customerEmail ? formVal.customerEmail.trim() : undefined,
         province: formVal.province,
         district: formVal.district,
         ward: formVal.ward,
         detailAddress: formVal.detailAddress,
         paymentMethod,
         discountCode,
-        note
+        note,
+        items: guestItems
       };
     }
 
@@ -202,8 +225,11 @@ export class CheckoutComponent implements OnInit {
       next: (res) => {
         this.isSubmitting.set(false);
         if (res.success && res.data) {
-          // Clear cart in service
-          this.cartService.loadCart();
+          if (!isAuth) {
+            this.cartService.clearCart().subscribe();
+          } else {
+            this.cartService.loadCart();
+          }
           this.router.navigate(['/order-success', res.data.orderCode]);
         }
       },

@@ -375,7 +375,19 @@
 
             <div class="form-actions-inline">
               <button type="submit" class="btn-primary" [disabled]="categoryForm.invalid">
-                {{ editingCatId() ? 'Cập nhật danh mục' : 'Thêm danh mục' }}
+                @if (editingCatId()) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                  <span>Cập nhật danh mục</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span>Thêm danh mục</span>
+                }
               </button>
               @if (editingCatId()) {
                 <button type="button" class="btn-secondary" (click)="editingCatId.set(null); categoryForm.reset({ name: '', slug: '', description: '', sortOrder: 0, status: 'active' })">

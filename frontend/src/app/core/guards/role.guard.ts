@@ -7,6 +7,7 @@ export const roleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   const expectedRoles = (route.data?.['roles'] as string[]) ?? [];
+  const expectedPermissions = (route.data?.['permissions'] as string[]) ?? [];
 
   if (!authService.isAuthenticated()) {
     if (state.url.startsWith('/admin')) {
@@ -15,10 +16,26 @@ export const roleGuard: CanActivateFn = (route, state) => {
     return router.createUrlTree(['/auth/login']);
   }
 
-  if (expectedRoles.length === 0 || authService.hasAnyRole(expectedRoles)) {
+  // Admin has full access to all roles and permissions
+  if (authService.isAdmin()) {
     return true;
   }
 
-  // User does not have sufficient role -> redirect to customer home
-  return router.createUrlTree(['/']);
+  // Check roles requirement
+  if (expectedRoles.length > 0 && !authService.hasAnyRole(expectedRoles)) {
+    if (state.url.startsWith('/admin')) {
+      return router.createUrlTree(['/admin/forbidden']);
+    }
+    return router.createUrlTree(['/']);
+  }
+
+  // Check permissions requirement
+  if (expectedPermissions.length > 0 && !authService.hasAnyPermission(expectedPermissions)) {
+    if (state.url.startsWith('/admin')) {
+      return router.createUrlTree(['/admin/forbidden']);
+    }
+    return router.createUrlTree(['/']);
+  }
+
+  return true;
 };

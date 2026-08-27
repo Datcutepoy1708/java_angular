@@ -47,6 +47,7 @@ export interface Order {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  customerEmail?: string;
   note?: string;
   createdAt: string;
   updatedAt: string;
@@ -54,10 +55,16 @@ export interface Order {
   statusHistory: OrderStatusHistory[];
 }
 
+export interface GuestOrderItem {
+  variantId: number;
+  quantity: number;
+}
+
 export interface CreateOrderRequest {
   addressId?: number;
   receiverName?: string;
   receiverPhone?: string;
+  customerEmail?: string;
   shippingAddress?: string;
   province?: string;
   district?: string;
@@ -66,6 +73,7 @@ export interface CreateOrderRequest {
   paymentMethod: PaymentMethod;
   discountCode?: string;
   note?: string;
+  items?: GuestOrderItem[];
 }
 
 export interface UpdateOrderStatusRequest {

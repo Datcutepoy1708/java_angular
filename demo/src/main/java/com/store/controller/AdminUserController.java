@@ -34,12 +34,12 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin/users")
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<AdminUserResponse>>> getUsersPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -56,6 +56,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/customers")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<PageResponse<AdminUserResponse>>> getCustomersPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -71,6 +72,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/staff")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<AdminUserResponse>>> getStaffPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -87,18 +89,21 @@ public class AdminUserController {
     }
 
     @GetMapping("/roles")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
         List<RoleResponse> response = adminUserService.getAllRoles();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> getUserById(@PathVariable Long id) {
         AdminUserResponse response = adminUserService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> createUser(
             @Valid @RequestBody AdminUserCreateRequest request
     ) {
@@ -108,6 +113,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody AdminUserUpdateRequest request,
@@ -119,6 +125,7 @@ public class AdminUserController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserStatus(
             @PathVariable Long id,
             @Valid @RequestBody AdminUserStatusRequest request,
@@ -130,6 +137,7 @@ public class AdminUserController {
     }
 
     @PostMapping("/{id}/reset-password")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> resetUserPassword(
             @PathVariable Long id,
             @Valid @RequestBody AdminUserPasswordResetRequest request
@@ -139,6 +147,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails

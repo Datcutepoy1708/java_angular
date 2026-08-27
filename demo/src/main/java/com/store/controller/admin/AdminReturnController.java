@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/admin/returns")
 @RequiredArgsConstructor
 @Tag(name = "Admin Returns & Refunds", description = "APIs for managing return requests, inspection, and refund processing")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
 public class AdminReturnController {
 
     private final ReturnService returnService;

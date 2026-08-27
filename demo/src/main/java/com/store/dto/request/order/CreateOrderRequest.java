@@ -21,6 +21,10 @@ public class CreateOrderRequest {
     @Size(max = 20, message = "Receiver phone must not exceed 20 characters")
     private String receiverPhone;
 
+    @jakarta.validation.constraints.Email(message = "Email không đúng định dạng")
+    @Size(max = 150, message = "Email không vượt quá 150 ký tự")
+    private String customerEmail;
+
     @Size(max = 500, message = "Shipping address must not exceed 500 characters")
     private String shippingAddress;
 
@@ -36,4 +40,7 @@ public class CreateOrderRequest {
 
     @Size(max = 500, message = "Note must not exceed 500 characters")
     private String note;
+
+    @jakarta.validation.Valid
+    private java.util.List<GuestOrderItemRequest> items;
 }

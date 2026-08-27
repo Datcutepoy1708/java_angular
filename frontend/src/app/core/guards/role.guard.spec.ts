@@ -9,8 +9,8 @@ describe('roleGuard', () => {
   let authServiceMock: Partial<AuthService>;
   let routerMock: { createUrlTree: ReturnType<typeof vi.fn> };
 
-  const runGuard = (url: string, roles: string[] = ['ROLE_ADMIN', 'ROLE_STAFF']) => {
-    const route = { data: { roles } } as unknown as ActivatedRouteSnapshot;
+  const runGuard = (url: string, roles: string[] = ['ROLE_ADMIN', 'ROLE_STAFF'], permissions: string[] = []) => {
+    const route = { data: { roles, permissions } } as unknown as ActivatedRouteSnapshot;
     const state = { url } as RouterStateSnapshot;
     return TestBed.runInInjectionContext(() => roleGuard(route, state));
   };
@@ -31,7 +31,9 @@ describe('roleGuard', () => {
     beforeEach(() => {
       authServiceMock = {
         isAuthenticated: signal(true) as any,
-        hasAnyRole: (roles: string[]) => roles.includes('ROLE_ADMIN'),
+        isAdmin: signal(true) as any,
+        hasAnyRole: (_roles: string[]) => true,
+        hasAnyPermission: (_perms: string[]) => true,
       };
       TestBed.overrideProvider(AuthService, { useValue: authServiceMock });
     });
@@ -41,8 +43,8 @@ describe('roleGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should pass through to /admin/brands', () => {
-      const result = runGuard('/admin/brands');
+    it('should pass through to any admin page regardless of permissions', () => {
+      const result = runGuard('/admin/staff', ['ROLE_ADMIN'], ['STAFF_VIEW']);
       expect(result).toBe(true);
     });
   });
@@ -51,14 +53,26 @@ describe('roleGuard', () => {
     beforeEach(() => {
       authServiceMock = {
         isAuthenticated: signal(true) as any,
+        isAdmin: signal(false) as any,
         hasAnyRole: (roles: string[]) => roles.includes('ROLE_STAFF'),
+        hasAnyPermission: (perms: string[]) => perms.includes('PRODUCT_VIEW'),
       };
       TestBed.overrideProvider(AuthService, { useValue: authServiceMock });
     });
 
-    it('should pass through to /admin/dashboard (staff allowed)', () => {
-      const result = runGuard('/admin/dashboard');
+    it('should pass through to /admin/dashboard (staff role allowed)', () => {
+      const result = runGuard('/admin/dashboard', ['ROLE_ADMIN', 'ROLE_STAFF']);
       expect(result).toBe(true);
+    });
+
+    it('should pass through when staff has required permission', () => {
+      const result = runGuard('/admin/products', ['ROLE_ADMIN', 'ROLE_STAFF'], ['PRODUCT_VIEW']);
+      expect(result).toBe(true);
+    });
+
+    it('should redirect to /admin/forbidden when staff lacks required permission', () => {
+      runGuard('/admin/staff', ['ROLE_ADMIN'], ['STAFF_VIEW']);
+      expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/admin/forbidden']);
     });
   });
 
@@ -66,18 +80,20 @@ describe('roleGuard', () => {
     beforeEach(() => {
       authServiceMock = {
         isAuthenticated: signal(true) as any,
+        isAdmin: signal(false) as any,
         hasAnyRole: (_roles: string[]) => false,
+        hasAnyPermission: (_perms: string[]) => false,
       };
       TestBed.overrideProvider(AuthService, { useValue: authServiceMock });
     });
 
-    it('should block and redirect to / when trying to access /admin/**', () => {
+    it('should block and redirect to /admin/forbidden when trying to access /admin/**', () => {
       runGuard('/admin/dashboard');
-      expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/']);
+      expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/admin/forbidden']);
     });
 
-    it('should block access to /admin/brands', () => {
-      runGuard('/admin/brands');
+    it('should redirect to / when trying to access non-admin restricted routes', () => {
+      runGuard('/special-area', ['ROLE_STAFF']);
       expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/']);
     });
   });
@@ -86,7 +102,9 @@ describe('roleGuard', () => {
     beforeEach(() => {
       authServiceMock = {
         isAuthenticated: signal(false) as any,
+        isAdmin: signal(false) as any,
         hasAnyRole: (_roles: string[]) => false,
+        hasAnyPermission: (_perms: string[]) => false,
       };
       TestBed.overrideProvider(AuthService, { useValue: authServiceMock });
     });

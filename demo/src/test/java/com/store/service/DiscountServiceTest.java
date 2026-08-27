@@ -288,6 +288,15 @@ class DiscountServiceTest {
     }
 
     @Test
+    @DisplayName("Validate discount should reject when userId is null (guest user)")
+    void testValidateAndCalculate_NullUserId_ThrowsInvalidDiscountException() {
+        BigDecimal subtotal = new BigDecimal("20000000.00");
+        assertThatThrownBy(() -> discountService.validateAndCalculate("SALE10", null, subtotal, List.of(cartItem)))
+                .isInstanceOf(InvalidDiscountException.class)
+                .hasMessageContaining("Mã giảm giá chỉ dành riêng cho thành viên đã đăng nhập tài khoản");
+    }
+
+    @Test
     @DisplayName("Create discount with duplicate code -> throws DuplicateResourceException")
     void testCreateDiscount_DuplicateCode_ThrowsException() {
         CreateDiscountRequest req = CreateDiscountRequest.builder()
