@@ -1,7 +1,6 @@
 package com.store.service.impl;
 
 import com.store.service.EmailService;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,19 +23,47 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.mail.from-name:Complexus Shop}")
     private String fromName;
 
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    private String getEffectiveFromAddress() {
+        String addr = (fromAddress != null && !fromAddress.isBlank()) ? fromAddress.replace("\"", "").trim() : "";
+        if (mailUsername != null && !mailUsername.isBlank() && (addr.isBlank() || addr.contains("@complexus.vn"))) {
+            return mailUsername.replace("\"", "").trim();
+        }
+        return addr.isBlank() ? "no-reply@complexus.vn" : addr;
+    }
+
+    private String getEffectiveFromName() {
+        return (fromName != null && !fromName.isBlank()) ? fromName.replace("\"", "").trim() : "Complexus Shop";
+    }
+
+    private boolean isNonDeliverableEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return true;
+        }
+        String lower = email.trim().toLowerCase();
+        return lower.endsWith("@zalo.me") || lower.endsWith(".local") || lower.endsWith(".internal");
+    }
+
     @Async
     @Override
     public void sendOtpEmail(String toEmail, String recipientName, String otp) {
+        if (isNonDeliverableEmail(toEmail)) {
+            log.info("Skipping OTP email for synthetic/non-deliverable address: {}", toEmail);
+            return;
+        }
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
+            helper.setFrom(getEffectiveFromAddress(), getEffectiveFromName());
+            helper.setTo(toEmail.trim());
             helper.setSubject("[COMPLEXUS] Mã xác thực đặt lại mật khẩu của bạn: " + otp);
 
             String greeting = (recipientName != null && !recipientName.isBlank())
-                    ? "Xin chào " + recipientName + ","
+                    ? "Xin chào " + recipientName.trim() + ","
                     : "Xin chào quý khách,";
 
             String htmlContent = buildOtpEmailHtml(greeting, otp);
@@ -44,10 +71,8 @@ public class EmailServiceImpl implements EmailService {
 
             mailSender.send(message);
             log.info("Successfully sent OTP email to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Failed to send OTP email to {}: {}", toEmail, e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Unexpected error sending email to {}: {}", toEmail, e.getMessage(), e);
+            log.error("Failed to send OTP email to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
@@ -101,16 +126,21 @@ public class EmailServiceImpl implements EmailService {
     @Async
     @Override
     public void sendSecurityAlert(String toEmail, String recipientName, String subject, String messageHtml) {
+        if (isNonDeliverableEmail(toEmail)) {
+            log.info("Skipping security alert email for synthetic/non-deliverable address: {}", toEmail);
+            return;
+        }
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromAddress, fromName);
-            helper.setTo(toEmail);
+            helper.setFrom(getEffectiveFromAddress(), getEffectiveFromName());
+            helper.setTo(toEmail.trim());
             helper.setSubject(subject != null ? subject : "[COMPLEXUS] Thông báo bảo mật tài khoản");
 
             String greeting = (recipientName != null && !recipientName.isBlank())
-                    ? "Xin chào " + recipientName + ","
+                    ? "Xin chào " + recipientName.trim() + ","
                     : "Xin chào quý khách,";
 
             String html = "<!DOCTYPE html>"

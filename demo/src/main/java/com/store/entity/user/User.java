@@ -66,7 +66,7 @@ public class User {
     @Builder.Default
     private Boolean emailVerified = false;
 
-    @Column(name = "provider", columnDefinition = "enum('local','google','facebook')")
+    @Column(name = "provider", columnDefinition = "enum('local','google','facebook','zalo')")
     @Builder.Default
     private AuthProvider provider = AuthProvider.LOCAL;
 

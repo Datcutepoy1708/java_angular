@@ -37,11 +37,28 @@ describe('SocialAuthService', () => {
       success: true,
       data: {
         googleClientId: 'test-google-id',
-        facebookAppId: 'test-fb-id'
+        facebookAppId: 'test-fb-id',
+        zaloAppId: 'test-zalo-id'
       }
     });
 
     await loadPromise;
     expect(service).toBeTruthy();
+  });
+
+  it('should throw error when signInWithZalo called without zaloAppId configured', async () => {
+    const signInPromise = service.signInWithZalo();
+
+    const req = httpMock.expectOne('http://localhost:8080/api/v1/auth/oauth2/config');
+    req.flush({
+      success: true,
+      data: {
+        googleClientId: 'test-google-id',
+        facebookAppId: 'test-fb-id',
+        zaloAppId: ''
+      }
+    });
+
+    await expect(signInPromise).rejects.toThrow('Zalo App ID chưa được cấu hình');
   });
 });

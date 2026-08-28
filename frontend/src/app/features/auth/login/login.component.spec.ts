@@ -144,4 +144,12 @@ describe('LoginComponent', () => {
     expect(component.errorMessage()).toBe('Facebook login failed');
     expect(component.isSocialLoading()).toBeNull();
   });
+
+  it('should handle onZaloLogin error gracefully', async () => {
+    const socialAuth = TestBed.inject(SocialAuthService);
+    vi.spyOn(socialAuth, 'signInWithZalo').mockRejectedValue(new Error('Zalo login failed'));
+    await component.onZaloLogin();
+    expect(component.errorMessage()).toBe('Zalo login failed');
+    expect(component.isSocialLoading()).toBeNull();
+  });
 });

@@ -8,6 +8,7 @@ import com.store.dto.request.auth.ForgotPasswordRequest;
 import com.store.dto.request.auth.GoogleLoginRequest;
 import com.store.dto.request.auth.ResetPasswordRequest;
 import com.store.dto.request.auth.VerifyOtpRequest;
+import com.store.dto.request.auth.ZaloLoginRequest;
 import com.store.dto.response.AuthResponse;
 import com.store.dto.response.UserSummaryResponse;
 import com.store.dto.response.auth.SocialUserInfo;
@@ -341,6 +342,16 @@ public class AuthServiceImpl implements AuthService {
         loginRateLimiter.checkRateLimit(null, clientIp);
 
         SocialUserInfo socialUser = socialAuthService.verifyFacebookToken(request.getAccessToken());
+        return processSocialLogin(socialUser, httpRequest, clientIp);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse loginWithZalo(ZaloLoginRequest request, HttpServletRequest httpRequest) {
+        String clientIp = extractClientIp(httpRequest);
+        loginRateLimiter.checkRateLimit(null, clientIp);
+
+        SocialUserInfo socialUser = socialAuthService.verifyZaloAuthCode(request.getCode(), request.getCodeVerifier());
         return processSocialLogin(socialUser, httpRequest, clientIp);
     }
 

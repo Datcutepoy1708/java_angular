@@ -12,6 +12,7 @@ import com.store.dto.response.auth.VerifyOtpResponse;
 
 import com.store.dto.request.auth.FacebookLoginRequest;
 import com.store.dto.request.auth.GoogleLoginRequest;
+import com.store.dto.request.auth.ZaloLoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
@@ -37,4 +38,6 @@ public interface AuthService {
     AuthResponse loginWithGoogle(GoogleLoginRequest request, HttpServletRequest httpRequest);
 
     AuthResponse loginWithFacebook(FacebookLoginRequest request, HttpServletRequest httpRequest);
+
+    AuthResponse loginWithZalo(ZaloLoginRequest request, HttpServletRequest httpRequest);
 }

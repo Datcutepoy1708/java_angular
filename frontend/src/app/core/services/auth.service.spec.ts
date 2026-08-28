@@ -153,4 +153,19 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBe(true);
     expect(service.getAccessToken()).toBe('mock-access-token');
   });
+
+  it('should loginWithZalo successfully and update state', () => {
+    service.loginWithZalo('mock-zalo-code', 'mock-verifier').subscribe((res) => {
+      expect(res.success).toBe(true);
+      expect(res.data.accessToken).toBe('mock-access-token');
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/v1/auth/social/zalo`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ code: 'mock-zalo-code', codeVerifier: 'mock-verifier' });
+    req.flush(mockAuthResponse);
+
+    expect(service.isAuthenticated()).toBe(true);
+    expect(service.getAccessToken()).toBe('mock-access-token');
+  });
 });

@@ -19,23 +19,25 @@ export class SocialAuthService {
 
   private googleClientId = '';
   private facebookAppId = '';
+  private zaloAppId = '';
 
   /**
    * Tự động tải Client ID trực tiếp từ Backend (nguồn file .env)
    */
   public async loadConfig(): Promise<void> {
-    if (this.configLoaded && (this.googleClientId || this.facebookAppId)) {
+    if (this.configLoaded && (this.googleClientId || this.facebookAppId || this.zaloAppId)) {
       return;
     }
     try {
       const res = await firstValueFrom(
-        this.http.get<ApiResponse<{ googleClientId: string; facebookAppId: string }>>(
+        this.http.get<ApiResponse<{ googleClientId: string; facebookAppId: string; zaloAppId: string }>>(
           `${environment.apiUrl}/api/v1/auth/oauth2/config`
         )
       );
       if (res && res.data) {
         this.googleClientId = res.data.googleClientId || '';
         this.facebookAppId = res.data.facebookAppId || '';
+        this.zaloAppId = res.data.zaloAppId || '';
         this.configLoaded = true;
       }
     } catch (err) {
@@ -294,6 +296,131 @@ export class SocialAuthService {
           // sẽ ném SecurityError do khác origin (Cross-Origin Frame). Bỏ qua và chờ tick kế tiếp.
         }
       }, 250);
+    });
+  }
+
+  /**
+   * Tạo chuỗi ngẫu nhiên bảo mật dùng cho PKCE code_verifier
+   */
+  private generateRandomString(length: number = 64): string {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    const randomValues = new Uint8Array(length);
+    crypto.getRandomValues(randomValues);
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += charset[randomValues[i] % charset.length];
+    }
+    return result;
+  }
+
+  /**
+   * Băm chuỗi SHA-256 và mã hóa Base64URL không đệm padding (PKCE code_challenge)
+   */
+  private async generateCodeChallenge(codeVerifier: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
+    return base64
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  /**
+   * Mở popup đăng nhập Zalo qua OAuth v4 PKCE:
+   * - Sinh state ngẫu nhiên lưu vào sessionStorage để chống tấn công CSRF
+   * - Sinh cặp mã PKCE (code_verifier & code_challenge)
+   * - Mở popup tới Zalo OAuth và lắng nghe postMessage từ route /auth/zalo/callback
+   */
+  public async signInWithZalo(): Promise<{ code: string; codeVerifier: string }> {
+    await this.loadConfig();
+
+    if (!this.zaloAppId) {
+      throw new Error('Zalo App ID chưa được cấu hình trong file .env');
+    }
+
+    const codeVerifier = this.generateRandomString(64);
+    const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+
+    // Tạo state ngẫu nhiên chống tấn công CSRF
+    const stateArray = new Uint8Array(16);
+    crypto.getRandomValues(stateArray);
+    const state = Array.from(stateArray, b => b.toString(16).padStart(2, '0')).join('');
+    sessionStorage.setItem('zalo_oauth_state', state);
+
+    return new Promise((resolve, reject) => {
+      const redirectUri = `${window.location.origin}/auth/zalo/callback`;
+      const oauthUrl = `https://oauth.zaloapp.com/v4/permission?app_id=${this.zaloAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge=${codeChallenge}&state=${state}`;
+
+      const width = 550;
+      const height = 650;
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2);
+
+      const popup = window.open(
+        oauthUrl,
+        'ZaloLoginPopup',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,status=no,toolbar=no`
+      );
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        sessionStorage.removeItem('zalo_oauth_state');
+        reject(new Error('Trình duyệt đã chặn cửa sổ bật lên (popup). Vui lòng cho phép popup để tiếp tục.'));
+        return;
+      }
+
+      let isCompleted = false;
+
+      // Lắng nghe postMessage từ ZaloCallbackComponent (chống CSRF & cùng origin)
+      const messageHandler = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) {
+          return;
+        }
+
+        if (event.data && event.data.type === 'ZALO_AUTH_CALLBACK') {
+          isCompleted = true;
+          window.removeEventListener('message', messageHandler);
+          clearInterval(checkClosedInterval);
+
+          const savedState = sessionStorage.getItem('zalo_oauth_state');
+          sessionStorage.removeItem('zalo_oauth_state');
+
+          // Xác thực CSRF State nghiêm ngặt
+          if (!event.data.state || event.data.state !== savedState) {
+            reject(new Error('Lỗi bảo mật CSRF: State không khớp hoặc phiên đăng nhập không hợp lệ!'));
+            return;
+          }
+
+          if (event.data.error) {
+            const desc = event.data.errorDescription || event.data.error || 'Đăng nhập Zalo bị từ chối.';
+            reject(new Error(`Lỗi Zalo: ${desc}`));
+            return;
+          }
+
+          if (!event.data.code) {
+            reject(new Error('Không nhận được Authorization Code từ Zalo.'));
+            return;
+          }
+
+          resolve({
+            code: event.data.code,
+            codeVerifier
+          });
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
+      // Giám sát trường hợp người dùng chủ động tắt popup
+      const checkClosedInterval = setInterval(() => {
+        if (!isCompleted && (!popup || popup.closed)) {
+          clearInterval(checkClosedInterval);
+          window.removeEventListener('message', messageHandler);
+          sessionStorage.removeItem('zalo_oauth_state');
+          reject(new Error('Cửa sổ đăng nhập Zalo đã bị đóng.'));
+        }
+      }, 500);
     });
   }
 }

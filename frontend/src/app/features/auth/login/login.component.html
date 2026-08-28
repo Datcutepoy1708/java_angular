@@ -171,6 +171,26 @@
         <span>Đăng nhập với Facebook</span>
       }
     </button>
+
+    <button
+      type="button"
+      class="btn-social"
+      (click)="onZaloLogin()"
+      [disabled]="isLoading() || isSocialLoading() !== null">
+      @if (isSocialLoading() === 'zalo') {
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Đang kết nối Zalo...</span>
+      } @else {
+        <img
+          src="/assets/images/Icon_of_Zalo.svg.webp"
+          alt="Zalo"
+          class="social-icon"
+          width="18"
+          height="18"
+        />
+        <span>Đăng nhập với Zalo</span>
+      }
+    </button>
   </div>
 
   <!-- Footer Info -->

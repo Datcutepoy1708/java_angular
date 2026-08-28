@@ -133,4 +133,31 @@ export class LoginComponent {
       this.errorMessage.set(err.message || 'Đăng nhập Facebook không thành công.');
     }
   }
+
+  async onZaloLogin(): Promise<void> {
+    if (this.isLoading() || this.isSocialLoading()) return;
+
+    this.isSocialLoading.set('zalo');
+    this.errorMessage.set(null);
+
+    try {
+      const { code, codeVerifier } = await this.socialAuthService.signInWithZalo();
+      this.authService.loginWithZalo(code, codeVerifier).subscribe({
+        next: (response) => {
+          this.isSocialLoading.set(null);
+          if (response.success) {
+            const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+            this.router.navigateByUrl(returnUrl);
+          }
+        },
+        error: (error) => {
+          this.isSocialLoading.set(null);
+          this.errorMessage.set(error.error?.message || 'Đăng nhập bằng Zalo thất bại. Vui lòng thử lại.');
+        }
+      });
+    } catch (err: any) {
+      this.isSocialLoading.set(null);
+      this.errorMessage.set(err.message || 'Đăng nhập Zalo không thành công.');
+    }
+  }
 }

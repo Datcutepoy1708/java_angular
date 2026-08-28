@@ -36,6 +36,9 @@ public class AuthController {
     @Value("${app.oauth2.facebook.app-id:}")
     private String facebookAppId;
 
+    @Value("${app.oauth2.zalo.app-id:}")
+    private String zaloAppId;
+
     @PostMapping("/register")
     @Operation(summary = "Customer Registration", description = "Register a new customer account with default ROLE_CUSTOMER")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -122,12 +125,23 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Đăng nhập Facebook thành công", response));
     }
 
+    @PostMapping("/social/zalo")
+    @Operation(summary = "Zalo Social Login", description = "Authenticate using Zalo Authorization Code and Code Verifier (PKCE) and receive application JWT tokens")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithZalo(
+            @Valid @RequestBody com.store.dto.request.auth.ZaloLoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.loginWithZalo(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập Zalo thành công", response));
+    }
+
     @GetMapping("/oauth2/config")
-    @Operation(summary = "Get Public OAuth2 Client Config", description = "Get public Google and Facebook client IDs loaded from environment (.env)")
+    @Operation(summary = "Get Public OAuth2 Client Config", description = "Get public Google, Facebook, and Zalo client IDs loaded from environment (.env)")
     public ResponseEntity<ApiResponse<Map<String, String>>> getOAuth2Config() {
         return ResponseEntity.ok(ApiResponse.success("OAuth2 configuration retrieved", Map.of(
                 "googleClientId", googleClientId != null ? googleClientId : "",
-                "facebookAppId", facebookAppId != null ? facebookAppId : ""
+                "facebookAppId", facebookAppId != null ? facebookAppId : "",
+                "zaloAppId", zaloAppId != null ? zaloAppId : ""
         )));
     }
 }

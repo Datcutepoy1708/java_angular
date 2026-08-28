@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum AuthProvider {
     LOCAL("local"),
     GOOGLE("google"),
-    FACEBOOK("facebook");
+    FACEBOOK("facebook"),
+    ZALO("zalo");
 
     private final String value;
 

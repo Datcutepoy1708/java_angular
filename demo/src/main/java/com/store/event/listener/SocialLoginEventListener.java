@@ -24,10 +24,15 @@ public class SocialLoginEventListener {
     private final ApplicationEventPublisher eventPublisher;
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handleSocialLoginPostProcess(SocialLoginPostProcessEvent event) {
         log.info("Processing post-login background tasks for user: {} (preHijack={}, newUser={})",
                 event.getEmail(), event.isPreHijackSuspected(), event.isNewUser());
+
+        boolean isSyntheticEmail = "ZALO".equalsIgnoreCase(event.getProvider())
+                || (event.getEmail() != null && (event.getEmail().endsWith("@zalo.me")
+                || event.getEmail().endsWith("@facebook.com")
+                || event.getEmail().endsWith(".local")));
 
         try {
             if (event.isPreHijackSuspected()) {
@@ -44,17 +49,21 @@ public class SocialLoginEventListener {
                     log.error("Failed to set token_valid_after in Redis: {}", e.getMessage());
                 }
 
-                // 2. Gửi email minh bạch, lịch sự và hướng dẫn chủ sở hữu thực sự
-                String messageHtml = "<p>Chúng tôi phát hiện tài khoản với email này đã được khởi tạo trước đó nhưng chưa từng phát sinh hoạt động mua sắm hay xác thực.</p>"
-                        + "<p>Khi bạn đăng nhập thành công qua <strong>" + event.getProvider() + "</strong>, hệ thống đã chính thức kích hoạt tài khoản và <strong>vô hiệu hóa các phiên đăng nhập cũ</strong> để bảo đảm bạn là người duy nhất nắm quyền kiểm soát tài khoản.</p>"
-                        + "<p>Nếu bạn muốn đặt mật khẩu riêng để đăng nhập trực tiếp sau này, bạn có thể sử dụng chức năng <em>\"Quên mật khẩu\"</em> trên trang đăng nhập bất kỳ lúc nào.</p>";
+                // 2. Gửi email minh bạch, lịch sự (bỏ qua nếu là tài khoản định danh synthetic như Zalo)
+                if (!isSyntheticEmail) {
+                    String messageHtml = "<p>Chúng tôi phát hiện tài khoản với email này đã được khởi tạo trước đó nhưng chưa từng phát sinh hoạt động mua sắm hay xác thực.</p>"
+                            + "<p>Khi bạn đăng nhập thành công qua <strong>" + event.getProvider() + "</strong>, hệ thống đã chính thức kích hoạt tài khoản và <strong>vô hiệu hóa các phiên đăng nhập cũ</strong> để bảo đảm bạn là người duy nhất nắm quyền kiểm soát tài khoản.</p>"
+                            + "<p>Nếu bạn muốn đặt mật khẩu riêng để đăng nhập trực tiếp sau này, bạn có thể sử dụng chức năng <em>\"Quên mật khẩu\"</em> trên trang đăng nhập bất kỳ lúc nào.</p>";
 
-                emailService.sendSecurityAlert(
-                        event.getEmail(),
-                        event.getFullName(),
-                        "[COMPLEXUS] Tài khoản của bạn đã được kích hoạt thành công qua " + event.getProvider(),
-                        messageHtml
-                );
+                    emailService.sendSecurityAlert(
+                            event.getEmail(),
+                            event.getFullName(),
+                            "[COMPLEXUS] Tài khoản của bạn đã được kích hoạt thành công qua " + event.getProvider(),
+                            messageHtml
+                    );
+                } else {
+                    log.info("Skipping security email for synthetic Zalo email: {}", event.getEmail());
+                }
 
                 // 3. Ghi Audit Log với cảnh báo bảo mật
                 eventPublisher.publishEvent(AuditLogEvent.builder()
@@ -90,12 +99,16 @@ public class SocialLoginEventListener {
                         + event.getProvider() + "</strong>.</p>"
                         + "<p>Giờ đây bạn có thể đăng nhập nhanh chóng bằng nút <strong>" + event.getProvider() + "</strong> hoặc tiếp tục sử dụng mật khẩu hiện tại bất kỳ lúc nào.</p>";
 
-                emailService.sendSecurityAlert(
-                        event.getEmail(),
-                        event.getFullName(),
-                        "[COMPLEXUS] Liên kết tài khoản " + event.getProvider() + " thành công",
-                        messageHtml
-                );
+                if (!isSyntheticEmail) {
+                    emailService.sendSecurityAlert(
+                            event.getEmail(),
+                            event.getFullName(),
+                            "[COMPLEXUS] Liên kết tài khoản " + event.getProvider() + " thành công",
+                            messageHtml
+                    );
+                } else {
+                    log.info("Skipping account-linked security email for synthetic Zalo email: {}", event.getEmail());
+                }
 
                 eventPublisher.publishEvent(AuditLogEvent.builder()
                         .userId(event.getUserId())
@@ -114,3 +127,8 @@ public class SocialLoginEventListener {
         }
     }
 }
+
+    
+    
+        
+    

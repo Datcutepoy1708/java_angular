@@ -3,6 +3,13 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
+  // 0. Zalo OAuth PKCE Callback Route (standalone popup, no shell)
+  {
+    path: 'auth/zalo/callback',
+    loadComponent: () =>
+      import('./features/auth/zalo-callback/zalo-callback.component').then((m) => m.ZaloCallbackComponent)
+  },
+
   // 1. Auth routes (Split-screen for customers: /auth/login, /auth/register)
   {
     path: 'auth',

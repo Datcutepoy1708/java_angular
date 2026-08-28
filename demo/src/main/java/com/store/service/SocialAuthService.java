@@ -21,4 +21,15 @@ public interface SocialAuthService {
      * @return SocialUserInfo chứa thông tin người dùng đã chuẩn hóa
      */
     SocialUserInfo verifyFacebookToken(String accessToken);
+
+    /**
+     * Xác thực Zalo OAuth v4 PKCE:
+     * 1. Gọi POST /v4/access_token với Authorization Code và Code Verifier để lấy Access Token.
+     * 2. Gọi GET /v2.0/me để lấy Zalo ID, tên hiển thị và avatar.
+     *
+     * @param code Authorization Code do Zalo OAuth trả về
+     * @param codeVerifier Mã bí mật xác minh PKCE sinh ra từ client
+     * @return SocialUserInfo chứa thông tin người dùng Zalo đã chuẩn hóa
+     */
+    SocialUserInfo verifyZaloAuthCode(String code, String codeVerifier);
 }

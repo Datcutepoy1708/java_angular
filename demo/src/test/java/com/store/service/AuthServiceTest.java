@@ -8,6 +8,7 @@ import com.store.dto.request.auth.ForgotPasswordRequest;
 import com.store.dto.request.auth.GoogleLoginRequest;
 import com.store.dto.request.auth.ResetPasswordRequest;
 import com.store.dto.request.auth.VerifyOtpRequest;
+import com.store.dto.request.auth.ZaloLoginRequest;
 import com.store.dto.response.AuthResponse;
 import com.store.dto.response.auth.SocialUserInfo;
 import com.store.dto.response.auth.VerifyOtpResponse;
@@ -462,6 +463,8 @@ class AuthServiceTest {
         private SocialUserInfo sampleFacebookUser;
         private GoogleLoginRequest googleRequest;
         private FacebookLoginRequest facebookRequest;
+        private SocialUserInfo sampleZaloUser;
+        private ZaloLoginRequest zaloRequest;
 
         @BeforeEach
         void initSocial() {
@@ -483,12 +486,26 @@ class AuthServiceTest {
                     .emailVerified(true)
                     .build();
 
+            sampleZaloUser = SocialUserInfo.builder()
+                    .provider(AuthProvider.ZALO)
+                    .providerId("zalo-user-123456")
+                    .email("zalo_zalo-user-123456@zalo.me")
+                    .fullName("Zalo Customer")
+                    .avatarUrl("https://graph.zalo.me/avatar")
+                    .emailVerified(true)
+                    .build();
+
             googleRequest = GoogleLoginRequest.builder()
                     .idToken("valid-google-id-token")
                     .build();
 
             facebookRequest = FacebookLoginRequest.builder()
                     .accessToken("valid-facebook-access-token")
+                    .build();
+
+            zaloRequest = ZaloLoginRequest.builder()
+                    .code("valid-zalo-auth-code")
+                    .codeVerifier("valid-code-verifier-string")
                     .build();
         }
 
@@ -598,6 +615,32 @@ class AuthServiceTest {
 
             assertThat(response).isNotNull();
             assertThat(response.getAccessToken()).isEqualTo("access-token-fb");
+            verify(userRepository).save(any(User.class));
+            verify(eventPublisher).publishEvent(any(SocialLoginPostProcessEvent.class));
+        }
+
+        @Test
+        @DisplayName("loginWithZalo - Thành công cho người dùng mới với email tổng hợp zalo_{id}@zalo.me")
+        void loginWithZalo_success_newUser() {
+            when(socialAuthService.verifyZaloAuthCode("valid-zalo-auth-code", "valid-code-verifier-string"))
+                    .thenReturn(sampleZaloUser);
+            when(userRepository.findByEmail("zalo_zalo-user-123456@zalo.me")).thenReturn(Optional.empty());
+            when(roleRepository.findByRoleName("ROLE_CUSTOMER")).thenReturn(Optional.of(customerRole));
+            when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$encodedRandomPassword");
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+                User u = inv.getArgument(0);
+                u.setUserId(77L);
+                return u;
+            });
+            when(jwtTokenProvider.generateAccessToken(any(CustomUserDetails.class))).thenReturn("access-token-zalo");
+            when(jwtTokenProvider.generateRefreshToken()).thenReturn("refresh-token-zalo");
+
+            AuthResponse response = authService.loginWithZalo(zaloRequest, null);
+
+            assertThat(response).isNotNull();
+            assertThat(response.getAccessToken()).isEqualTo("access-token-zalo");
+            assertThat(response.getUser().getEmail()).isEqualTo("zalo_zalo-user-123456@zalo.me");
+            assertThat(response.getUser().getFullName()).isEqualTo("Zalo Customer");
             verify(userRepository).save(any(User.class));
             verify(eventPublisher).publishEvent(any(SocialLoginPostProcessEvent.class));
         }
