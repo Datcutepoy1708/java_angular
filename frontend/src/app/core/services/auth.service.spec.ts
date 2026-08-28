@@ -123,4 +123,34 @@ describe('AuthService', () => {
     expect(service.currentUser()).toBeNull();
     expect(service.getAccessToken()).toBeNull();
   });
+
+  it('should loginWithGoogle successfully and update state', () => {
+    service.loginWithGoogle('mock-id-token').subscribe((res) => {
+      expect(res.success).toBe(true);
+      expect(res.data.accessToken).toBe('mock-access-token');
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/v1/auth/social/google`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ idToken: 'mock-id-token' });
+    req.flush(mockAuthResponse);
+
+    expect(service.isAuthenticated()).toBe(true);
+    expect(service.getAccessToken()).toBe('mock-access-token');
+  });
+
+  it('should loginWithFacebook successfully and update state', () => {
+    service.loginWithFacebook('mock-fb-access-token').subscribe((res) => {
+      expect(res.success).toBe(true);
+      expect(res.data.accessToken).toBe('mock-access-token');
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/v1/auth/social/facebook`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ accessToken: 'mock-fb-access-token' });
+    req.flush(mockAuthResponse);
+
+    expect(service.isAuthenticated()).toBe(true);
+    expect(service.getAccessToken()).toBe('mock-access-token');
+  });
 });

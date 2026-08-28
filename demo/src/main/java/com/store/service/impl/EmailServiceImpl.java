@@ -97,4 +97,52 @@ public class EmailServiceImpl implements EmailService {
                 + "</body>"
                 + "</html>";
     }
+
+    @Async
+    @Override
+    public void sendSecurityAlert(String toEmail, String recipientName, String subject, String messageHtml) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(toEmail);
+            helper.setSubject(subject != null ? subject : "[COMPLEXUS] Thông báo bảo mật tài khoản");
+
+            String greeting = (recipientName != null && !recipientName.isBlank())
+                    ? "Xin chào " + recipientName + ","
+                    : "Xin chào quý khách,";
+
+            String html = "<!DOCTYPE html>"
+                    + "<html><head><meta charset='UTF-8'></head>"
+                    + "<body style='margin:0;padding:0;background-color:#f8fafc;font-family:Arial,sans-serif;color:#1e293b;'>"
+                    + "<table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f8fafc;padding:40px 0;'>"
+                    + "  <tr><td align='center'>"
+                    + "    <table width='580' cellpadding='0' cellspacing='0' style='background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0;'>"
+                    + "      <tr><td style='background:linear-gradient(135deg,#0284c7,#2563eb);padding:24px 32px;text-align:center;'>"
+                    + "        <h1 style='margin:0;font-size:24px;font-weight:700;color:#ffffff;'>COMPLEXUS</h1>"
+                    + "        <p style='margin:4px 0 0 0;font-size:13px;color:#bfdbfe;'>Hệ thống Máy tính & Linh kiện chính hãng</p>"
+                    + "      </td></tr>"
+                    + "      <tr><td style='padding:32px;'>"
+                    + "        <h2 style='margin:0 0 16px 0;font-size:18px;color:#0f172a;'>" + greeting + "</h2>"
+                    + "        <div style='font-size:14px;line-height:1.6;color:#334155;'>" + messageHtml + "</div>"
+                    + "        <div style='margin-top:24px;padding:16px;background-color:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;color:#64748b;'>"
+                    + "          Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ hotline hỗ trợ <strong>1800 6868</strong> để được trợ giúp."
+                    + "        </div>"
+                    + "      </td></tr>"
+                    + "      <tr><td style='background-color:#f1f5f9;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;'>"
+                    + "        © 2026 COMPLEXUS Computer Store. All rights reserved."
+                    + "      </td></tr>"
+                    + "    </table>"
+                    + "  </td></tr>"
+                    + "</table>"
+                    + "</body></html>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Successfully sent security alert email to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send security alert email to {}: {}", toEmail, e.getMessage(), e);
+        }
+    }
 }

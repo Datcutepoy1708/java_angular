@@ -10,6 +10,10 @@ import com.store.dto.response.AuthResponse;
 import com.store.dto.response.UserSummaryResponse;
 import com.store.dto.response.auth.VerifyOtpResponse;
 
+import com.store.dto.request.auth.FacebookLoginRequest;
+import com.store.dto.request.auth.GoogleLoginRequest;
+import jakarta.servlet.http.HttpServletRequest;
+
 public interface AuthService {
 
     AuthResponse register(RegisterRequest request);
@@ -29,4 +33,8 @@ public interface AuthService {
     VerifyOtpResponse verifyOtp(VerifyOtpRequest request);
 
     void resetPassword(ResetPasswordRequest request);
+
+    AuthResponse loginWithGoogle(GoogleLoginRequest request, HttpServletRequest httpRequest);
+
+    AuthResponse loginWithFacebook(FacebookLoginRequest request, HttpServletRequest httpRequest);
 }

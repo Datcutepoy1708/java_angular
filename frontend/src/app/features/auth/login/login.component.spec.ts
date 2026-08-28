@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { SocialAuthService } from '../../../core/services/social-auth.service';
 import { ApiResponse, AuthResponse } from '../../../core/models/auth.model';
 
 describe('LoginComponent', () => {
@@ -126,5 +127,21 @@ describe('LoginComponent', () => {
     component.onSubmit();
 
     expect(component.errorMessage()).toBe('Too many requests');
+  });
+
+  it('should handle onGoogleLogin error gracefully', async () => {
+    const socialAuth = TestBed.inject(SocialAuthService);
+    vi.spyOn(socialAuth, 'signInWithGoogle').mockRejectedValue(new Error('Google login failed'));
+    await component.onGoogleLogin();
+    expect(component.errorMessage()).toBe('Google login failed');
+    expect(component.isSocialLoading()).toBeNull();
+  });
+
+  it('should handle onFacebookLogin error gracefully', async () => {
+    const socialAuth = TestBed.inject(SocialAuthService);
+    vi.spyOn(socialAuth, 'signInWithFacebook').mockRejectedValue(new Error('Facebook login failed'));
+    await component.onFacebookLogin();
+    expect(component.errorMessage()).toBe('Facebook login failed');
+    expect(component.isSocialLoading()).toBeNull();
   });
 });

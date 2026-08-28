@@ -58,6 +58,26 @@ export class AuthService {
     );
   }
 
+  loginWithGoogle(idToken: string): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.baseUrl}/social/google`, { idToken }).pipe(
+      tap((response) => {
+        if (response.success && response.data) {
+          this.handleAuthSuccess(response.data);
+        }
+      })
+    );
+  }
+
+  loginWithFacebook(accessToken: string): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.baseUrl}/social/facebook`, { accessToken }).pipe(
+      tap((response) => {
+        if (response.success && response.data) {
+          this.handleAuthSuccess(response.data);
+        }
+      })
+    );
+  }
+
   refreshToken(): Observable<ApiResponse<AuthResponse>> {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {

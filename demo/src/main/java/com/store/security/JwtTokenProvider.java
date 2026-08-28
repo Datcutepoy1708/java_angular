@@ -65,6 +65,10 @@ public class JwtTokenProvider {
         return null;
     }
 
+    public Date getIssuedAtFromToken(String token) {
+        return parseClaims(token).getIssuedAt();
+    }
+
     public boolean validateToken(String token) {
         try {
             parseClaims(token);

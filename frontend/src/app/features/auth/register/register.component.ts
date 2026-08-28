@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { SocialAuthService } from '../../../core/services/social-auth.service';
 
 export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('password')?.value;
@@ -22,9 +23,11 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
 })
 export class RegisterComponent {
   private readonly authService = inject(AuthService);
+  private readonly socialAuthService = inject(SocialAuthService);
   private readonly router = inject(Router);
 
   readonly isLoading = signal(false);
+  readonly isSocialLoading = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
@@ -156,5 +159,57 @@ export class RegisterComponent {
       this.registerForm.hasError('passwordMismatch') &&
       (confirmField?.dirty || confirmField?.touched)
     );
+  }
+
+  async onGoogleSignup(): Promise<void> {
+    if (this.isLoading() || this.isSocialLoading()) return;
+
+    this.isSocialLoading.set('google');
+    this.errorMessage.set(null);
+
+    try {
+      const idToken = await this.socialAuthService.signInWithGoogle();
+      this.authService.loginWithGoogle(idToken).subscribe({
+        next: (response) => {
+          this.isSocialLoading.set(null);
+          if (response.success) {
+            this.router.navigateByUrl('/');
+          }
+        },
+        error: (error) => {
+          this.isSocialLoading.set(null);
+          this.errorMessage.set(error.error?.message || 'Đăng ký bằng Google thất bại. Vui lòng thử lại.');
+        }
+      });
+    } catch (err: any) {
+      this.isSocialLoading.set(null);
+      this.errorMessage.set(err.message || 'Đăng ký Google không thành công.');
+    }
+  }
+
+  async onFacebookSignup(): Promise<void> {
+    if (this.isLoading() || this.isSocialLoading()) return;
+
+    this.isSocialLoading.set('facebook');
+    this.errorMessage.set(null);
+
+    try {
+      const accessToken = await this.socialAuthService.signInWithFacebook();
+      this.authService.loginWithFacebook(accessToken).subscribe({
+        next: (response) => {
+          this.isSocialLoading.set(null);
+          if (response.success) {
+            this.router.navigateByUrl('/');
+          }
+        },
+        error: (error) => {
+          this.isSocialLoading.set(null);
+          this.errorMessage.set(error.error?.message || 'Đăng ký bằng Facebook thất bại. Vui lòng thử lại.');
+        }
+      });
+    } catch (err: any) {
+      this.isSocialLoading.set(null);
+      this.errorMessage.set(err.message || 'Đăng ký Facebook không thành công.');
+    }
   }
 }

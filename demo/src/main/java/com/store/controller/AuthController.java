@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -26,6 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Value("${app.oauth2.google.client-id:}")
+    private String googleClientId;
+
+    @Value("${app.oauth2.facebook.app-id:}")
+    private String facebookAppId;
 
     @PostMapping("/register")
     @Operation(summary = "Customer Registration", description = "Register a new customer account with default ROLE_CUSTOMER")
@@ -91,5 +100,34 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody com.store.dto.request.auth.ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.", null));
+    }
+
+    @PostMapping("/social/google")
+    @Operation(summary = "Google Social Login", description = "Authenticate using Google ID Token and receive application JWT tokens")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(
+            @Valid @RequestBody com.store.dto.request.auth.GoogleLoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.loginWithGoogle(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập Google thành công", response));
+    }
+
+    @PostMapping("/social/facebook")
+    @Operation(summary = "Facebook Social Login", description = "Authenticate using Facebook Access Token and receive application JWT tokens")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithFacebook(
+            @Valid @RequestBody com.store.dto.request.auth.FacebookLoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest
+    ) {
+        AuthResponse response = authService.loginWithFacebook(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập Facebook thành công", response));
+    }
+
+    @GetMapping("/oauth2/config")
+    @Operation(summary = "Get Public OAuth2 Client Config", description = "Get public Google and Facebook client IDs loaded from environment (.env)")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getOAuth2Config() {
+        return ResponseEntity.ok(ApiResponse.success("OAuth2 configuration retrieved", Map.of(
+                "googleClientId", googleClientId != null ? googleClientId : "",
+                "facebookAppId", facebookAppId != null ? facebookAppId : ""
+        )));
     }
 }
