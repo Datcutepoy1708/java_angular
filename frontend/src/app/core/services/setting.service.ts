@@ -89,11 +89,17 @@ export class SettingService {
       footerTiktokUrl: raw['FOOTER_TIKTOK_URL'] || DEFAULT_PUBLIC_SETTINGS.footerTiktokUrl,
       freeShippingThreshold: parseNumber(raw['FREE_SHIPPING_THRESHOLD'], DEFAULT_PUBLIC_SETTINGS.freeShippingThreshold),
       defaultShippingFee: parseNumber(raw['DEFAULT_SHIPPING_FEE'], DEFAULT_PUBLIC_SETTINGS.defaultShippingFee),
+      orderAutoCancelHours: parseNumber(raw['ORDER_AUTO_CANCEL_HOURS'], DEFAULT_PUBLIC_SETTINGS.orderAutoCancelHours),
+      returnWindowDays: parseNumber(raw['RETURN_WINDOW_DAYS'], DEFAULT_PUBLIC_SETTINGS.returnWindowDays),
       enableCod: parseBoolean(raw['ENABLE_COD'], DEFAULT_PUBLIC_SETTINGS.enableCod),
       enableBankTransfer: parseBoolean(raw['ENABLE_BANK_TRANSFER'], DEFAULT_PUBLIC_SETTINGS.enableBankTransfer),
       metaTitle: raw['META_TITLE'] || DEFAULT_PUBLIC_SETTINGS.metaTitle,
       metaDescription: raw['META_DESCRIPTION'] || DEFAULT_PUBLIC_SETTINGS.metaDescription,
-      maintenanceMode: parseBoolean(raw['MAINTENANCE_MODE'], DEFAULT_PUBLIC_SETTINGS.maintenanceMode)
+      maintenanceMode: parseBoolean(raw['MAINTENANCE_MODE'], DEFAULT_PUBLIC_SETTINGS.maintenanceMode),
+      policyShoppingGuide: raw['POLICY_SHOPPING_GUIDE'] || DEFAULT_PUBLIC_SETTINGS.policyShoppingGuide,
+      policyShippingDelivery: raw['POLICY_SHIPPING_DELIVERY'] || DEFAULT_PUBLIC_SETTINGS.policyShippingDelivery,
+      policyWarrantyReturn: raw['POLICY_WARRANTY_RETURN'] || DEFAULT_PUBLIC_SETTINGS.policyWarrantyReturn,
+      policyFaqJson: raw['POLICY_FAQ_JSON'] || DEFAULT_PUBLIC_SETTINGS.policyFaqJson
     };
   }
 }

@@ -15,7 +15,15 @@ export type SettingTab =
   | 'footer'
   | 'orderShipping'
   | 'seo'
-  | 'systemNotification';
+  | 'systemNotification'
+  | 'policy';
+
+export interface ManageFaqItem {
+  id: number;
+  question: string;
+  answer: string;
+  category: 'order' | 'shipping' | 'warranty' | 'general';
+}
 
 @Component({
   selector: 'app-setting-manage',
@@ -34,6 +42,8 @@ export class SettingManageComponent implements OnInit {
   readonly saving = signal<boolean>(false);
   readonly showResetModal = signal<boolean>(false);
   readonly toast = signal<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  readonly faqList = signal<ManageFaqItem[]>([]);
 
   readonly settingForm: FormGroup = this.fb.group({
     // 1. General
@@ -82,6 +92,15 @@ export class SettingManageComponent implements OnInit {
       [Validators.required, Validators.min(1), Validators.pattern('^[0-9]+$')],
     ],
     MAINTENANCE_MODE: [false],
+
+    // 6. Policy & Customer Support
+    RETURN_WINDOW_DAYS: [
+      14,
+      [Validators.required, Validators.min(1), Validators.pattern('^[0-9]+$')],
+    ],
+    POLICY_SHOPPING_GUIDE: [''],
+    POLICY_SHIPPING_DELIVERY: [''],
+    POLICY_WARRANTY_RETURN: [''],
   });
 
   ngOnInit(): void {
@@ -144,6 +163,11 @@ export class SettingManageComponent implements OnInit {
       META_DESCRIPTION: String(formValue.META_DESCRIPTION || '').trim(),
       LOW_STOCK_THRESHOLD: String(formValue.LOW_STOCK_THRESHOLD),
       MAINTENANCE_MODE: String(Boolean(formValue.MAINTENANCE_MODE)),
+      RETURN_WINDOW_DAYS: String(formValue.RETURN_WINDOW_DAYS ?? 14),
+      POLICY_SHOPPING_GUIDE: String(formValue.POLICY_SHOPPING_GUIDE || '').trim(),
+      POLICY_SHIPPING_DELIVERY: String(formValue.POLICY_SHIPPING_DELIVERY || '').trim(),
+      POLICY_WARRANTY_RETURN: String(formValue.POLICY_WARRANTY_RETURN || '').trim(),
+      POLICY_FAQ_JSON: JSON.stringify(this.faqList()),
     };
 
     this.settingService.updateSettings({ settings: payload }).subscribe({
@@ -160,6 +184,33 @@ export class SettingManageComponent implements OnInit {
         const msg = err.error?.message || 'Không thể lưu cài đặt. Vui lòng kiểm tra lại.';
         this.showToast(msg, 'error');
       },
+    });
+  }
+
+  addFaq(): void {
+    const nextId = this.faqList().length > 0 ? Math.max(...this.faqList().map(f => f.id)) + 1 : 1;
+    this.faqList.update(list => [
+      ...list,
+      {
+        id: nextId,
+        question: '',
+        answer: '',
+        category: 'general'
+      }
+    ]);
+  }
+
+  removeFaq(index: number): void {
+    this.faqList.update(list => list.filter((_, i) => i !== index));
+  }
+
+  updateFaq(index: number, field: 'question' | 'answer' | 'category', value: string): void {
+    this.faqList.update(list => {
+      const updated = [...list];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+      }
+      return updated;
     });
   }
 
@@ -214,7 +265,73 @@ export class SettingManageComponent implements OnInit {
       META_DESCRIPTION: map['META_DESCRIPTION'] ?? '',
       LOW_STOCK_THRESHOLD: Number(map['LOW_STOCK_THRESHOLD'] ?? 5),
       MAINTENANCE_MODE: map['MAINTENANCE_MODE'] === 'true',
+      RETURN_WINDOW_DAYS: Number(map['RETURN_WINDOW_DAYS'] ?? 14),
+      POLICY_SHOPPING_GUIDE: map['POLICY_SHOPPING_GUIDE'] ?? '',
+      POLICY_SHIPPING_DELIVERY: map['POLICY_SHIPPING_DELIVERY'] ?? '',
+      POLICY_WARRANTY_RETURN: map['POLICY_WARRANTY_RETURN'] ?? '',
     });
+
+    if (map['POLICY_FAQ_JSON']) {
+      try {
+        const parsed = JSON.parse(map['POLICY_FAQ_JSON']);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.faqList.set(parsed);
+        } else {
+          this.faqList.set(this.getDefaultFaqs());
+        }
+      } catch {
+        this.faqList.set(this.getDefaultFaqs());
+      }
+    } else {
+      this.faqList.set(this.getDefaultFaqs());
+    }
+  }
+
+  private getDefaultFaqs(): ManageFaqItem[] {
+    return [
+      {
+        id: 1,
+        category: 'order',
+        question: 'Tôi có bắt buộc phải tạo tài khoản để mua hàng không?',
+        answer:
+          'Không bắt buộc. Quý khách hoàn toàn có thể mua hàng với tư cách Khách vãng lai (Guest Checkout) chỉ bằng cách nhập thông tin họ tên, số điện thoại và địa chỉ nhận hàng.',
+      },
+      {
+        id: 2,
+        category: 'order',
+        question: 'Đơn hàng chưa thanh toán chuyển khoản sẽ được giữ trong bao lâu?',
+        answer:
+          'Đơn hàng chọn phương thức chuyển khoản sẽ được giữ linh kiện trong 24 giờ trước khi tự động hủy hoàn kho.',
+      },
+      {
+        id: 3,
+        category: 'shipping',
+        question: 'Làm thế nào để tôi kiểm tra tình trạng vận chuyển đơn hàng của mình?',
+        answer:
+          'Quý khách truy cập vào mục "Tra cứu đơn hàng", nhập Mã đơn hàng và Số điện thoại để theo dõi lộ trình thời gian thực.',
+      },
+      {
+        id: 4,
+        category: 'shipping',
+        question: 'Tôi có được quyền kiểm tra hàng trước khi thanh toán (đồng kiểm) không?',
+        answer:
+          'Có. Quý khách được quyền mở kiện hàng kiểm tra ngoại quan sản phẩm trước khi thanh toán cho shipper.',
+      },
+      {
+        id: 5,
+        category: 'warranty',
+        question: 'Sản phẩm của Complexus có phải là hàng chính hãng 100% không?',
+        answer:
+          'Tất cả linh kiện đều là hàng chính hãng 100%, có tem bảo hành và hóa đơn VAT đầy đủ từ nhà phân phối.',
+      },
+      {
+        id: 6,
+        category: 'warranty',
+        question: 'Nếu linh kiện bị lỗi trong quá trình sử dụng, tôi cần liên hệ ai để được hỗ trợ?',
+        answer:
+          'Quý khách liên hệ trực tiếp hotline hoặc mang sản phẩm đến showroom của Complexus để được kỹ thuật viên hỗ trợ nhanh nhất.',
+      },
+    ];
   }
 
   private showToast(message: string, type: 'success' | 'error'): void {

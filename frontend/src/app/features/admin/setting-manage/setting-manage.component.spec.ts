@@ -118,4 +118,20 @@ describe('SettingManageComponent', () => {
     expect(mockSettingService.updateSettings).not.toHaveBeenCalled();
     expect(component.toast()?.type).toBe('error');
   });
+
+  it('should switch to policy tab and manage FAQs', () => {
+    component.setTab('policy');
+    expect(component.activeTab()).toBe('policy');
+
+    const initialCount = component.faqList().length;
+    component.addFaq();
+    expect(component.faqList().length).toBe(initialCount + 1);
+
+    const lastIdx = component.faqList().length - 1;
+    component.updateFaq(lastIdx, 'question', 'Câu hỏi thử nghiệm?');
+    expect(component.faqList()[lastIdx].question).toBe('Câu hỏi thử nghiệm?');
+
+    component.removeFaq(lastIdx);
+    expect(component.faqList().length).toBe(initialCount);
+  });
 });

@@ -290,6 +290,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/shop/news-detail/news-detail.component').then((m) => m.NewsDetailComponent),
       },
+      {
+        path: 'policy/:topic',
+        loadComponent: () =>
+          import('./features/shop/policy-info/policy-info.component').then((m) => m.PolicyInfoComponent),
+      },
+      {
+        path: 'policy',
+        redirectTo: 'policy/shopping-guide',
+        pathMatch: 'full'
+      },
     ],
   },
 

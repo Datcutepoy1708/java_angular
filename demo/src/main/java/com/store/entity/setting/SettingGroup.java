@@ -6,5 +6,6 @@ public enum SettingGroup {
     ORDER_SHIPPING,
     ORDER,
     SEO,
-    SYSTEM_NOTIFICATION
+    SYSTEM_NOTIFICATION,
+    POLICY
 }

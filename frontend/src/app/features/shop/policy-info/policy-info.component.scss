@@ -1,0 +1,962 @@
+// ── Theme Variables & Mixins ───────────────────────────────────────────
+$primary: var(--primary, #2563eb);
+$primary-hover: var(--primary-hover, #1d4ed8);
+$primary-light: var(--primary-light, #eff6ff);
+$on-surface: var(--on-surface, #0f172a);
+$on-surface-variant: var(--on-surface-variant, #64748b);
+$surface: var(--surface, #ffffff);
+$surface-alt: var(--surface-alt, #f8fafc);
+$border: var(--border, #e2e8f0);
+
+.policy-page {
+  background: $surface-alt;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+// ── Header Banner ────────────────────────────────────────────────────────
+.policy-header-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  padding: 32px 0 40px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: #94a3b8;
+    margin-bottom: 16px;
+
+    a {
+      color: #cbd5e1;
+      text-decoration: none;
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: #ffffff;
+      }
+    }
+
+    .divider {
+      color: #64748b;
+    }
+
+    .current {
+      color: #93c5fd;
+      font-weight: 500;
+    }
+  }
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .banner-text {
+    max-width: 720px;
+
+    .page-title {
+      font-size: 1.875rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.25;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 0.9375rem;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+
+  .hotline-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+
+    .hotline-icon {
+      width: 28px;
+      height: 28px;
+      color: #60a5fa;
+      flex-shrink: 0;
+    }
+
+    .hotline-info {
+      display: flex;
+      flex-direction: column;
+
+      .label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .number {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #fbbf24;
+        letter-spacing: 0.02em;
+      }
+    }
+  }
+}
+
+// ── Layout Grid ──────────────────────────────────────────────────────────
+.policy-body-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 20px 0 20px;
+}
+
+.policy-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+  align-items: flex-start;
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────────────
+.policy-sidebar {
+  .sidebar-sticky-wrapper {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sidebar-card {
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+
+    .sidebar-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: $on-surface-variant;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 14px 0;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+  }
+
+  .nav-topic-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nav-topic-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+
+    .icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .topic-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .topic-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: $on-surface;
+        transition: color 0.15s ease;
+      }
+
+      .topic-subtitle {
+        font-size: 0.75rem;
+        color: $on-surface-variant;
+      }
+    }
+
+    .arrow-icon {
+      width: 16px;
+      height: 16px;
+      color: #cbd5e1;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    &:hover {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+
+      .icon-box {
+        background: $primary-light;
+        color: $primary;
+      }
+
+      .arrow-icon {
+        transform: translateX(3px);
+        color: $primary;
+      }
+    }
+
+    &.active {
+      background: $primary-light;
+      border-color: #bfdbfe;
+
+      .icon-box {
+        background: $primary;
+        color: #ffffff;
+      }
+
+      .topic-info .topic-title {
+        color: $primary;
+        font-weight: 700;
+      }
+
+      .arrow-icon {
+        color: $primary;
+        transform: translateX(3px);
+      }
+    }
+  }
+
+  .support-contact-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+
+    .box-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0 0 6px 0;
+    }
+
+    .box-desc {
+      font-size: 0.8125rem;
+      color: $on-surface-variant;
+      line-height: 1.45;
+      margin: 0 0 14px 0;
+    }
+
+    .contact-entry {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+      font-size: 0.8125rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .entry-label {
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 2px;
+      }
+
+      .entry-val {
+        font-weight: 700;
+        color: $primary;
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .entry-text {
+        font-weight: 600;
+        color: $on-surface;
+      }
+    }
+  }
+}
+
+// ── Main Content Area ────────────────────────────────────────────────────
+.policy-main-content {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 20px;
+  padding: 36px 40px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+
+  @media (max-width: 768px) {
+    padding: 24px 20px;
+  }
+}
+
+.content-section {
+  .section-header {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+
+    .badge-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: $primary;
+      background: $primary-light;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .section-heading {
+      font-size: 1.625rem;
+      font-weight: 800;
+      color: $on-surface;
+      line-height: 1.3;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .section-lead {
+      font-size: 0.9375rem;
+      color: $on-surface-variant;
+      line-height: 1.6;
+      margin: 0;
+    }
+  }
+}
+
+// ── Steps Grid (Shopping Guide) ──────────────────────────────────────────
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .step-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #ffffff;
+      border-color: #bfdbfe;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .step-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: $primary;
+      color: #ffffff;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .step-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0 0 8px 0;
+      line-height: 1.35;
+    }
+
+    .step-desc {
+      font-size: 0.84375rem;
+      color: #475569;
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+}
+
+// ── Feature Callout ──────────────────────────────────────────────────────
+.feature-callout-box {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 24px;
+  flex-wrap: wrap;
+
+  .callout-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: $primary;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .callout-content {
+    flex: 1;
+    min-width: 260px;
+
+    .callout-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin: 0 0 4px 0;
+    }
+
+    .callout-desc {
+      font-size: 0.84375rem;
+      color: #3b82f6;
+      margin: 0;
+      line-height: 1.45;
+    }
+  }
+
+  .callout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: $primary;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: $primary-hover;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+  }
+}
+
+// ── Metrics Row ──────────────────────────────────────────────────────────
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .metric-label {
+      font-size: 0.78125rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .metric-val {
+      font-size: 1.375rem;
+      font-weight: 800;
+      color: $on-surface;
+      letter-spacing: -0.01em;
+    }
+
+    .metric-note {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    &.highlight {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+
+      .metric-label {
+        color: #2563eb;
+      }
+
+      .metric-val {
+        color: #1d4ed8;
+      }
+    }
+  }
+}
+
+// ── Policy Text Blocks & Tables ──────────────────────────────────────────
+.policy-text-block {
+  .block-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 28px 0 14px 0;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+.table-responsive {
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.policy-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+
+  th {
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    line-height: 1.5;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.feature-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.875rem;
+    color: #334155;
+    line-height: 1.55;
+
+    .check-icon {
+      width: 20px;
+      height: 20px;
+      color: #16a34a;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+}
+
+// ── Info Grid 2 Columns (Warranty Conditions) ───────────────────────────
+.info-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .info-box {
+    border-radius: 14px;
+    padding: 20px;
+
+    .box-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      margin: 0 0 14px 0;
+
+      .box-icon {
+        width: 20px;
+        height: 20px;
+
+        &.success {
+          color: #16a34a;
+        }
+
+        &.error {
+          color: #dc2626;
+        }
+      }
+    }
+
+    &.eligible {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+
+      .box-head {
+        color: #166534;
+      }
+    }
+
+    &.non-eligible {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+
+      .box-head {
+        color: #991b1b;
+      }
+    }
+
+    .clean-list {
+      list-style: disc;
+      padding-left: 20px;
+      margin: 0;
+      font-size: 0.84375rem;
+      color: #334155;
+      line-height: 1.6;
+
+      li {
+        margin-bottom: 6px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+// ── Address Card ─────────────────────────────────────────────────────────
+.address-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+
+  .addr-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: $primary-light;
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .addr-details {
+    h4 {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0 0 6px 0;
+    }
+
+    .addr-line {
+      font-size: 0.84375rem;
+      color: #475569;
+      margin: 0 0 4px 0;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+// ── FAQ Accordion ────────────────────────────────────────────────────────
+.faq-accordion-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 36px;
+
+  .faq-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #cbd5e1;
+    }
+
+    &.open {
+      border-color: #93c5fd;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.06);
+
+      .faq-question-btn {
+        background: #f8fafc;
+
+        .q-number, .q-text {
+          color: $primary;
+        }
+
+        .chevron-icon {
+          transform: rotate(180deg);
+          color: $primary;
+        }
+      }
+    }
+
+    .faq-question-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s ease;
+
+      .q-number {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #94a3b8;
+        flex-shrink: 0;
+      }
+
+      .q-text {
+        flex: 1;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: $on-surface;
+        line-height: 1.4;
+      }
+
+      .chevron-icon {
+        width: 18px;
+        height: 18px;
+        color: #94a3b8;
+        transition: transform 0.2s ease, color 0.15s ease;
+        flex-shrink: 0;
+      }
+    }
+
+    .faq-answer-panel {
+      padding: 0 20px 18px 52px;
+      background: #f8fafc;
+      animation: fadeIn 0.2s ease;
+
+      @media (max-width: 576px) {
+        padding-left: 20px;
+      }
+
+      .answer-content {
+        font-size: 0.875rem;
+        color: #475569;
+        line-height: 1.6;
+
+        p {
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faq-footer-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+
+  .card-heading {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: $on-surface;
+    margin: 0 0 6px 0;
+  }
+
+  .card-subtext {
+    font-size: 0.84375rem;
+    color: $on-surface-variant;
+    margin: 0 0 18px 0;
+  }
+
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .btn-call {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: $primary;
+      color: #ffffff;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      &:hover {
+        background: $primary-hover;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      }
+    }
+
+    .btn-news {
+      display: inline-flex;
+      align-items: center;
+      background: #ffffff;
+      color: $on-surface;
+      border: 1px solid #cbd5e1;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+      }
+    }
+  }
+}
+
+// ── Admin Custom Policy Note ─────────────────────────────────────────────
+.admin-custom-note {
+  margin-top: 24px;
+  background: #fdf4ff;
+  border: 1px solid #f0abfc;
+  border-radius: 14px;
+  padding: 20px 24px;
+
+  .note-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #a21caf;
+    background: rgba(162, 28, 175, 0.1);
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: #701a75;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-line;
+  }
+}

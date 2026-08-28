@@ -167,6 +167,9 @@ public class SettingServiceImpl implements SettingService {
         if (key.startsWith("FREE_SHIPPING") || key.startsWith("DEFAULT_SHIPPING") || key.startsWith("ENABLE_") || key.startsWith("ORDER_") || key.startsWith("RETURN_")) {
             return SettingGroup.ORDER_SHIPPING;
         }
+        if (key.startsWith("POLICY_")) {
+            return SettingGroup.POLICY;
+        }
         if (key.startsWith("META_") || key.startsWith("SEO_")) {
             return SettingGroup.SEO;
         }
@@ -233,6 +236,10 @@ public class SettingServiceImpl implements SettingService {
         map.put("LOW_STOCK_THRESHOLD", "5");
         map.put("MAINTENANCE_MODE", "false");
         map.put("RETURN_WINDOW_DAYS", "14");
+        map.put("POLICY_SHOPPING_GUIDE", "");
+        map.put("POLICY_SHIPPING_DELIVERY", "");
+        map.put("POLICY_WARRANTY_RETURN", "");
+        map.put("POLICY_FAQ_JSON", "");
         return map;
     }
 }

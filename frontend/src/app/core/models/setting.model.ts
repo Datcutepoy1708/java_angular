@@ -2,8 +2,10 @@ export type SettingGroup =
   | 'GENERAL'
   | 'FOOTER'
   | 'ORDER_SHIPPING'
+  | 'ORDER'
   | 'SEO'
-  | 'SYSTEM_NOTIFICATION';
+  | 'SYSTEM_NOTIFICATION'
+  | 'POLICY';
 
 export interface SettingItem {
   settingId: number;
@@ -41,11 +43,17 @@ export interface PublicSettings {
   footerTiktokUrl: string;
   freeShippingThreshold: number;
   defaultShippingFee: number;
+  orderAutoCancelHours: number;
+  returnWindowDays: number;
   enableCod: boolean;
   enableBankTransfer: boolean;
   metaTitle: string;
   metaDescription: string;
   maintenanceMode: boolean;
+  policyShoppingGuide: string;
+  policyShippingDelivery: string;
+  policyWarrantyReturn: string;
+  policyFaqJson: string;
 }
 
 export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
@@ -67,9 +75,15 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
   footerTiktokUrl: 'https://tiktok.com/@complexus_tech',
   freeShippingThreshold: 5000000,
   defaultShippingFee: 35000,
+  orderAutoCancelHours: 24,
+  returnWindowDays: 14,
   enableCod: true,
   enableBankTransfer: true,
   metaTitle: 'Complexus - Siêu thị Máy tính, Laptop Gaming & Linh kiện PC Chính Hãng',
   metaDescription: 'Chuyên cung cấp máy tính để bàn, laptop gaming, card màn hình VGA RTX 40-series, CPU Intel Gen 14, AMD Ryzen chính hãng giá tốt nhất.',
-  maintenanceMode: false
+  maintenanceMode: false,
+  policyShoppingGuide: '',
+  policyShippingDelivery: '',
+  policyWarrantyReturn: '',
+  policyFaqJson: ''
 };
