@@ -27,10 +27,16 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     ) throws IOException {
         log.error("Access denied error: {}", accessDeniedException.getMessage());
 
+        if (response.isCommitted()) {
+            return;
+        }
+
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
         ApiResponse<Void> apiResponse = ApiResponse.error("Forbidden: " + accessDeniedException.getMessage());
-        response.getOutputStream().println(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().flush();
     }
 }

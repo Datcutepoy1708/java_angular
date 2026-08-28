@@ -27,10 +27,16 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     ) throws IOException {
         log.error("Unauthorized error: {}", authException.getMessage());
 
+        if (response.isCommitted()) {
+            return;
+        }
+
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         ApiResponse<Void> apiResponse = ApiResponse.error("Unauthorized: " + authException.getMessage());
-        response.getOutputStream().println(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().flush();
     }
 }

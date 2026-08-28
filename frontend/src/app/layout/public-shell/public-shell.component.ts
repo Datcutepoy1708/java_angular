@@ -30,8 +30,6 @@ export class PublicShellComponent implements OnInit {
   readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
 
-  readonly isDark = this.themeService.isDark;
-
   // State
   readonly categoriesTree = signal<CategoryResponse[]>([]);
   readonly searchQuery = signal('');
@@ -41,6 +39,9 @@ export class PublicShellComponent implements OnInit {
   readonly publicSettings = this.settingService.publicSettings;
 
   ngOnInit(): void {
+    // 0. Ensure public storefront always defaults to clean light theme
+    this.themeService.setTheme('light');
+
     // 1. Fetch public system settings (Footer, Branding, Maintenance Mode)
     this.settingService.loadPublicSettings().subscribe({
       error: err => console.error('Error fetching public settings:', err),
@@ -63,10 +64,6 @@ export class PublicShellComponent implements OnInit {
 
   closeMegaMenu(): void {
     this.isMegaMenuOpen.set(false);
-  }
-
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
   }
 
   onSearchSubmit(): void {

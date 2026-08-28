@@ -14,6 +14,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         // Never call logout(), which forces guests to be redirected to the login page!
         const refreshToken = authService.getRefreshToken();
         if (!refreshToken) {
+          if (req.url.includes('/api/v1/settings') || req.url.includes('/api/v1/admin')) {
+            authService.logout();
+          }
           return throwError(() => error);
         }
 

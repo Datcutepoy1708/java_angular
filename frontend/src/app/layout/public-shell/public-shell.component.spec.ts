@@ -33,6 +33,7 @@ describe('PublicShellComponent', () => {
   const mockThemeService = {
     currentTheme: signal<'light' | 'dark'>('light'),
     isDark: isDarkSignal,
+    setTheme: vi.fn(),
     toggleTheme: () => isDarkSignal.update(v => !v)
   };
 
@@ -95,9 +96,7 @@ describe('PublicShellComponent', () => {
     expect(component.isMegaMenuOpen()).toBe(false);
   });
 
-  it('should toggle theme when toggleTheme is called', () => {
-    expect(component.isDark()).toBe(false);
-    component.toggleTheme();
-    expect(component.isDark()).toBe(true);
+  it('should enforce light theme on init', () => {
+    expect(mockThemeService.setTheme).toHaveBeenCalledWith('light');
   });
 });

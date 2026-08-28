@@ -70,14 +70,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/track").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/{orderCode}").permitAll()
                         // Admin Settings endpoints
-                        .requestMatchers("/api/v1/settings/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/settings", "/api/v1/settings/**").hasRole("ADMIN")
                         // Static uploads public read
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // Upload API (Authenticated users: Admin, Staff, Customer for avatars/reviews)
                         .requestMatchers(HttpMethod.POST, "/api/v1/upload/**").authenticated()
                         // Auth APIs
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        // OpenAPI / Swagger
+                        // OpenAPI / Swagger & System Error Dispatch
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

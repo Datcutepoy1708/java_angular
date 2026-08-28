@@ -1,11 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { ProductCardComponent } from './product-card.component';
 import { ProductResponse } from '../../../core/models/product.model';
+import { CartService } from '../../../core/services/cart.service';
 
 describe('ProductCardComponent', () => {
   let component: ProductCardComponent;
   let fixture: ComponentFixture<ProductCardComponent>;
+
+  const mockCartService = {
+    addToCart: vi.fn().mockReturnValue(of(true)),
+  };
 
   const mockProduct = {
     productId: 1,
@@ -72,7 +78,10 @@ describe('ProductCardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProductCardComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: CartService, useValue: mockCartService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProductCardComponent);
@@ -92,13 +101,14 @@ describe('ProductCardComponent', () => {
     expect(priceInfo.discountPercent).toBe(9); // (32990000 - 29990000) / 32990000 ~ 9.09% -> 9%
   });
 
-  it('should emit addToCart event on button click', () => {
+  it('should call CartService.addToCart and emit addToCart event on button click', () => {
     let emittedProduct: ProductResponse | null = null;
     component.addToCart.subscribe((p) => (emittedProduct = p));
 
-    const button = fixture.nativeElement.querySelector('.quick-cart-btn');
+    const button = fixture.nativeElement.querySelector('.quick-cart-btn') as HTMLButtonElement;
     button.click();
 
+    expect(mockCartService.addToCart).toHaveBeenCalledWith(1, 1);
     expect(emittedProduct).toEqual(mockProduct);
   });
 });
