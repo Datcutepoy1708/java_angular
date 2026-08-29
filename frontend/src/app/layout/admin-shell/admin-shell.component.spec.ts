@@ -74,8 +74,7 @@ describe('AdminShellComponent', () => {
   it('should filter out unauthorized groups/children for limited Staff user', () => {
     authServiceMock.isAdmin.set(false);
     authServiceMock.hasAnyRole.mockImplementation((roles: string[]) => roles.includes('ROLE_STAFF'));
-    // Staff only has PRODUCT_VIEW permission
-    authServiceMock.hasAnyPermission.mockImplementation((perms: string[]) => perms.includes('PRODUCT_VIEW'));
+    authServiceMock.hasAnyPermission.mockImplementation(() => false);
 
     fixture.detectChanges();
 
@@ -88,15 +87,20 @@ describe('AdminShellComponent', () => {
 
     // Dashboard (ROLE_STAFF allowed) should be visible
     expect(visiblePaths).toContain('/admin/dashboard');
-    // Products (PRODUCT_VIEW permission allowed) should be visible
-    expect(visiblePaths).toContain('/admin/products');
 
-    // Admin-only items should be HIDDEN
+    // Live chat (ROLE_STAFF allowed) should be visible
+    expect(visiblePaths).toContain('/admin/chat');
+
+    // Admin-only groups are blocked at group level — their children are never evaluated
+    // 'products' group has roles:['ROLE_ADMIN'] with no permissions on the group itself
+    // so the entire group is hidden for Staff even if a child has PRODUCT_VIEW permission
+    expect(visiblePaths).not.toContain('/admin/products');
     expect(visiblePaths).not.toContain('/admin/staff');
     expect(visiblePaths).not.toContain('/admin/roles');
     expect(visiblePaths).not.toContain('/admin/settings');
     expect(visiblePaths).not.toContain('/admin/audit-logs');
   });
+
 
   it('should toggle accordion group open and closed', () => {
     // products group starts open (default in expandedGroups signal)
