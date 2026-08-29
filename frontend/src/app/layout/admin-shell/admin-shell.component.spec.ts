@@ -54,29 +54,58 @@ describe('AdminShellComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create and render navigation items and user initials for Admin', () => {
+  it('should create and render the admin shell with grouped navigation', () => {
     expect(component).toBeTruthy();
-    expect(component.visibleNavItems().length).toBe(component.navItems.length);
+    // visibleNavGroups() should return all groups for an admin
+    const groups = component.visibleNavGroups();
+    expect(groups.length).toBeGreaterThan(0);
     expect(component.getUserInitials()).toBe('AT');
   });
 
-  it('should filter out unauthorized sidebar items for limited Staff user', () => {
+  it('should expose all navGroups as source of truth', () => {
+    // navGroups is the source data (public readonly array)
+    expect(component.navGroups.length).toBeGreaterThan(0);
+    // visibleNavGroups is the filtered computed signal
+    const visibleGroups = component.visibleNavGroups();
+    // An admin sees all groups
+    expect(visibleGroups.length).toBe(component.navGroups.length);
+  });
+
+  it('should filter out unauthorized groups/children for limited Staff user', () => {
     authServiceMock.isAdmin.set(false);
     authServiceMock.hasAnyRole.mockImplementation((roles: string[]) => roles.includes('ROLE_STAFF'));
+    // Staff only has PRODUCT_VIEW permission
     authServiceMock.hasAnyPermission.mockImplementation((perms: string[]) => perms.includes('PRODUCT_VIEW'));
 
     fixture.detectChanges();
 
-    const visiblePaths = component.visibleNavItems().map(i => i.path);
-    // Dashboard (ROLE_STAFF allowed) and Products (PRODUCT_VIEW permission allowed) should be visible
+    const visibleGroups = component.visibleNavGroups();
+
+    // Flatten all visible child paths
+    const visiblePaths = visibleGroups.flatMap(g =>
+      g.children ? g.children.map((c: { path: string }) => c.path) : (g.path ? [g.path] : [])
+    );
+
+    // Dashboard (ROLE_STAFF allowed) should be visible
     expect(visiblePaths).toContain('/admin/dashboard');
+    // Products (PRODUCT_VIEW permission allowed) should be visible
     expect(visiblePaths).toContain('/admin/products');
 
-    // Admin-only or non-granted permission items should be HIDDEN
+    // Admin-only items should be HIDDEN
     expect(visiblePaths).not.toContain('/admin/staff');
     expect(visiblePaths).not.toContain('/admin/roles');
     expect(visiblePaths).not.toContain('/admin/settings');
     expect(visiblePaths).not.toContain('/admin/audit-logs');
+  });
+
+  it('should toggle accordion group open and closed', () => {
+    // products group starts open (default in expandedGroups signal)
+    const wasExpanded = component.isGroupExpanded('products');
+    component.toggleGroup('products');
+    expect(component.isGroupExpanded('products')).toBe(!wasExpanded);
+    // Toggle back
+    component.toggleGroup('products');
+    expect(component.isGroupExpanded('products')).toBe(wasExpanded);
   });
 
   it('should toggle theme when toggleTheme is called', () => {
