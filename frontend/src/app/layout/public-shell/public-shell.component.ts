@@ -13,11 +13,12 @@ import { CartService } from '../../core/services/cart.service';
 import { SettingService } from '../../core/services/setting.service';
 import { CategoryResponse } from '../../core/models/category.model';
 import { ThemeService } from '../../core/services/theme.service';
+import { ChatWidgetComponent } from '../../shared/chat-widget/chat-widget.component';
 
 @Component({
   selector: 'app-public-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, FormsModule],
+  imports: [RouterOutlet, RouterLink, FormsModule, ChatWidgetComponent],
   templateUrl: './public-shell.component.html',
   styleUrl: './public-shell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

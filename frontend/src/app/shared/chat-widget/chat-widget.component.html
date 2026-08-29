@@ -1,0 +1,202 @@
+<section class="chat-widget">
+  <!-- Floating Bubble -->
+  <button
+    id="chat-widget-bubble"
+    class="chat-bubble"
+    [class.chat-bubble--open]="isOpen()"
+    (click)="toggleWidget()"
+    aria-label="Mở chat hỗ trợ"
+  >
+    @if (isOpen()) {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    }
+    @if (!isOpen() && unreadCount() > 0) {
+      <span class="bubble-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+    }
+  </button>
+
+  <!-- Chat Panel -->
+  @if (isOpen()) {
+    <div class="chat-panel" role="dialog" aria-label="Cửa sổ chat hỗ trợ">
+
+      <!-- Header -->
+      <header class="chat-header">
+        <div class="chat-header__left">
+          <div class="chat-avatar">
+            <img src="/assets/images/logo-icon.png" alt="Complexus" onerror="this.style.display='none'">
+            <span class="chat-avatar__fallback">C</span>
+          </div>
+          <div class="chat-header__info">
+            <span class="chat-header__name">Complexus Support</span>
+            <span class="chat-header__status">
+              <span class="status-dot" [ngClass]="getStatusDotClass(convStatus())"></span>
+              {{ getStatusLabel(convStatus()) }}
+            </span>
+          </div>
+        </div>
+        <button class="chat-close-btn" (click)="closeWidget()" aria-label="Đóng chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <!-- Message List -->
+      <div
+        class="chat-messages"
+        #messageListEl
+        (scroll)="onScroll($event)"
+      >
+        @if (isLoading()) {
+          <div class="chat-loading">
+            <span class="spinner"></span>
+            <span>Đang tải...</span>
+          </div>
+        }
+
+        @for (msg of messages(); track msg.messageId) {
+          <!-- System Message -->
+          @if (isSystem(msg)) {
+            <div class="msg msg--system">
+              <span>{{ msg.content }}</span>
+            </div>
+          }
+
+          <!-- Bot / Staff Message -->
+          @else if (!isCustomer(msg)) {
+            <div class="msg msg--incoming">
+              <div class="msg__avatar">
+                @if (isBot(msg)) {
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2 2 2 0 01-2 2 2 2 0 01-2-2 2 2 0 012-2zm8 14v-2a6 6 0 00-6-6H10a6 6 0 00-6 6v2"/><rect x="8" y="14" width="8" height="6" rx="1"/></svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                }
+              </div>
+              <div class="msg__body">
+                <div class="msg__name">{{ msg.senderName }}</div>
+                <div class="msg__bubble msg__bubble--incoming">
+                  @if (msg.attachmentUrl) {
+                    <img [src]="msg.attachmentUrl" alt="Ảnh" class="msg__image" loading="lazy">
+                  }
+                  @if (msg.content) {
+                    <p>{{ msg.content }}</p>
+                  }
+                </div>
+                @if (msg.quickReplies && msg.quickReplies.length > 0) {
+                  <div class="msg__quick-replies">
+                    @for (qr of msg.quickReplies; track qr) {
+                      <button
+                        class="quick-reply-btn"
+                        [disabled]="isClosed()"
+                        (click)="sendQuickReply(qr)"
+                      >{{ qr }}</button>
+                    }
+                  </div>
+                }
+                <div class="msg__time">{{ formatTime(msg.createdAt) }}</div>
+              </div>
+            </div>
+          }
+
+          <!-- Customer Message -->
+          @else {
+            <div class="msg msg--outgoing">
+              <div class="msg__body msg__body--outgoing">
+                <div class="msg__bubble msg__bubble--outgoing">
+                  @if (msg.attachmentUrl) {
+                    <img [src]="msg.attachmentUrl" alt="Ảnh" class="msg__image" loading="lazy">
+                  }
+                  @if (msg.content) {
+                    <p>{{ msg.content }}</p>
+                  }
+                </div>
+                <div class="msg__time">{{ formatTime(msg.createdAt) }}</div>
+              </div>
+            </div>
+          }
+        }
+
+        <!-- Typing Indicator -->
+        @if (isTyping()) {
+          <div class="msg msg--incoming">
+            <div class="msg__avatar">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="msg__body">
+              <div class="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (isClosed()) {
+          <div class="chat-closed-notice">
+            Hội thoại đã kết thúc. Cảm ơn bạn đã liên hệ Complexus!
+          </div>
+        }
+      </div>
+
+      <!-- Scroll Down Button -->
+      @if (showScrollDown()) {
+        <button class="scroll-down-btn" (click)="scrollDown()" aria-label="Cuộn xuống">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+        </button>
+      }
+
+      <!-- Input Area -->
+      <footer class="chat-input-area">
+        @if (isWaiting()) {
+          <div class="waiting-notice">
+            <span class="spinner spinner--sm"></span>
+            Đang kết nối nhân viên tư vấn, vui lòng chờ...
+          </div>
+        }
+        <div class="chat-input-row" [class.disabled]="isClosed()">
+          <!-- Image Upload -->
+          <label class="img-upload-btn" [class.loading]="isUploadingImage()" aria-label="Tải ảnh lên">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              (change)="onFileSelected($event)"
+              [disabled]="isClosed() || isUploadingImage()"
+              hidden
+            >
+            @if (isUploadingImage()) {
+              <span class="spinner spinner--sm"></span>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            }
+          </label>
+
+          <!-- Text Input -->
+          <textarea
+            #inputEl
+            id="chat-text-input"
+            class="chat-input"
+            placeholder="Nhập tin nhắn..."
+            rows="1"
+            [value]="inputText()"
+            [disabled]="isClosed()"
+            (input)="onInputChange($event)"
+            (keydown)="onKeydown($event)"
+          ></textarea>
+
+          <!-- Send Button -->
+          <button
+            id="chat-send-btn"
+            class="send-btn"
+            [disabled]="!inputText().trim() || isClosed() || isSending()"
+            (click)="sendMessage()"
+            aria-label="Gửi tin nhắn"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+          </button>
+        </div>
+        <div class="chat-footer-brand">
+          Powered by <strong>Complexus</strong>
+        </div>
+      </footer>
+    </div>
+  }
+</section>

@@ -206,6 +206,20 @@ export const routes: Routes = [
               import('./features/admin/audit-log/audit-log.component').then((m) => m.AuditLogComponent)
           },
           {
+            path: 'chat',
+            canActivate: [roleGuard],
+            data: { roles: ['ROLE_ADMIN', 'ROLE_STAFF'] },
+            loadComponent: () =>
+              import('./features/admin/chat-manage/chat-manage.component').then((m) => m.ChatManageComponent)
+          },
+          {
+            path: 'bot-rules',
+            canActivate: [roleGuard],
+            data: { roles: ['ROLE_ADMIN'] },
+            loadComponent: () =>
+              import('./features/admin/bot-rules-manage/bot-rules-manage.component').then((m) => m.BotRulesManageComponent)
+          },
+          {
             path: 'forbidden',
             loadComponent: () =>
               import('./features/admin/forbidden/forbidden.component').then((m) => m.ForbiddenComponent)

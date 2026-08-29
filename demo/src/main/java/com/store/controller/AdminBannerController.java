@@ -37,9 +37,17 @@ public class AdminBannerController {
     @GetMapping
     @Operation(summary = "Get all banners for admin with optional position filter")
     public ResponseEntity<ApiResponse<List<BannerResponse>>> getAdminBanners(
-            @RequestParam(required = false) BannerPosition position
+            @RequestParam(required = false) String position
     ) {
-        List<BannerResponse> banners = bannerService.getAdminBanners(position);
+        BannerPosition bannerPosition = null;
+        if (position != null && !position.isBlank()) {
+            try {
+                bannerPosition = BannerPosition.fromValue(position);
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid position
+            }
+        }
+        List<BannerResponse> banners = bannerService.getAdminBanners(bannerPosition);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách banner quản trị thành công", banners));
     }
 

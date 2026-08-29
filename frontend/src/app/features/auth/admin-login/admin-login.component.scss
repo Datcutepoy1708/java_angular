@@ -35,12 +35,12 @@
   margin-bottom: 28px;
 }
 
-.brand-logo {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 8px;
-  letter-spacing: -0.5px;
+.brand-logo-img {
+  height: 84px;
+  width: auto;
+  object-fit: contain;
+  margin: 0 auto 14px;
+  display: block;
 }
 
 .card-title {

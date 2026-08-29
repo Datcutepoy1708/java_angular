@@ -26,9 +26,17 @@ public class BannerController {
     @GetMapping("/public")
     @Operation(summary = "Get active banners for specific position within date validity range (Cached 1h)")
     public ResponseEntity<ApiResponse<List<BannerResponse>>> getPublicBanners(
-            @RequestParam(required = false) BannerPosition position
+            @RequestParam(required = false) String position
     ) {
-        List<BannerResponse> banners = bannerService.getPublicBanners(position);
+        BannerPosition bannerPosition = null;
+        if (position != null && !position.isBlank()) {
+            try {
+                bannerPosition = BannerPosition.fromValue(position);
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid position and return empty list or all
+            }
+        }
+        List<BannerResponse> banners = bannerService.getPublicBanners(bannerPosition);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách banner thành công", banners));
     }
 }

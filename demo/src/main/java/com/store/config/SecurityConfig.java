@@ -88,6 +88,13 @@ public class SecurityConfig {
                         ).permitAll()
                         // Actuator
                         .requestMatchers("/actuator/**").permitAll()
+                        // WebSocket endpoint (SockJS needs to be public)
+                        .requestMatchers("/ws-chat/**").permitAll()
+                        // Customer Chat APIs (public — guest access)
+                        .requestMatchers("/api/v1/chat/init").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/chat/*/messages").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/chat/upload-image").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/chat/*/mark-read").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 );

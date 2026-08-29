@@ -65,6 +65,7 @@ public class RedisConfig implements CachingConfigurer {
         configs.put("suppliers", defaultConfig.entryTtl(Duration.ofHours(2)));
         configs.put("roles", defaultConfig.entryTtl(Duration.ofHours(2)));
         configs.put("permissions", defaultConfig.entryTtl(Duration.ofHours(2)));
+        configs.put("chatBotRules", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(defaultConfig)

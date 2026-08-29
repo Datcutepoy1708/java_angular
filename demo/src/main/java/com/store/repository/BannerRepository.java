@@ -15,7 +15,8 @@ import java.util.List;
 @Repository
 public interface BannerRepository extends JpaRepository<Banner, Long>, JpaSpecificationExecutor<Banner> {
 
-    @Query("SELECT b FROM Banner b WHERE b.position = :position AND b.status = com.store.entity.banner.BannerStatus.ACTIVE " +
+    @Query("SELECT b FROM Banner b WHERE (:position IS NULL OR b.position = :position) " +
+           "AND b.status = com.store.entity.banner.BannerStatus.ACTIVE " +
            "AND (b.startDate IS NULL OR b.startDate <= :now) " +
            "AND (b.endDate IS NULL OR b.endDate >= :now) " +
            "ORDER BY b.sortOrder ASC, b.createdAt DESC")

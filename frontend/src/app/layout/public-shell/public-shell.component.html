@@ -27,17 +27,11 @@
     <div class="container header-container">
       <!-- Logo -->
       <a routerLink="/" class="brand-logo-link" (click)="closeMegaMenu()">
-        <div class="logo-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="logo-svg">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-            <line x1="8" y1="21" x2="16" y2="21"/>
-            <line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-        </div>
-        <div class="logo-text">
-          <span class="logo-title">COMPLEXUS</span>
-          <span class="logo-sub">Computer & Components</span>
-        </div>
+        <img
+          src="/assets/images/complexus-logo.png"
+          alt="Complexus Computer & Components"
+          class="brand-logo-img"
+        />
       </a>
 
       <!-- Category Mega Menu Button -->
@@ -312,4 +306,8 @@
       </div>
     </div>
   </footer>
+
+  <!-- ── Live Chat Widget ─────────────────────────────────────────── -->
+  <app-chat-widget></app-chat-widget>
+
 </div>

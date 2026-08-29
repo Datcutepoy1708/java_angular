@@ -28,11 +28,21 @@
   margin-bottom: 20px;
 }
 
-.promo__logo {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--primary);
-  letter-spacing: -0.5px;
+.promo__logo-link {
+  display: inline-block;
+  text-decoration: none;
+
+  .promo__logo-img {
+    height: 92px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.04);
+    }
+  }
 }
 
 .promo__badge {

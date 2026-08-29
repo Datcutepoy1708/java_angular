@@ -5,28 +5,86 @@
   <aside class="admin-sidebar">
     <!-- Logo -->
     <div class="sidebar-logo">
-      <span class="logo-text">Complexus</span>
-      <span class="logo-sub">Admin Console</span>
+      <img
+        src="/assets/images/complexus-logo.png"
+        alt="Complexus Admin"
+        class="sidebar-logo-img"
+      />
     </div>
 
-    <!-- Navigation -->
+    <!-- Navigation Groups -->
     <nav class="sidebar-nav" aria-label="Admin navigation">
-      <ul>
-        @for (item of visibleNavItems(); track item.path) {
-          <li>
-            <a
-              [routerLink]="item.path"
-              routerLinkActive="active"
-              class="nav-item"
-              [attr.aria-label]="item.label"
-            >
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-                   aria-hidden="true">
-                <path [attr.d]="item.icon"/>
-              </svg>
-              <span class="nav-label">{{ item.label }}</span>
-            </a>
+      <ul class="nav-groups-list">
+        @for (group of visibleNavGroups(); track group.id) {
+          <li class="nav-group" [class.nav-group--active]="isGroupActive(group)">
+            @if (group.children && group.children.length > 0) {
+              <!-- Expandable Accordion Header -->
+              <button
+                type="button"
+                class="group-header-btn"
+                [class.expanded]="isGroupExpanded(group.id)"
+                [class.active-parent]="isGroupActive(group)"
+                (click)="toggleGroup(group.id)"
+                [attr.aria-expanded]="isGroupExpanded(group.id)"
+              >
+                <div class="group-header-left">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path [attr.d]="group.icon"/>
+                  </svg>
+                  <span class="group-title">{{ group.title }}</span>
+                </div>
+
+                <!-- Rotating Chevron Arrow -->
+                <svg
+                  class="chevron-icon"
+                  [class.rotated]="isGroupExpanded(group.id)"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <!-- Collapsible Sub-menu List -->
+              <ul
+                class="sub-menu-list"
+                [class.expanded]="isGroupExpanded(group.id)"
+              >
+                @for (child of group.children; track child.id) {
+                  <li class="sub-menu-item">
+                    <a
+                      [routerLink]="child.path"
+                      routerLinkActive="active"
+                      class="sub-nav-link"
+                    >
+                      <span class="sub-nav-dot"></span>
+                      <span class="sub-nav-label">{{ child.label }}</span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <!-- Direct Single Item Link (e.g. Settings) -->
+              <a
+                [routerLink]="group.path"
+                routerLinkActive="active"
+                class="nav-item direct-link"
+                [attr.aria-label]="group.title"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path [attr.d]="group.icon"/>
+                </svg>
+                <span class="nav-label">{{ group.title }}</span>
+              </a>
+            }
           </li>
         }
       </ul>
@@ -51,7 +109,7 @@
   <div class="admin-content">
     <!-- Topbar -->
     <header class="admin-topbar">
-      <!-- Left: page title slot (children fill via service or title) -->
+      <!-- Left: page title -->
       <div class="topbar-left">
         <h1 class="page-title">Trang Quản Trị</h1>
       </div>
@@ -87,7 +145,7 @@
           }
         </button>
 
-        <!-- Notification bell — functional icon per AGENTS.md §11 -->
+        <!-- Notification bell -->
         <button class="topbar-btn" type="button" aria-label="Thông báo" id="notification-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
