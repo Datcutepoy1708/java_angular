@@ -85,7 +85,10 @@ public class ChatWebSocketController {
         if (principal instanceof org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth) {
             return auth.getPrincipal() instanceof CustomUserDetails userDetails
                     && userDetails.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                                || a.getAuthority().equals("ROLE_STAFF")
+                                || a.getAuthority().equals("CHAT_RESPOND")
+                                || a.getAuthority().equals("CHAT_MANAGE"));
         }
         return false;
     }

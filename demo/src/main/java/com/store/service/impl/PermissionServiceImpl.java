@@ -33,6 +33,7 @@ public class PermissionServiceImpl implements PermissionService {
         groupMap.put("PRODUCT", new ArrayList<>());
         groupMap.put("INVENTORY", new ArrayList<>());
         groupMap.put("ORDER", new ArrayList<>());
+        groupMap.put("CHAT", new ArrayList<>());
         groupMap.put("MARKETING", new ArrayList<>());
         groupMap.put("USER", new ArrayList<>());
         groupMap.put("SYSTEM", new ArrayList<>());
@@ -54,6 +55,7 @@ public class PermissionServiceImpl implements PermissionService {
         addIfNotEmpty(result, "PRODUCT", "Quản Lý Sản Phẩm & Danh Mục", groupMap.get("PRODUCT"));
         addIfNotEmpty(result, "INVENTORY", "Quản Lý Kho Hàng & Nhà Cung Cấp", groupMap.get("INVENTORY"));
         addIfNotEmpty(result, "ORDER", "Quản Lý Đơn Hàng & Đánh Giá", groupMap.get("ORDER"));
+        addIfNotEmpty(result, "CHAT", "Chăm Sóc Khách Hàng & Live Chat", groupMap.get("CHAT"));
         addIfNotEmpty(result, "MARKETING", "Khuyến Mãi, Banner & Tin Tức", groupMap.get("MARKETING"));
         addIfNotEmpty(result, "SYSTEM", "Báo Cáo & Cài Đặt Hệ Thống", groupMap.get("SYSTEM"));
         addIfNotEmpty(result, "OTHER", "Quyền Khác", groupMap.get("OTHER"));
@@ -97,6 +99,9 @@ public class PermissionServiceImpl implements PermissionService {
         }
         if (upper.startsWith("ORDER_") || upper.startsWith("REVIEW_")) {
             return "ORDER";
+        }
+        if (upper.startsWith("CHAT_") || upper.startsWith("BOT_")) {
+            return "CHAT";
         }
         if (upper.startsWith("DISCOUNT_") || upper.startsWith("BANNER_") || upper.startsWith("NEWS_")) {
             return "MARKETING";

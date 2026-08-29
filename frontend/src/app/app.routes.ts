@@ -208,14 +208,14 @@ export const routes: Routes = [
           {
             path: 'chat',
             canActivate: [roleGuard],
-            data: { roles: ['ROLE_ADMIN', 'ROLE_STAFF'] },
+            data: { roles: ['ROLE_ADMIN', 'ROLE_STAFF'], permissions: ['CHAT_VIEW', 'CHAT_RESPOND', 'CHAT_MANAGE'] },
             loadComponent: () =>
               import('./features/admin/chat-manage/chat-manage.component').then((m) => m.ChatManageComponent)
           },
           {
             path: 'bot-rules',
             canActivate: [roleGuard],
-            data: { roles: ['ROLE_ADMIN'] },
+            data: { roles: ['ROLE_ADMIN'], permissions: ['CHAT_BOT_VIEW', 'CHAT_BOT_CREATE', 'CHAT_BOT_UPDATE', 'CHAT_BOT_DELETE', 'CHAT_BOT_MANAGE'] },
             loadComponent: () =>
               import('./features/admin/bot-rules-manage/bot-rules-manage.component').then((m) => m.BotRulesManageComponent)
           },

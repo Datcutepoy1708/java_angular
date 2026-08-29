@@ -217,18 +217,21 @@ export class AdminShellComponent implements OnInit {
       title: 'Chăm Sóc & Live Chat',
       icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
       roles: ['ROLE_ADMIN', 'ROLE_STAFF'],
+      permissions: ['CHAT_VIEW', 'CHAT_RESPOND', 'CHAT_MANAGE', 'CHAT_BOT_VIEW', 'CHAT_BOT_CREATE', 'CHAT_BOT_UPDATE', 'CHAT_BOT_DELETE', 'CHAT_BOT_MANAGE'],
       children: [
         {
           id: 'chat',
           label: 'Tin nhắn Live Chat',
           path: '/admin/chat',
           roles: ['ROLE_ADMIN', 'ROLE_STAFF'],
+          permissions: ['CHAT_VIEW', 'CHAT_RESPOND', 'CHAT_MANAGE'],
         },
         {
           id: 'bot-rules',
           label: 'Kịch bản Bot Rules',
           path: '/admin/bot-rules',
           roles: ['ROLE_ADMIN'],
+          permissions: ['CHAT_BOT_VIEW', 'CHAT_BOT_CREATE', 'CHAT_BOT_UPDATE', 'CHAT_BOT_DELETE', 'CHAT_BOT_MANAGE'],
         },
       ],
     },
@@ -346,12 +349,14 @@ export class AdminShellComponent implements OnInit {
       return false;
     }
     if (item.permissions && item.permissions.length > 0) {
-      return this.authService.hasAnyPermission(item.permissions);
+      if (this.authService.hasAnyPermission(item.permissions)) {
+        return true;
+      }
     }
     if (item.roles && item.roles.length > 0) {
       return this.authService.hasAnyRole(item.roles);
     }
-    return true;
+    return !item.permissions && !item.roles;
   }
 
   toggleTheme(): void {

@@ -114,3 +114,20 @@ INSERT INTO `chat_bot_rules` (`rule_name`, `keywords`, `match_type`, `response_m
  'Đang kết nối bạn với nhân viên tư vấn của Complexus. Vui lòng chờ trong giây lát, nhân viên sẽ tiếp nhận ngay!',
  NULL,
  'HANDOVER_STAFF', 95, 1);
+
+-- 5. Seed Permissions cho Live Chat & Bot Rules
+INSERT INTO `permissions` (`permission_id`, `permission_code`, `description`) VALUES
+(72, 'CHAT_VIEW', 'Xem danh sách và tin nhắn Live Chat'),
+(73, 'CHAT_RESPOND', 'Tiếp nhận và phản hồi tin nhắn Live Chat'),
+(74, 'CHAT_MANAGE', 'Toàn quyền quản trị Live Chat'),
+(75, 'CHAT_BOT_VIEW', 'Xem kịch bản Chatbot (Bot Rules)'),
+(76, 'CHAT_BOT_CREATE', 'Tạo mới kịch bản Chatbot'),
+(77, 'CHAT_BOT_UPDATE', 'Cập nhật kịch bản Chatbot'),
+(78, 'CHAT_BOT_DELETE', 'Xóa kịch bản Chatbot'),
+(79, 'CHAT_BOT_MANAGE', 'Toàn quyền quản lý Chatbot')
+ON DUPLICATE KEY UPDATE `description` = VALUES(`description`);
+
+-- Gán quyền mặc định cho ROLE_ADMIN (role_id = 1) và ROLE_STAFF (role_id = 2)
+INSERT IGNORE INTO `role_permissions` (`role_id`, `permission_id`) VALUES
+(1, 72), (1, 73), (1, 74), (1, 75), (1, 76), (1, 77), (1, 78), (1, 79),
+(2, 72), (2, 73);

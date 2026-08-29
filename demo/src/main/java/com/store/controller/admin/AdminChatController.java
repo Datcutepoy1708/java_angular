@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/chat")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+@PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_VIEW', 'CHAT_RESPOND', 'CHAT_MANAGE', 'CHAT_BOT_VIEW', 'CHAT_BOT_CREATE', 'CHAT_BOT_UPDATE', 'CHAT_BOT_DELETE', 'CHAT_BOT_MANAGE')")
 @Tag(name = "Admin Chat", description = "Admin/Staff live chat management and bot rule CRUD APIs")
 @SecurityRequirement(name = "bearerAuth")
 public class AdminChatController {
@@ -37,6 +37,7 @@ public class AdminChatController {
     // ─── Conversation Queue ───────────────────────────────────────────────────
 
     @GetMapping("/conversations")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_VIEW', 'CHAT_MANAGE')")
     @Operation(summary = "Lấy danh sách hội thoại theo trạng thái (mặc định WAITING_STAFF)")
     public ResponseEntity<ApiResponse<List<ChatConversationSummaryResponse>>> getConversations(
             @RequestParam(defaultValue = "WAITING_STAFF") ConversationStatus status) {
@@ -46,6 +47,7 @@ public class AdminChatController {
     }
 
     @GetMapping("/conversations/my")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_VIEW', 'CHAT_RESPOND', 'CHAT_MANAGE')")
     @Operation(summary = "Lấy hội thoại đang xử lý của nhân viên hiện tại")
     public ResponseEntity<ApiResponse<List<ChatConversationSummaryResponse>>> getMyConversations(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -55,6 +57,7 @@ public class AdminChatController {
     }
 
     @GetMapping("/conversations/{conversationId}/messages")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_VIEW', 'CHAT_MANAGE')")
     @Operation(summary = "Lấy tin nhắn của hội thoại (admin view)")
     public ResponseEntity<ApiResponse<List<ChatMessageDto>>> getMessages(
             @PathVariable Long conversationId,
@@ -68,6 +71,7 @@ public class AdminChatController {
     }
 
     @PostMapping("/conversations/{conversationId}/claim")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_RESPOND', 'CHAT_MANAGE')")
     @Operation(summary = "Tiếp nhận hội thoại (atomic, chống race condition)")
     public ResponseEntity<ApiResponse<ChatConversationSummaryResponse>> claimConversation(
             @PathVariable Long conversationId,
@@ -79,6 +83,7 @@ public class AdminChatController {
     }
 
     @PostMapping("/conversations/{conversationId}/close")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_RESPOND', 'CHAT_MANAGE')")
     @Operation(summary = "Kết thúc hội thoại")
     public ResponseEntity<ApiResponse<Void>> closeConversation(
             @PathVariable Long conversationId,
@@ -89,6 +94,7 @@ public class AdminChatController {
     }
 
     @PatchMapping("/conversations/{conversationId}/mark-read")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_RESPOND', 'CHAT_VIEW', 'CHAT_MANAGE')")
     @Operation(summary = "Đánh dấu đã đọc (nhân viên mở hội thoại)")
     public ResponseEntity<ApiResponse<Void>> markReadByStaff(@PathVariable Long conversationId) {
         chatService.markReadByStaff(conversationId);
@@ -98,6 +104,7 @@ public class AdminChatController {
     // ─── Bot Rules CRUD ───────────────────────────────────────────────────────
 
     @GetMapping("/bot-rules")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_BOT_VIEW', 'CHAT_BOT_MANAGE')")
     @Operation(summary = "Lấy tất cả bot rules")
     public ResponseEntity<ApiResponse<List<ChatBotRuleResponse>>> getAllRules() {
         return ResponseEntity.ok(ApiResponse.success("Tải bot rules thành công",
@@ -105,6 +112,7 @@ public class AdminChatController {
     }
 
     @GetMapping("/bot-rules/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_BOT_VIEW', 'CHAT_BOT_MANAGE')")
     @Operation(summary = "Lấy chi tiết một bot rule")
     public ResponseEntity<ApiResponse<ChatBotRuleResponse>> getRuleById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success("Tải bot rule thành công",
@@ -112,8 +120,8 @@ public class AdminChatController {
     }
 
     @PostMapping("/bot-rules")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Tạo mới bot rule (chỉ Admin)")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_BOT_CREATE', 'CHAT_BOT_MANAGE')")
+    @Operation(summary = "Tạo mới bot rule (Admin hoặc có quyền CHAT_BOT_CREATE)")
     public ResponseEntity<ApiResponse<ChatBotRuleResponse>> createRule(
             @Valid @RequestBody ChatBotRuleRequest request) {
 
@@ -123,8 +131,8 @@ public class AdminChatController {
     }
 
     @PutMapping("/bot-rules/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Cập nhật bot rule (chỉ Admin)")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_BOT_UPDATE', 'CHAT_BOT_MANAGE')")
+    @Operation(summary = "Cập nhật bot rule (Admin hoặc có quyền CHAT_BOT_UPDATE)")
     public ResponseEntity<ApiResponse<ChatBotRuleResponse>> updateRule(
             @PathVariable Integer id,
             @Valid @RequestBody ChatBotRuleRequest request) {
@@ -134,8 +142,8 @@ public class AdminChatController {
     }
 
     @DeleteMapping("/bot-rules/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Xóa bot rule (chỉ Admin)")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_BOT_DELETE', 'CHAT_BOT_MANAGE')")
+    @Operation(summary = "Xóa bot rule (Admin hoặc có quyền CHAT_BOT_DELETE)")
     public ResponseEntity<ApiResponse<Void>> deleteRule(@PathVariable Integer id) {
         chatRuleService.deleteRule(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa bot rule thành công", null));

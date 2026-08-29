@@ -33,14 +33,15 @@ class PermissionServiceTest {
         Permission p2 = Permission.builder().permissionId(2).permissionCode("ORDER_VIEW").description("Xem đơn").build();
         Permission p3 = Permission.builder().permissionId(3).permissionCode("INVENTORY_MANAGE").description("Quản lý kho").build();
         Permission p4 = Permission.builder().permissionId(4).permissionCode("ROLE_MANAGE").description("Quản lý quyền").build();
+        Permission p5 = Permission.builder().permissionId(5).permissionCode("CHAT_VIEW").description("Xem chat").build();
 
-        when(permissionRepository.findAllByOrderByPermissionCodeAsc()).thenReturn(List.of(p1, p2, p3, p4));
+        when(permissionRepository.findAllByOrderByPermissionCodeAsc()).thenReturn(List.of(p1, p2, p3, p4, p5));
 
         List<PermissionGroupResponse> result = permissionService.getAllGroupedPermissions();
 
         assertThat(result).isNotEmpty();
         assertThat(result.stream().map(PermissionGroupResponse::getGroupCode))
-                .contains("PRODUCT", "ORDER", "INVENTORY", "USER");
+                .contains("PRODUCT", "ORDER", "INVENTORY", "USER", "CHAT");
     }
 
     @Test
