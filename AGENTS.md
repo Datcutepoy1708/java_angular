@@ -315,7 +315,7 @@ export const routes: Routes = [
 
 ## 10. Testing
 
-- Backend: JUnit 5 + Mockito for the service layer; `@SpringBootTest` + Testcontainers (MySQL + Redis containers) for integration tests, including cache-eviction-on-write behavior.
+- Backend: JUnit 5 + Mockito for the service layer; use `@SpringBootTest` with the CI-provided MySQL/Redis service containers for current integration tests, including cache-eviction-on-write behavior. Testcontainers is a future improvement and must not be claimed as active until its dependencies and container-backed tests actually exist.
 - Frontend: Vitest for unit tests (Angular's current default, replacing Karma); Cypress/Playwright for e2e on core flows once they exist.
 - Whenever Redis caching is added to a CRUD endpoint, write a test verifying that an update/delete actually evicts the cache (stale reads are a common bug class here).
 
@@ -337,23 +337,86 @@ CI configuration lives in `.github/workflows/`. Every PR into `main` or `develop
 ### 12.1 Required workflows
 - **`backend-ci.yml`** — triggers on changes under `demo/**`:
   1. Checkout, set up JDK 21.
-  2. `mvn -B verify` (compiles, runs unit tests, runs Testcontainers-based integration tests).
+  2. Start the required MySQL/Redis service containers, then run `mvn -B verify` (compiles and runs unit/integration tests).
   3. Fail the build on any test failure — do not mark tests `@Disabled` to force a green build.
 - **`frontend-ci.yml`** — triggers on changes under `frontend/**`:
   1. Checkout, set up Node LTS, `npm ci` (never `npm install` in CI — lockfile must be respected exactly).
   2. `npm run lint`.
-  3. `npm run test -- --watch=false --browsers=ChromeHeadless`.
+  3. `npm run test -- --watch=false` (Vitest; do not pass Karma-only flags such as `--browsers=ChromeHeadless`).
   4. `npm run build -- --configuration production` to catch build-time errors early.
 - Use `paths:` filters so backend changes don't trigger the frontend workflow and vice versa — keeps CI fast and cheap.
 
 ### 12.2 Rules for the agent
-- Any new feature that adds a Maven dependency, npm package, or new test command must also update the corresponding workflow file if the existing steps no longer cover it (e.g. adding Testcontainers requires Docker-in-Docker support already assumed in `backend-ci.yml` — flag this to the user if a runner change is needed).
+- Any new feature that adds a Maven dependency, npm package, or new test command must also update the corresponding workflow file if the existing steps no longer cover it. If Testcontainers is introduced, update the test infrastructure deliberately and do not also start duplicate CI service containers for the same dependency.
 - Never commit code that fails `mvn verify` or `npm run lint` locally — CI is a safety net, not a substitute for running checks before pushing.
 - Secrets used in CI (DB password for integration tests, etc.) must be referenced via GitHub Actions `secrets.*` context — never hardcoded in the workflow YAML.
-- When adding a new Redis-dependent test (per section 10), ensure the workflow spins up a Redis service container (`services: redis: image: redis:7-alpine`) alongside MySQL/Testcontainers, or the test will fail in CI even if it passes locally.
+- When adding a new Redis-dependent test (per section 10), ensure exactly one supported Redis test environment exists: either the workflow Redis service (`redis:7-alpine`) or a Testcontainers-managed Redis instance.
 - Branch protection on `main`/`develop` requires both `backend-ci` and `frontend-ci` (when relevant paths changed) to pass, plus at least one review approval — do not suggest merging around this.
 
-## 13. What the agent must NOT do
+## 13. Production hardening rules
+
+### 13.1 Order data access
+
+- `GET /api/v1/orders/{orderCode}` is authenticated-only and may return an order only when `order.user.userId` matches the authenticated user ID.
+- Guest orders must never be returned from the authenticated order-detail endpoint. Guests must use `GET /api/v1/orders/track?code=...&phone=...`, and both values must match.
+- A failed guest lookup must return a generic error that does not reveal whether the order code exists.
+- Any change to order access must include HTTP-level regression tests for anonymous access, wrong ownership, member access to a guest order, owner access, and successful/failed guest tracking.
+
+### 13.2 JWT, credentials, and bootstrap accounts
+
+- JWT signing secrets must have no source-code fallback or default value. Production keys must come from environment variables or a secret manager and provide at least 256 bits of random entropy.
+- Required secrets must be validated at startup without logging their contents; missing, malformed, or weak production secrets must fail fast.
+- Never log passwords, JWTs, refresh/reset tokens, OTPs, cookies, authorization headers, or other credential material.
+- Admin bootstrap is disabled by default and may run only when `ADMIN_BOOTSTRAP_ENABLED=true` and all required values such as `ADMIN_INITIAL_EMAIL` and `ADMIN_INITIAL_PASSWORD` are present.
+- If bootstrap is enabled but incomplete, startup must fail. Never generate or print an initial admin password in application logs.
+
+### 13.3 Trusted proxy and client IP
+
+- Controllers must not read `Forwarded`, `X-Forwarded-For`, or `X-Real-IP` directly. Resolve client IP through one shared `ClientIpResolver` using `HttpServletRequest#getRemoteAddr()`.
+- For Tomcat behind a trusted reverse proxy, use `server.forward-headers-strategy: native` with an explicit `server.tomcat.remoteip.internal-proxies` allowlist. Do not combine Tomcat native proxy rules with the framework forwarding strategy.
+- The backend must not be directly reachable around the trusted proxy. The proxy must remove client-supplied forwarding headers and set its own trusted values.
+- Do not enable forwarded-header trust without documenting and testing the real proxy/network topology. Public rate limits should combine IP with another appropriate factor such as phone number or guest session ID.
+
+### 13.4 Flyway and existing databases
+
+- Flyway is the only mechanism for applying production schema changes; applied migration files are immutable.
+- Do not copy a database dump directly into a migration. Remove database creation/selection, destructive dump statements, dump metadata, fixed `AUTO_INCREMENT` values, definers, and transactional/test data first.
+- Static reference data may be migrated, but Flyway must never seed a production user with a fixed/default password.
+- Before baselining an existing database: create and verify a backup, compare the actual schema/reference data with the intended migrations, test on a restored copy, and record the baseline version selected for that environment.
+- Never assume all existing databases have the same baseline version. The next migration must have a version greater than every object represented by that environment's baseline.
+- New/CI databases must be tested from an empty MySQL schema with Flyway applying the complete migration chain. Existing-database upgrade tests must also be performed before production rollout.
+
+### 13.5 Production-safe configuration
+
+- Base configuration is production-safe by default: SQL logging off, Swagger off, health details hidden, Open Session in View off, and circular references disabled.
+- Development-only settings belong in `application-dev.yml` with explicit `spring.config.activate.on-profile: dev`; production must explicitly use the `prod` profile and never activate `dev`.
+- Public Actuator exposure is limited to `health` and `info`, without internal health details. Other management endpoints must remain unexposed or be restricted to an internal/admin management plane.
+- Swagger/OpenAPI UI is disabled by default and in production.
+- Never enable `spring.main.allow-circular-references`; refactor dependency cycles instead.
+
+### 13.6 Refresh-token concurrency
+
+- Functional interceptors must not keep request state through `this`. Shared refresh state belongs in `AuthService`.
+- Concurrent 401 responses must share one refresh request. Clean the shared state with `finalize()` before `shareReplay({ bufferSize: 1, refCount: false })`.
+- Requests under `/api/v1/auth/**`, especially the refresh endpoint, must never trigger recursive refresh handling.
+- Tests must verify one refresh request for concurrent 401 responses, successful retries with the new access token, cleanup after failure, and absence of refresh loops.
+
+### 13.7 Cache correctness
+
+- A cache key must include every normalized input that can change a response. Cache-key generation and repository queries must use the same canonical defaults and normalization logic.
+- Product-list keys include category, descendant inclusion, brand, supplier when applicable, visibility/status, normalized keyword, price range, deterministically sorted attribute filters, page, size, sort field, and sort direction.
+- Sort fields use an allowlist. Keep public and admin query methods separate where practical; never cache an admin query merely because its status is `ACTIVE`.
+- A missing cache is preferable to a cache with possible key collisions or authorization leakage.
+- Cache tests cover distinct filters, cache hits, write eviction, and Redis-unavailable fallback. Never cache cart, order, inventory quantity, or user-sensitive responses.
+
+### 13.8 CI and encoding enforcement
+
+- Required CI commands must not use `--if-present`. Lint checks both TypeScript and Angular templates and must fail CI on errors.
+- Do not add disable comments, skip tests, weaken assertions, or relax rules solely to make CI pass. New build warnings must be fixed or explicitly documented with rationale.
+- Java, TypeScript, HTML, YAML, and SQL source files use UTF-8. Do not mass-replace suspected mojibake; inspect and repair each damaged string.
+- Tests for Vietnamese JSON responses verify JSON-compatible content and a correctly decoded UTF-8 body, not an exact `charset` parameter.
+
+## 14. What the agent must NOT do
 
 - Do not modify a production table's structure without a new migration file.
 - Do not hardcode secrets (JWT secret, DB password, Redis password) — always use `application.yml` + environment variables, or GitHub Actions secrets in CI.
@@ -363,7 +426,7 @@ CI configuration lives in `.github/workflows/`. Every PR into `main` or `develop
 - Do not use field injection (`@Autowired` on a field) in Java, or manual `new Service()` instantiation in Angular — see sections 6.6 and 7.4.
 - Do not disable, skip, or work around a failing CI check instead of fixing the underlying issue.
 
-## 14. Roadmap (current phase → later)
+## 15. Roadmap (current phase → later)
 
 **Phase 1 (current — do this first):**
 1. Set up the Spring Boot project, connect MySQL via Flyway using `database_ban_may_tinh.sql`.

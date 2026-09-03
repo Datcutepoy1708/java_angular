@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import com.store.util.ClientIpResolver;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -38,6 +39,7 @@ public class AuditLogAspect {
 
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final ClientIpResolver clientIpResolver;
 
     @Around("@annotation(com.store.audit.annotation.Auditable)")
     public Object auditMethod(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -147,10 +149,6 @@ public class AuditLogAspect {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null || xfHeader.isBlank() || "unknown".equalsIgnoreCase(xfHeader)) {
-            return request.getRemoteAddr();
-        }
-        return xfHeader.split(",")[0].trim();
+        return clientIpResolver.resolveClientIp(request);
     }
 }

@@ -19,15 +19,27 @@ import java.util.UUID;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
-    private String jwtSecret;
+    private final String jwtSecret;
+    private final long accessTokenExpirationMs;
+    private final SecretKey signingKey;
 
-    @Value("${jwt.access-token-expiration-ms:1800000}")
-    private long accessTokenExpirationMs;
+    public JwtTokenProvider(
+            @Value("${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}") String jwtSecret,
+            @Value("${jwt.access-token-expiration-ms:1800000}") long accessTokenExpirationMs) {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException("JWT Secret cannot be null or empty.");
+        }
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT Secret must be at least 256 bits (32 bytes) long. Current length: " + keyBytes.length + " bytes.");
+        }
+        this.jwtSecret = jwtSecret;
+        this.accessTokenExpirationMs = accessTokenExpirationMs;
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return this.signingKey;
     }
 
     public String generateAccessToken(CustomUserDetails userDetails) {

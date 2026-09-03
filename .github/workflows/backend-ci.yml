@@ -23,7 +23,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
           MYSQL_DATABASE: computer_store_db
         ports:
           - 3306:3306
@@ -49,23 +49,23 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x demo/mvnw
 
-      - name: Initialize Database Schema
-        run: mysql -h 127.0.0.1 -P 3306 -u root -proot computer_store_db < database/database_ban_may_tinh.sql
-
-      - name: Initialize Chat Tables Schema
-        run: mysql -h 127.0.0.1 -P 3306 -u root -proot computer_store_db < database/chat_tables.sql
-
       - name: Run CI Build & Tests (Maven Verify)
         working-directory: demo
         env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USERNAME: ${{ secrets.DB_USERNAME || 'root' }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/computer_store_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME || 'root' }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
           SPRING_DATA_REDIS_HOST: 127.0.0.1
           SPRING_DATA_REDIS_PORT: 6379
-          JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-          MAIL_HOST: smtp.gmail.com
-          MAIL_PORT: 587
-          MAIL_USERNAME: test@store.com
-          MAIL_PASSWORD: dummypassword
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          ZALO_APP_ID: ${{ secrets.ZALO_APP_ID }}
+          ZALO_SECRET_KEY: ${{ secrets.ZALO_SECRET_KEY }}
         run: ./mvnw -B clean verify

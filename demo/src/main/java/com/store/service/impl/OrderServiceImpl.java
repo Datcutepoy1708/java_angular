@@ -328,10 +328,10 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with code: " + orderCode));
 
-        if (order.getUser() != null) {
-            if (userId == null || !order.getUser().getUserId().equals(userId)) {
-                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view this order");
-            }
+        // This endpoint is exclusively for authenticated customers viewing their own orders.
+        // Guest orders must be retrieved through trackGuestOrder, which also verifies the phone number.
+        if (userId == null || order.getUser() == null || !order.getUser().getUserId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view this order");
         }
         return mapOrderToResponse(order);
     }

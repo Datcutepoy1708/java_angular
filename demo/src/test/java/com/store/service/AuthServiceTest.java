@@ -28,6 +28,8 @@ import com.store.security.CustomUserDetails;
 import com.store.security.JwtTokenProvider;
 import com.store.security.LoginRateLimiter;
 import com.store.service.impl.AuthServiceImpl;
+import com.store.util.ClientIpResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -87,7 +89,9 @@ class AuthServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks
+    @Mock
+    private ClientIpResolver clientIpResolver;
+
     private AuthServiceImpl authService;
 
     private Role customerRole;
@@ -97,6 +101,20 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
+        authService = new AuthServiceImpl(
+                userRepository,
+                roleRepository,
+                authTokenRepository,
+                orderRepository,
+                passwordEncoder,
+                jwtTokenProvider,
+                loginRateLimiter,
+                emailService,
+                otpService,
+                socialAuthService,
+                eventPublisher,
+                clientIpResolver
+        );
         customerRole = Role.builder()
                 .roleId(1)
                 .roleName("ROLE_CUSTOMER")
@@ -643,6 +661,27 @@ class AuthServiceTest {
             assertThat(response.getUser().getFullName()).isEqualTo("Zalo Customer");
             verify(userRepository).save(any(User.class));
             verify(eventPublisher).publishEvent(any(SocialLoginPostProcessEvent.class));
+        }
+
+        @Test
+        @DisplayName("loginWithZalo - Sử dụng ClientIpResolver thay vì tự bóc tách X-Forwarded-For")
+        void loginWithZalo_usesClientIpResolver_notSpoofedHeader() {
+            HttpServletRequest mockRequest = org.mockito.Mockito.mock(HttpServletRequest.class);
+            when(clientIpResolver.resolveClientIp(mockRequest)).thenReturn("203.0.113.195");
+            when(socialAuthService.verifyZaloAuthCode("valid-zalo-auth-code", "valid-code-verifier-string"))
+                    .thenReturn(sampleZaloUser);
+            when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(customerUser));
+            when(userRepository.save(any(User.class))).thenReturn(customerUser);
+            when(jwtTokenProvider.generateAccessToken(any(CustomUserDetails.class))).thenReturn("access-token-zalo");
+            when(jwtTokenProvider.generateRefreshToken()).thenReturn("refresh-token-zalo");
+
+            AuthResponse response = authService.loginWithZalo(zaloRequest, mockRequest);
+
+            assertThat(response).isNotNull();
+            verify(clientIpResolver).resolveClientIp(mockRequest);
+            verify(loginRateLimiter).checkRateLimit(null, "203.0.113.195");
+            verify(mockRequest, org.mockito.Mockito.never()).getHeader("X-Forwarded-For");
+            verify(mockRequest, org.mockito.Mockito.never()).getHeader("X-Real-IP");
         }
     }
 }

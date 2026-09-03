@@ -1,0 +1,38 @@
+# ===================================================================
+# Production Profile Configuration
+# ===================================================================
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# Tắt Swagger UI và OpenAPI docs trong môi trường production để bảo mật API surface
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Giới hạn Actuator trong Production
+management:
+  endpoints:
+    jmx:
+      exposure:
+        exclude: "*"
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

@@ -33,6 +33,7 @@ import com.store.service.AuthService;
 import com.store.service.EmailService;
 import com.store.service.OtpService;
 import com.store.service.SocialAuthService;
+import com.store.util.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
     private final OtpService otpService;
     private final SocialAuthService socialAuthService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ClientIpResolver clientIpResolver;
 
     @Override
     @Transactional
@@ -328,7 +330,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse loginWithGoogle(GoogleLoginRequest request, HttpServletRequest httpRequest) {
-        String clientIp = extractClientIp(httpRequest);
+        String clientIp = clientIpResolver.resolveClientIp(httpRequest);
         loginRateLimiter.checkRateLimit(null, clientIp);
 
         SocialUserInfo socialUser = socialAuthService.verifyGoogleToken(request.getIdToken());
@@ -338,7 +340,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse loginWithFacebook(FacebookLoginRequest request, HttpServletRequest httpRequest) {
-        String clientIp = extractClientIp(httpRequest);
+        String clientIp = clientIpResolver.resolveClientIp(httpRequest);
         loginRateLimiter.checkRateLimit(null, clientIp);
 
         SocialUserInfo socialUser = socialAuthService.verifyFacebookToken(request.getAccessToken());
@@ -348,7 +350,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse loginWithZalo(ZaloLoginRequest request, HttpServletRequest httpRequest) {
-        String clientIp = extractClientIp(httpRequest);
+        String clientIp = clientIpResolver.resolveClientIp(httpRequest);
         loginRateLimiter.checkRateLimit(null, clientIp);
 
         SocialUserInfo socialUser = socialAuthService.verifyZaloAuthCode(request.getCode(), request.getCodeVerifier());
@@ -466,19 +468,6 @@ public class AuthServiceImpl implements AuthService {
                 .build());
 
         return buildAuthResponse(user);
-    }
-
-    private String extractClientIp(HttpServletRequest request) {
-        if (request == null) return "127.0.0.1";
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isBlank()) {
-            return xRealIp.trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private String hashToken(String token) {

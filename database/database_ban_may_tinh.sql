@@ -1429,6 +1429,87 @@ CREATE TABLE `return_request_images` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `chat_conversations`
+--
+
+DROP TABLE IF EXISTS `chat_conversations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chat_conversations` (
+  `conversation_id` bigint NOT NULL AUTO_INCREMENT,
+  `session_id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_id` bigint DEFAULT NULL,
+  `staff_id` bigint DEFAULT NULL,
+  `customer_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `customer_email` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `customer_phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('BOT_ACTIVE','WAITING_STAFF','STAFF_ACTIVE','CLOSED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'BOT_ACTIVE',
+  `bot_unmatched_count` int NOT NULL DEFAULT '0',
+  `unread_staff_count` int NOT NULL DEFAULT '0',
+  `unread_customer_count` int NOT NULL DEFAULT '0',
+  `last_message` text COLLATE utf8mb4_unicode_ci,
+  `last_message_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`conversation_id`),
+  KEY `idx_chat_session` (`session_id`),
+  KEY `idx_chat_user` (`user_id`),
+  KEY `idx_chat_staff` (`staff_id`),
+  KEY `idx_chat_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chat_messages`
+--
+
+DROP TABLE IF EXISTS `chat_messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chat_messages` (
+  `message_id` bigint NOT NULL AUTO_INCREMENT,
+  `conversation_id` bigint NOT NULL,
+  `sender_type` enum('CUSTOMER','BOT','STAFF','SYSTEM') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sender_id` bigint DEFAULT NULL,
+  `sender_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `metadata` json DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`message_id`),
+  KEY `idx_msg_conversation` (`conversation_id`),
+  KEY `idx_msg_created` (`created_at`),
+  CONSTRAINT `fk_chat_msg_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `chat_conversations` (`conversation_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chat_bot_rules`
+--
+
+DROP TABLE IF EXISTS `chat_bot_rules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chat_bot_rules` (
+  `rule_id` int NOT NULL AUTO_INCREMENT,
+  `rule_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `keywords` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `match_type` enum('CONTAINS','EXACT','REGEX') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'CONTAINS',
+  `response_message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `quick_replies` json DEFAULT NULL,
+  `action_type` enum('REPLY','HANDOVER_STAFF') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REPLY',
+  `priority` int NOT NULL DEFAULT '0',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rule_id`),
+  KEY `idx_rule_priority` (`priority` DESC),
+  KEY `idx_rule_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

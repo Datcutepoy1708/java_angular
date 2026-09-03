@@ -20,6 +20,7 @@ export class SocialAuthService {
   private googleClientId = '';
   private facebookAppId = '';
   private zaloAppId = '';
+  private zaloLoginInProgress = false;
 
   /**
    * Tự động tải Client ID trực tiếp từ Backend (nguồn file .env)
@@ -329,11 +330,25 @@ export class SocialAuthService {
 
   /**
    * Mở popup đăng nhập Zalo qua OAuth v4 PKCE:
+   * - Ngăn chặn mở đồng thời nhiều popup (single-popup lock)
    * - Sinh state ngẫu nhiên lưu vào sessionStorage để chống tấn công CSRF
    * - Sinh cặp mã PKCE (code_verifier & code_challenge)
    * - Mở popup tới Zalo OAuth và lắng nghe postMessage từ route /auth/zalo/callback
    */
   public async signInWithZalo(): Promise<{ code: string; codeVerifier: string }> {
+    if (this.zaloLoginInProgress) {
+      throw new Error('Đang trong quá trình đăng nhập Zalo. Vui lòng chờ hoàn tất.');
+    }
+
+    this.zaloLoginInProgress = true;
+    try {
+      return await this.executeZaloLogin();
+    } finally {
+      this.zaloLoginInProgress = false;
+    }
+  }
+
+  private async executeZaloLogin(): Promise<{ code: string; codeVerifier: string }> {
     await this.loadConfig();
 
     if (!this.zaloAppId) {
@@ -372,19 +387,31 @@ export class SocialAuthService {
 
       let isCompleted = false;
 
-      // Lắng nghe postMessage từ ZaloCallbackComponent (chống CSRF & cùng origin)
+      const cleanup = () => {
+        window.removeEventListener('message', messageHandler);
+        if (checkClosedInterval) {
+          clearInterval(checkClosedInterval);
+        }
+        sessionStorage.removeItem('zalo_oauth_state');
+        if (popup && !popup.closed) {
+          try {
+            popup.close();
+          } catch (e) {
+            // Ignore cross-origin close errors
+          }
+        }
+      };
+
+      // Lắng nghe postMessage từ ZaloCallbackComponent (kiểm tra cả origin và window source)
       const messageHandler = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) {
+        if (event.origin !== window.location.origin || event.source !== popup) {
           return;
         }
 
         if (event.data && event.data.type === 'ZALO_AUTH_CALLBACK') {
           isCompleted = true;
-          window.removeEventListener('message', messageHandler);
-          clearInterval(checkClosedInterval);
-
           const savedState = sessionStorage.getItem('zalo_oauth_state');
-          sessionStorage.removeItem('zalo_oauth_state');
+          cleanup();
 
           // Xác thực CSRF State nghiêm ngặt
           if (!event.data.state || event.data.state !== savedState) {
@@ -415,9 +442,8 @@ export class SocialAuthService {
       // Giám sát trường hợp người dùng chủ động tắt popup
       const checkClosedInterval = setInterval(() => {
         if (!isCompleted && (!popup || popup.closed)) {
-          clearInterval(checkClosedInterval);
-          window.removeEventListener('message', messageHandler);
-          sessionStorage.removeItem('zalo_oauth_state');
+          isCompleted = true;
+          cleanup();
           reject(new Error('Cửa sổ đăng nhập Zalo đã bị đóng.'));
         }
       }, 500);

@@ -68,7 +68,6 @@ public class SecurityConfig {
                         // Orders public endpoints (Guest Checkout & Order Tracking)
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/track").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/{orderCode}").permitAll()
                         // Admin Settings endpoints
                         .requestMatchers("/api/v1/settings", "/api/v1/settings/**").hasRole("ADMIN")
                         // Static uploads public read
@@ -86,8 +85,9 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        // Actuator
-                        .requestMatchers("/actuator/**").permitAll()
+                        // Actuator (health & info public for probes, others restricted to ADMIN)
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         // WebSocket endpoint (SockJS needs to be public)
                         .requestMatchers("/ws-chat/**").permitAll()
                         // Customer Chat APIs (public — guest access)

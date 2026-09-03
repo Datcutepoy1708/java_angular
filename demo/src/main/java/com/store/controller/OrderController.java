@@ -43,6 +43,7 @@ public class OrderController {
 
     private final OrderService orderService;
     private final GuestOrderRateLimiter guestOrderRateLimiter;
+    private final com.store.util.ClientIpResolver clientIpResolver;
 
     @PostMapping
     @Operation(summary = "Submit an order (supports both Member and Guest checkout)")
@@ -52,7 +53,7 @@ public class OrderController {
             HttpServletRequest servletRequest) {
         Long userId = userDetails != null ? userDetails.getUserId() : null;
         if (userId == null) {
-            String clientIp = extractClientIp(servletRequest);
+            String clientIp = clientIpResolver.resolveClientIp(servletRequest);
             guestOrderRateLimiter.checkRateLimit(clientIp, request.getReceiverPhone());
             OrderResponse response = orderService.createOrder(null, request);
             guestOrderRateLimiter.recordOrder(clientIp);
@@ -87,26 +88,13 @@ public class OrderController {
     }
 
     @GetMapping("/{orderCode}")
-    @Operation(summary = "Get order details and timeline by order code")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get the current user's order details and timeline by order code")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrderByCode(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String orderCode) {
-        Long userId = userDetails != null ? userDetails.getUserId() : null;
-        OrderResponse response = orderService.getOrderByCode(orderCode, userId);
+        OrderResponse response = orderService.getOrderByCode(orderCode, userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin đơn hàng thành công", response));
-    }
-
-    private String extractClientIp(HttpServletRequest request) {
-        if (request == null) return "unknown";
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader != null && !xfHeader.isBlank()) {
-            return xfHeader.split(",")[0].trim();
-        }
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp.trim();
-        }
-        return request.getRemoteAddr();
     }
 
     @PostMapping("/{orderCode}/cancel")

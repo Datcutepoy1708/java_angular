@@ -5,6 +5,8 @@ import { HomeComponent } from './home.component';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { BrandService } from '../../../core/services/brand.service';
+import { BannerService } from '../../../core/services/banner.service';
+import { NewsService } from '../../../core/services/news.service';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -35,6 +37,19 @@ describe('HomeComponent', () => {
     getAll: () => of({ success: true, message: 'OK', data: [] }),
   };
 
+  const mockBannerService = {
+    getPublicBanners: () => of({ success: true, message: 'OK', data: [] }),
+  };
+
+  const mockNewsService = {
+    getPublicNews: () =>
+      of({
+        success: true,
+        message: 'OK',
+        data: { content: [], totalElements: 0, totalPages: 0 },
+      }),
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
@@ -43,6 +58,8 @@ describe('HomeComponent', () => {
         { provide: ProductService, useValue: mockProductService },
         { provide: CategoryService, useValue: mockCategoryService },
         { provide: BrandService, useValue: mockBrandService },
+        { provide: BannerService, useValue: mockBannerService },
+        { provide: NewsService, useValue: mockNewsService },
       ],
     }).compileComponents();
 

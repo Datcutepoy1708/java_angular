@@ -11,7 +11,7 @@ spring:
       max-request-size: 10MB
   main:
     banner-mode: "off"
-    allow-circular-references: true
+    allow-circular-references: false
   jmx:
     enabled: false
 

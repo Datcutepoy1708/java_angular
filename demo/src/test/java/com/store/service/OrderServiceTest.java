@@ -474,6 +474,80 @@ class OrderServiceTest {
     class GuestOrderTests {
 
         @Test
+        @DisplayName("Authenticated order-detail endpoint must reject guest orders")
+        void testGetOrderByCode_GuestOrder_ThrowsAccessDeniedException() {
+            Order guestOrder = Order.builder()
+                    .orderId(200L)
+                    .orderCode("ORD-GUEST-123456")
+                    .receiverPhone("0988888888")
+                    .items(new ArrayList<>())
+                    .statusHistory(new ArrayList<>())
+                    .build();
+
+            when(orderRepository.findByOrderCode("ORD-GUEST-123456"))
+                    .thenReturn(Optional.of(guestOrder));
+
+            assertThatThrownBy(() -> orderService.getOrderByCode("ORD-GUEST-123456", 1L))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        }
+
+        @Test
+        @DisplayName("Unauthenticated caller must not use the authenticated order-detail endpoint")
+        void testGetOrderByCode_Unauthenticated_ThrowsAccessDeniedException() {
+            Order memberOrder = Order.builder()
+                    .orderId(100L)
+                    .orderCode("ORD-MEMBER-123456")
+                    .user(testUser)
+                    .items(new ArrayList<>())
+                    .statusHistory(new ArrayList<>())
+                    .build();
+
+            when(orderRepository.findByOrderCode("ORD-MEMBER-123456"))
+                    .thenReturn(Optional.of(memberOrder));
+
+            assertThatThrownBy(() -> orderService.getOrderByCode("ORD-MEMBER-123456", null))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        }
+
+        @Test
+        @DisplayName("Authenticated customer must not view another customer's order")
+        void testGetOrderByCode_DifferentOwner_ThrowsAccessDeniedException() {
+            Order memberOrder = Order.builder()
+                    .orderId(100L)
+                    .orderCode("ORD-MEMBER-123456")
+                    .user(testUser)
+                    .items(new ArrayList<>())
+                    .statusHistory(new ArrayList<>())
+                    .build();
+
+            when(orderRepository.findByOrderCode("ORD-MEMBER-123456"))
+                    .thenReturn(Optional.of(memberOrder));
+
+            assertThatThrownBy(() -> orderService.getOrderByCode("ORD-MEMBER-123456", 999L))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        }
+
+        @Test
+        @DisplayName("Authenticated customer can view only their own order")
+        void testGetOrderByCode_Owner_Success() {
+            Order memberOrder = Order.builder()
+                    .orderId(100L)
+                    .orderCode("ORD-MEMBER-123456")
+                    .user(testUser)
+                    .items(new ArrayList<>())
+                    .statusHistory(new ArrayList<>())
+                    .build();
+
+            when(orderRepository.findByOrderCode("ORD-MEMBER-123456"))
+                    .thenReturn(Optional.of(memberOrder));
+
+            OrderResponse response = orderService.getOrderByCode("ORD-MEMBER-123456", testUser.getUserId());
+
+            assertThat(response.getOrderCode()).isEqualTo("ORD-MEMBER-123456");
+            assertThat(response.getUserId()).isEqualTo(testUser.getUserId());
+        }
+
+        @Test
         @DisplayName("Should successfully place guest order with atomic stock reservation and null user")
         void testCreateGuestOrder_Success() {
             com.store.dto.request.order.GuestOrderItemRequest guestItem = com.store.dto.request.order.GuestOrderItemRequest.builder()

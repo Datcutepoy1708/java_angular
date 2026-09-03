@@ -29,6 +29,7 @@ import java.util.Map;
 public class CustomerChatController {
 
     private final ChatService chatService;
+    private final com.store.util.ClientIpResolver clientIpResolver;
 
     @PostMapping("/init")
     @Operation(summary = "Khởi tạo hoặc tiếp tục hội thoại chat")
@@ -58,7 +59,7 @@ public class CustomerChatController {
             @RequestHeader("X-Session-Id") String sessionId,
             HttpServletRequest httpRequest) {
 
-        String ipAddress = getClientIp(httpRequest);
+        String ipAddress = clientIpResolver.resolveClientIp(httpRequest);
         String imageUrl = chatService.uploadChatImage(file, ipAddress, sessionId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tải ảnh lên thành công", Map.of("url", imageUrl)));
@@ -87,19 +88,5 @@ public class CustomerChatController {
 
         chatService.markReadByCustomer(conversationId, sessionId);
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu đọc", null));
-    }
-
-    // ─── Utilities ────────────────────────────────────────────────────────────
-
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        return request.getRemoteAddr();
     }
 }
