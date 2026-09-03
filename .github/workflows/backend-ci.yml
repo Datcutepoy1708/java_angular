@@ -23,7 +23,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
+          MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: computer_store_db
         ports:
           - 3306:3306
@@ -54,18 +54,30 @@ jobs:
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_USERNAME: ${{ secrets.DB_USERNAME || 'root' }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
+          DB_USERNAME: root
+          DB_PASSWORD: root
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/computer_store_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME || 'root' }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
           SPRING_DATA_REDIS_HOST: 127.0.0.1
           SPRING_DATA_REDIS_PORT: 6379
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          MAIL_HOST: ${{ secrets.MAIL_HOST }}
-          MAIL_PORT: ${{ secrets.MAIL_PORT }}
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-          ZALO_APP_ID: ${{ secrets.ZALO_APP_ID }}
-          ZALO_SECRET_KEY: ${{ secrets.ZALO_SECRET_KEY }}
-        run: ./mvnw -B clean verify
+          SECRET_JWT: ${{ secrets.JWT_SECRET }}
+          SECRET_MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          SECRET_MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          SECRET_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          SECRET_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          SECRET_ZALO_APP_ID: ${{ secrets.ZALO_APP_ID }}
+          SECRET_ZALO_SECRET_KEY: ${{ secrets.ZALO_SECRET_KEY }}
+        run: |
+          export JWT_SECRET="${SECRET_JWT:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}"
+          export MAIL_HOST="${SECRET_MAIL_HOST:-smtp.gmail.com}"
+          export MAIL_PORT="${SECRET_MAIL_PORT:-587}"
+          export MAIL_USERNAME="${SECRET_MAIL_USERNAME:-test@store.com}"
+          export MAIL_PASSWORD="${SECRET_MAIL_PASSWORD:-dummypassword}"
+          if [ -n "$SECRET_ZALO_APP_ID" ]; then
+            export ZALO_APP_ID="$SECRET_ZALO_APP_ID"
+          fi
+          if [ -n "$SECRET_ZALO_SECRET_KEY" ]; then
+            export ZALO_SECRET_KEY="$SECRET_ZALO_SECRET_KEY"
+          fi
+          ./mvnw -B clean verify
