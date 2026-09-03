@@ -58,38 +58,39 @@ public class TestFixtureHelper {
     }
 
     private void ensureProductAndVariant() {
-        if (productVariantRepository.count() == 0) {
-            Category category = categoryRepository.findAll().stream().findFirst().orElseGet(() ->
-                    categoryRepository.save(Category.builder()
-                            .name("Linh kiện máy tính")
-                            .slug("linh-kien-may-tinh-" + System.nanoTime())
-                            .status(CategoryStatus.ACTIVE)
-                            .build())
-            );
+        Category category = categoryRepository.findAll().stream().findFirst().orElseGet(() ->
+                categoryRepository.save(Category.builder()
+                        .name("Linh kiện máy tính")
+                        .slug("linh-kien-may-tinh-" + System.nanoTime())
+                        .status(CategoryStatus.ACTIVE)
+                        .build())
+        );
 
-            Brand brand = brandRepository.findAll().stream().findFirst().orElseGet(() ->
-                    brandRepository.save(Brand.builder()
-                            .name("ASUS")
-                            .slug("asus-" + System.nanoTime())
-                            .build())
-            );
+        Brand brand = brandRepository.findAll().stream().findFirst().orElseGet(() ->
+                brandRepository.save(Brand.builder()
+                        .name("ASUS")
+                        .slug("asus-" + System.nanoTime())
+                        .build())
+        );
 
-            Product product = productRepository.findAll().stream().findFirst().orElseGet(() ->
-                    productRepository.save(Product.builder()
-                            .category(category)
-                            .brand(brand)
-                            .name("VGA ASUS ROG Strix GeForce RTX 4090")
-                            .slug("vga-asus-rog-strix-geforce-rtx-4090-" + System.nanoTime())
-                            .sku("VGA-RTX4090-ROG-" + (System.nanoTime() % 100000))
-                            .status(ProductStatus.ACTIVE)
-                            .warrantyMonths(36)
-                            .build())
-            );
+        Product product = productRepository.findAll().stream().findFirst().orElseGet(() ->
+                productRepository.save(Product.builder()
+                        .category(category)
+                        .brand(brand)
+                        .name("VGA ASUS ROG Strix GeForce RTX 4090")
+                        .slug("vga-asus-rog-strix-geforce-rtx-4090-" + System.nanoTime())
+                        .sku("VGA-RTX4090-ROG-" + (System.nanoTime() % 100000))
+                        .status(ProductStatus.ACTIVE)
+                        .warrantyMonths(36)
+                        .build())
+        );
 
+        while (productVariantRepository.count() < 3) {
+            long idx = productVariantRepository.count() + 1;
             productVariantRepository.save(ProductVariant.builder()
                     .product(product)
-                    .variantName("ASUS ROG Strix RTX 4090 24GB Gaming")
-                    .skuVariant("ROG-STRIX-RTX4090-O24G-" + (System.nanoTime() % 100000))
+                    .variantName("ASUS ROG Strix RTX 4090 Variant " + idx)
+                    .skuVariant("ROG-STRIX-RTX4090-V" + idx + "-" + (System.nanoTime() % 100000))
                     .price(new BigDecimal("49990000.00"))
                     .salePrice(new BigDecimal("47990000.00"))
                     .costPrice(new BigDecimal("42000000.00"))

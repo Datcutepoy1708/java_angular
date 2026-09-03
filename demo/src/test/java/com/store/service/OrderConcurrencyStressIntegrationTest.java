@@ -218,6 +218,7 @@ class OrderConcurrencyStressIntegrationTest {
     @Test
     @DisplayName("DB Rollback Test: When 1 of 3 items in cart fails due to InsufficientStock, Spring @Transactional must rollback DB state so previous items have reserved_qty=0, order table has 0 garbage rows, and cart is intact")
     void testCreateOrder_PartialReserve_RollsBackOnDbLevel() {
+        fixtureHelper.ensureBasicFixtures();
         List<ProductVariant> variants = productVariantRepository.findAll();
         assertThat(variants.size()).isGreaterThanOrEqualTo(3);
 
