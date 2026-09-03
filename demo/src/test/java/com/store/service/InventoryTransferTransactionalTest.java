@@ -47,12 +47,16 @@ class InventoryTransferTransactionalTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private com.store.util.TestFixtureHelper fixtureHelper;
+
     private Long testVariantId;
     private Integer sourceWarehouseId;
     private Integer targetWarehouseId;
 
     @BeforeEach
     void setUp() {
+        fixtureHelper.ensureBasicFixtures();
         ProductVariant variant = productVariantRepository.findAll().stream().findFirst().orElseThrow();
         List<Warehouse> warehouses = warehouseRepository.findAll();
         assertThat(warehouses.size()).isGreaterThanOrEqualTo(2);

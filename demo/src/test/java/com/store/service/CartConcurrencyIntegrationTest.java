@@ -26,11 +26,23 @@ class CartConcurrencyIntegrationTest {
     @Autowired
     private CartItemRepository cartItemRepository;
 
+    @Autowired
+    private com.store.util.TestFixtureHelper fixtureHelper;
+
+    @Autowired
+    private com.store.repository.UserRepository userRepository;
+
+    @Autowired
+    private com.store.repository.ProductVariantRepository productVariantRepository;
+
     @Test
     @DisplayName("Stress Test: 20 concurrent threads adding same variant to cart - zero duplicate key errors, exact accumulated total")
     void testConcurrentAddToCart_AtomicUpsert_NoDuplicateKeyError() throws InterruptedException {
-        Long testUserId = 2L; // Customer user in DB
-        Long testVariantId = 1L; // RTX 4090 / Laptop in seed data
+        fixtureHelper.ensureBasicFixtures();
+        com.store.entity.user.User customer = userRepository.findAll().stream().findFirst().orElseThrow();
+        com.store.entity.product.ProductVariant variant = productVariantRepository.findAll().stream().findFirst().orElseThrow();
+        Long testUserId = customer.getUserId();
+        Long testVariantId = variant.getVariantId();
         int threadCount = 20;
         int qtyPerThread = 2;
 

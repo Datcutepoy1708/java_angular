@@ -48,11 +48,15 @@ class InventoryConcurrencyStressIntegrationTest {
     @Autowired
     private WarehouseRepository warehouseRepository;
 
+    @Autowired
+    private com.store.util.TestFixtureHelper fixtureHelper;
+
     private Long testVariantId;
     private Integer testWarehouseId;
 
     @BeforeEach
     void setUp() {
+        fixtureHelper.ensureBasicFixtures();
         // Find existing variant and warehouse or create for test
         ProductVariant variant = productVariantRepository.findAll().stream().findFirst()
                 .orElseThrow(() -> new IllegalStateException("No product variants found in database for test"));

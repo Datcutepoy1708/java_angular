@@ -75,6 +75,9 @@ class DiscountConcurrencyIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private com.store.util.TestFixtureHelper fixtureHelper;
+
     private Long testVariantId;
     private Integer testWarehouseId;
     private List<Long> testUserIds = new ArrayList<>();
@@ -83,6 +86,7 @@ class DiscountConcurrencyIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        fixtureHelper.ensureBasicFixtures();
         ProductVariant variant = productVariantRepository.findAll().stream().findFirst()
                 .orElseThrow(() -> new IllegalStateException("No variants found for test"));
         Warehouse warehouse = warehouseRepository.findAll().stream().findFirst()
