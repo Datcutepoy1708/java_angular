@@ -66,4 +66,14 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     Optional<Order> findByOrderCodeAndReceiverPhone(String orderCode, String receiverPhone);
 
     long countByReceiverPhoneAndOrderStatusAndCreatedAtAfter(String receiverPhone, OrderStatus orderStatus, LocalDateTime after);
+
+    Optional<Order> findByPaymentReference(String paymentReference);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.paymentReference = :paymentReference")
+    Optional<Order> findByPaymentReferenceForUpdate(@Param("paymentReference") String paymentReference);
+
+    Optional<Order> findByPaymentPollingTokenHash(String paymentPollingTokenHash);
+
+    boolean existsByPaymentReference(String paymentReference);
 }

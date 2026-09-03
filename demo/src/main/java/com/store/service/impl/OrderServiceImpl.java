@@ -79,6 +79,8 @@ public class OrderServiceImpl implements OrderService {
     private final DiscountService discountService;
     private final DiscountCodeRepository discountCodeRepository;
     private final DiscountUsageRepository discountUsageRepository;
+    private final com.store.util.PaymentSecurityUtil paymentSecurityUtil;
+    private final com.store.config.PaymentProperties paymentProperties;
 
     private static final String ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final Random RANDOM = new SecureRandom();
@@ -263,6 +265,28 @@ public class OrderServiceImpl implements OrderService {
         // Generate unique order code
         String orderCode = generateUniqueOrderCode();
 
+        // Bank transfer payment reference & polling token generation
+        String paymentReference = null;
+        String rawPollingToken = null;
+        String pollingTokenHash = null;
+        LocalDateTime pollingExpiresAt = null;
+
+        if (paymentMethod == PaymentMethod.BANK_TRANSFER) {
+            for (int i = 0; i < 10; i++) {
+                String candidate = paymentSecurityUtil.generatePaymentReference();
+                if (!orderRepository.existsByPaymentReference(candidate)) {
+                    paymentReference = candidate;
+                    break;
+                }
+            }
+            if (paymentReference == null) {
+                paymentReference = paymentSecurityUtil.generatePaymentReference();
+            }
+            rawPollingToken = paymentSecurityUtil.generateRawPollingToken();
+            pollingTokenHash = paymentSecurityUtil.sha256Hex(rawPollingToken);
+            pollingExpiresAt = LocalDateTime.now().plusMinutes(30);
+        }
+
         // Step 5: Create and save Order
         Order order = Order.builder()
                 .orderCode(orderCode)
@@ -279,6 +303,11 @@ public class OrderServiceImpl implements OrderService {
                 .discountId(discountId)
                 .paymentMethod(paymentMethod)
                 .paymentStatus(PaymentStatus.UNPAID)
+                .paymentReference(paymentReference)
+                .paymentPollingTokenHash(pollingTokenHash)
+                .paymentPollingExpiresAt(pollingExpiresAt)
+                .paidAmount(BigDecimal.ZERO)
+                .reconciliationStatus(com.store.entity.order.ReconciliationStatus.PENDING)
                 .orderStatus(OrderStatus.PENDING)
                 .note(request.getNote())
                 .build();
@@ -312,7 +341,11 @@ public class OrderServiceImpl implements OrderService {
             cartItemRepository.deleteByUserUserId(userId);
         }
 
-        return mapOrderToResponse(savedOrder);
+        OrderResponse response = mapOrderToResponse(savedOrder);
+        if (rawPollingToken != null && response.getPaymentInstruction() != null) {
+            response.getPaymentInstruction().setPaymentPollingToken(rawPollingToken);
+        }
+        return response;
     }
 
     @Override
@@ -631,7 +664,32 @@ public class OrderServiceImpl implements OrderService {
                     .orElse(null);
         }
 
-        return OrderResponse.fromEntity(order, itemResponses, historyResponses, discountCode);
+        OrderResponse response = OrderResponse.fromEntity(order, itemResponses, historyResponses, discountCode);
+        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.getPaymentReference() != null) {
+            String bankId = paymentProperties.getBank().getId();
+            String accountNo = paymentProperties.getBank().getAccountNo();
+            String accountName = paymentProperties.getBank().getAccountName();
+            BigDecimal amount = order.getTotalAmount();
+            String encodedRef = java.net.URLEncoder.encode(order.getPaymentReference(), java.nio.charset.StandardCharsets.UTF_8);
+            String encodedName = java.net.URLEncoder.encode(accountName != null ? accountName : "", java.nio.charset.StandardCharsets.UTF_8);
+            String qrUrl = String.format("https://img.vietqr.io/image/%s-%s-compact2.png?amount=%s&addInfo=%s&accountName=%s",
+                    bankId != null ? bankId : "MB",
+                    accountNo != null ? accountNo : "",
+                    amount != null ? amount.toPlainString() : "0",
+                    encodedRef,
+                    encodedName);
+
+            com.store.dto.payment.PaymentInstructionResponse instruction = com.store.dto.payment.PaymentInstructionResponse.builder()
+                    .paymentReference(order.getPaymentReference())
+                    .bankId(bankId)
+                    .bankAccountNo(accountNo)
+                    .bankAccountName(accountName)
+                    .totalAmount(amount)
+                    .qrCodeUrl(qrUrl)
+                    .build();
+            response.setPaymentInstruction(instruction);
+        }
+        return response;
     }
 
     private Pageable createPageable(OrderFilterRequest filter) {

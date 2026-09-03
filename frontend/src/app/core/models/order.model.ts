@@ -28,6 +28,21 @@ export interface OrderStatusHistory {
   changedAt: string;
 }
 
+export interface PaymentInstruction {
+  paymentReference: string;
+  paymentPollingToken?: string;
+  bankId: string;
+  bankAccountNo: string;
+  bankAccountName: string;
+  totalAmount: number;
+  qrCodeUrl: string;
+}
+
+export interface PaymentPollingResponse {
+  status: 'PENDING' | 'PAID';
+  paidAt?: string | null;
+}
+
 export interface Order {
   orderId: number;
   orderCode: string;
@@ -47,6 +62,10 @@ export interface Order {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  paymentReference?: string;
+  paidAmount?: number;
+  reconciliationStatus?: string;
+  paymentInstruction?: PaymentInstruction;
   customerEmail?: string;
   note?: string;
   createdAt: string;

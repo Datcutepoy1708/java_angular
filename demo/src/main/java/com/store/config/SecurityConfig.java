@@ -68,6 +68,9 @@ public class SecurityConfig {
                         // Orders public endpoints (Guest Checkout & Order Tracking)
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/track").permitAll()
+                        // Payment Webhook (SePay) & Tracking Status Polling
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhooks/sepay").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/status").permitAll()
                         // Admin Settings endpoints
                         .requestMatchers("/api/v1/settings", "/api/v1/settings/**").hasRole("ADMIN")
                         // Static uploads public read

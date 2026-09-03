@@ -230,7 +230,20 @@ export class CheckoutComponent implements OnInit {
           } else {
             this.cartService.loadCart();
           }
-          this.router.navigate(['/order-success', res.data.orderCode]);
+          const pollingToken = res.data.paymentInstruction?.paymentPollingToken;
+          if (pollingToken) {
+            try {
+              sessionStorage.setItem(`payment_polling_${res.data.orderCode}`, pollingToken);
+            } catch {
+              // Ignore session storage access error
+            }
+          }
+          this.router.navigate(['/order-success', res.data.orderCode], {
+            state: {
+              order: res.data,
+              pollingToken: pollingToken
+            }
+          });
         }
       },
       error: (err) => {

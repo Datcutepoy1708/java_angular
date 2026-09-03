@@ -38,6 +38,11 @@ public class OrderResponse {
     private PaymentMethod paymentMethod;
     private PaymentStatus paymentStatus;
     private OrderStatus orderStatus;
+    private String paymentReference;
+    private BigDecimal paidAmount;
+    private LocalDateTime paidAt;
+    private String reconciliationStatus;
+    private com.store.dto.payment.PaymentInstructionResponse paymentInstruction;
     private String note;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -74,6 +79,10 @@ public class OrderResponse {
                 .discountCode(discountCode)
                 .paymentMethod(order.getPaymentMethod())
                 .paymentStatus(order.getPaymentStatus())
+                .paymentReference(order.getPaymentReference())
+                .paidAmount(order.getPaidAmount())
+                .paidAt(order.getPaidAt())
+                .reconciliationStatus(order.getReconciliationStatus() != null ? order.getReconciliationStatus().name() : null)
                 .orderStatus(order.getOrderStatus())
                 .note(order.getNote())
                 .createdAt(order.getCreatedAt())

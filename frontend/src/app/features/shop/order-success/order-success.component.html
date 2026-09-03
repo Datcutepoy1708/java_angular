@@ -21,8 +21,24 @@
         <strong class="code">{{ orderCode() }}</strong>
       </div>
 
-      <!-- Bank Transfer Instructions (If Bank Transfer) -->
-      @if (order()?.paymentMethod === 'bank_transfer') {
+      <!-- Payment Success Alert (When bank transfer is verified) -->
+      @if (isPaid()) {
+        <div class="paid-success-banner">
+          <div class="banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div class="banner-content">
+            <h3 class="banner-title">Đã Nhận Thanh Toán Thành Công!</h3>
+            <p class="banner-desc">Hệ thống đã tự động đối soát giao dịch chuyển khoản của bạn. Đơn hàng đang được chuẩn bị để đóng gói và vận chuyển.</p>
+          </div>
+        </div>
+      }
+
+      <!-- Bank Transfer Instructions (If Bank Transfer and not yet paid) -->
+      @if (order()?.paymentMethod === 'bank_transfer' && !isPaid()) {
         <div class="bank-instruction-box">
           <div class="box-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="bank-icon" width="20" height="20">
@@ -31,27 +47,35 @@
             <h3>Hướng Dẫn Thanh Toán Chuyển Khoản</h3>
           </div>
           <p class="instruction-text">
-            Vui lòng chuyển khoản đúng số tiền <strong>{{ formatPrice(order()?.totalAmount || 0) }}</strong> theo thông tin bên dưới trong vòng <strong>24 giờ</strong> để hoàn tất đơn hàng:
+            Vui lòng chuyển khoản đúng số tiền <strong>{{ formatPrice(order()?.totalAmount || 0) }}</strong> kèm nội dung chuyển khoản bên dưới để hệ thống tự động xác nhận đơn hàng:
           </p>
 
-          <div class="bank-grid">
+          <div class="bank-transfer-layout">
+            <!-- Dynamic VietQR Code -->
+            @if (order()?.paymentInstruction?.qrCodeUrl) {
+              <div class="qr-code-section">
+                <img [src]="order()?.paymentInstruction?.qrCodeUrl" alt="VietQR Mã Thanh Toán" class="qr-image" />
+                <span class="qr-hint">Mở App Ngân hàng bất kỳ để quét mã QR</span>
+              </div>
+            }
+
             <div class="bank-info">
               <div class="info-row">
                 <span class="info-label">Ngân hàng:</span>
-                <strong class="info-value">MB Bank (Ngân hàng Quân Đội)</strong>
+                <strong class="info-value">{{ order()?.paymentInstruction?.bankId || 'MB Bank' }}</strong>
               </div>
               <div class="info-row">
                 <span class="info-label">Số tài khoản:</span>
                 <div class="copyable-value">
-                  <strong class="info-value">090123456789</strong>
-                  <button type="button" class="btn-copy" (click)="copyToClipboard('090123456789')">
+                  <strong class="info-value">{{ order()?.paymentInstruction?.bankAccountNo || '090123456789' }}</strong>
+                  <button type="button" class="btn-copy" (click)="copyToClipboard(order()?.paymentInstruction?.bankAccountNo || '090123456789')">
                     Sao chép
                   </button>
                 </div>
               </div>
               <div class="info-row">
                 <span class="info-label">Chủ tài khoản:</span>
-                <strong class="info-value">CÔNG TY TNHH CÔNG NGHỆ COMPLEXUS</strong>
+                <strong class="info-value">{{ order()?.paymentInstruction?.bankAccountName || 'CONG TY COMPLEXUS' }}</strong>
               </div>
               <div class="info-row">
                 <span class="info-label">Số tiền:</span>
@@ -60,13 +84,22 @@
               <div class="info-row">
                 <span class="info-label">Nội dung CK:</span>
                 <div class="copyable-value">
-                  <strong class="info-value text-primary">{{ orderCode() }}</strong>
-                  <button type="button" class="btn-copy" (click)="copyToClipboard(orderCode())">
+                  <strong class="info-value text-primary highlight-ref">{{ order()?.paymentReference || orderCode() }}</strong>
+                  <button type="button" class="btn-copy" (click)="copyToClipboard(order()?.paymentReference || orderCode())">
                     Sao chép
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Auto-checking Status Indicator -->
+          <div class="polling-status-bar">
+            <span class="pulse-indicator"></span>
+            <span class="status-text">Hệ thống đang tự động lắng nghe giao dịch chuyển khoản...</span>
+            <button type="button" class="btn-check-now" (click)="checkPaymentNow()" [disabled]="isChecking()">
+              {{ isChecking() ? 'Đang kiểm tra...' : 'Kiểm tra ngay' }}
+            </button>
           </div>
 
           @if (copied()) {
@@ -92,7 +125,17 @@
               @if (order()?.paymentMethod === 'cod') {
                 Thanh toán khi nhận hàng (COD)
               } @else {
-                Chuyển khoản Ngân hàng (VietQR)
+                Chuyển khoản Ngân hàng (VietQR / SePay)
+              }
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Trạng thái thanh toán:</span>
+            <span class="detail-value">
+              @if (order()?.paymentStatus === 'paid' || isPaid()) {
+                <span class="status-badge paid">Đã thanh toán</span>
+              } @else {
+                <span class="status-badge unpaid">Chờ thanh toán</span>
               }
             </span>
           </div>

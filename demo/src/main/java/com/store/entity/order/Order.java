@@ -12,6 +12,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -87,6 +89,27 @@ public class Order {
     @Column(name = "payment_status", columnDefinition = "enum('unpaid','paid','refunded')")
     @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
+
+    @Column(name = "payment_reference", unique = true, length = 20)
+    private String paymentReference;
+
+    @Column(name = "payment_polling_token_hash", columnDefinition = "char(64)", unique = true, length = 64)
+    private String paymentPollingTokenHash;
+
+    @Column(name = "payment_polling_expires_at")
+    private LocalDateTime paymentPollingExpiresAt;
+
+    @Column(name = "paid_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal paidAmount = BigDecimal.ZERO;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "reconciliation_status", nullable = false, length = 20)
+    @Builder.Default
+    private ReconciliationStatus reconciliationStatus = ReconciliationStatus.PENDING;
 
     @Column(name = "order_status", columnDefinition = "enum('pending','confirmed','processing','shipping','completed','cancelled')")
     @Builder.Default

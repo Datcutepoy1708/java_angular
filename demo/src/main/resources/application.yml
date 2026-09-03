@@ -67,6 +67,13 @@ spring:
           protocol: smtp
 
 app:
+  bank:
+    id: ${BANK_ID:}
+    account-no: ${BANK_ACCOUNT_NO:}
+    account-name: ${BANK_ACCOUNT_NAME:}
+  sepay:
+    enabled: ${SEPAY_ENABLED:false}
+    webhook-apikey: ${SEPAY_WEBHOOK_APIKEY:}
   mail:
     from-address: ${MAIL_FROM_ADDRESS:no-reply@complexus.vn}
     from-name: ${MAIL_FROM_NAME:Complexus Shop}
@@ -108,4 +115,3 @@ management:
       show-details: never
       probes:
         enabled: true
-

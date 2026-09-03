@@ -40,7 +40,7 @@ class FlywayMigrationIsolatedTest {
     }
 
     @Test
-    @DisplayName("Verify clean Flyway V1 -> V2 execution on isolated UUID blank DB (strict CREATE TABLE, natural keys, idempotency)")
+    @DisplayName("Verify all Flyway migrations on an isolated UUID blank DB")
     void testFlywayMigrations_OnIsolatedBlankDatabase() throws Exception {
         String dbUser = getDbUser();
         String dbPass = getDbPassword();
@@ -59,7 +59,7 @@ class FlywayMigrationIsolatedTest {
         }
 
         try {
-            // 3. Run Flyway V1 -> V2 on the clean blank database
+            // 3. Run every migration on the clean blank database
             Flyway flyway = Flyway.configure()
                     .dataSource(testDbJdbcUrl, dbUser, dbPass)
                     .locations("classpath:db/migration")
@@ -69,7 +69,7 @@ class FlywayMigrationIsolatedTest {
 
             MigrateResult firstRun = flyway.migrate();
             System.out.println("First migrate result on " + testDbName + ": " + firstRun.migrationsExecuted + " migrations executed.");
-            assertEquals(2, firstRun.migrationsExecuted, "Expected V1 and V2 to execute on blank database");
+            assertEquals(5, firstRun.migrationsExecuted, "Expected V1 through V5 to execute on blank database");
             assertTrue(firstRun.success, "First migration run must succeed");
 
             // 4. Verify tables, reference data, and exact role mappings
