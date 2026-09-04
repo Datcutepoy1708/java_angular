@@ -39,9 +39,11 @@ import com.store.repository.OrderRepository;
 import com.store.repository.OrderStatusHistoryRepository;
 import com.store.repository.ProductImageRepository;
 import com.store.repository.ProductVariantRepository;
+import com.store.repository.SettingRepository;
 import com.store.repository.UserRepository;
 import com.store.service.DiscountService;
 import com.store.service.OrderService;
+import org.springframework.util.StringUtils;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +81,7 @@ public class OrderServiceImpl implements OrderService {
     private final DiscountService discountService;
     private final DiscountCodeRepository discountCodeRepository;
     private final DiscountUsageRepository discountUsageRepository;
+    private final SettingRepository settingRepository;
     private final com.store.util.PaymentSecurityUtil paymentSecurityUtil;
     private final com.store.config.PaymentProperties paymentProperties;
 
@@ -264,6 +267,25 @@ public class OrderServiceImpl implements OrderService {
 
         // Generate unique order code
         String orderCode = generateUniqueOrderCode();
+
+        // Validate Payment Method Availability based on System Settings
+        if (paymentMethod == PaymentMethod.BANK_TRANSFER) {
+            boolean isBankTransferEnabled = settingRepository.findBySettingKey("ENABLE_BANK_TRANSFER")
+                    .map(com.store.entity.setting.Setting::getSettingValue)
+                    .map(val -> !"false".equalsIgnoreCase(val.trim()))
+                    .orElse(true);
+            if (!isBankTransferEnabled) {
+                throw new IllegalStateException("Phương thức thanh toán chuyển khoản qua mã QR hiện đang tạm khóa bởi quản trị viên.");
+            }
+        } else if (paymentMethod == PaymentMethod.COD) {
+            boolean isCodEnabled = settingRepository.findBySettingKey("ENABLE_COD")
+                    .map(com.store.entity.setting.Setting::getSettingValue)
+                    .map(val -> !"false".equalsIgnoreCase(val.trim()))
+                    .orElse(true);
+            if (!isCodEnabled) {
+                throw new IllegalStateException("Phương thức thanh toán khi nhận hàng (COD) hiện đang tạm khóa bởi quản trị viên.");
+            }
+        }
 
         // Bank transfer payment reference & polling token generation
         String paymentReference = null;
@@ -665,22 +687,23 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderResponse response = OrderResponse.fromEntity(order, itemResponses, historyResponses, discountCode);
-        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER && order.getPaymentReference() != null) {
-            String bankId = paymentProperties.getBank().getId();
-            String accountNo = paymentProperties.getBank().getAccountNo();
-            String accountName = paymentProperties.getBank().getAccountName();
-            BigDecimal amount = order.getTotalAmount();
-            String encodedRef = java.net.URLEncoder.encode(order.getPaymentReference(), java.nio.charset.StandardCharsets.UTF_8);
-            String encodedName = java.net.URLEncoder.encode(accountName != null ? accountName : "", java.nio.charset.StandardCharsets.UTF_8);
+        if (order.getPaymentMethod() == PaymentMethod.BANK_TRANSFER) {
+            String bankId = paymentProperties != null && paymentProperties.getBank() != null && StringUtils.hasText(paymentProperties.getBank().getId()) ? paymentProperties.getBank().getId() : "MB";
+            String accountNo = paymentProperties != null && paymentProperties.getBank() != null && StringUtils.hasText(paymentProperties.getBank().getAccountNo()) ? paymentProperties.getBank().getAccountNo() : "090123456789";
+            String accountName = paymentProperties != null && paymentProperties.getBank() != null && StringUtils.hasText(paymentProperties.getBank().getAccountName()) ? paymentProperties.getBank().getAccountName() : "CONG TY COMPLEXUS";
+            BigDecimal amount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+            String ref = StringUtils.hasText(order.getPaymentReference()) ? order.getPaymentReference() : order.getOrderCode();
+            String encodedRef = java.net.URLEncoder.encode(ref != null ? ref : "", java.nio.charset.StandardCharsets.UTF_8);
+            String encodedName = java.net.URLEncoder.encode(accountName, java.nio.charset.StandardCharsets.UTF_8);
             String qrUrl = String.format("https://img.vietqr.io/image/%s-%s-compact2.png?amount=%s&addInfo=%s&accountName=%s",
-                    bankId != null ? bankId : "MB",
-                    accountNo != null ? accountNo : "",
-                    amount != null ? amount.toPlainString() : "0",
+                    bankId,
+                    accountNo,
+                    amount.toPlainString(),
                     encodedRef,
                     encodedName);
 
             com.store.dto.payment.PaymentInstructionResponse instruction = com.store.dto.payment.PaymentInstructionResponse.builder()
-                    .paymentReference(order.getPaymentReference())
+                    .paymentReference(ref)
                     .bankId(bankId)
                     .bankAccountNo(accountNo)
                     .bankAccountName(accountName)

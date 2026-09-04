@@ -87,6 +87,12 @@ class OrderServiceTest {
     private DiscountUsageRepository discountUsageRepository;
     @Mock
     private com.store.repository.ProductVariantRepository productVariantRepository;
+    @Mock
+    private com.store.repository.SettingRepository settingRepository;
+    @Mock
+    private com.store.util.PaymentSecurityUtil paymentSecurityUtil;
+    @Mock
+    private com.store.config.PaymentProperties paymentProperties;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -257,6 +263,31 @@ class OrderServiceTest {
             verify(orderRepository, never()).save(any());
             verify(cartItemRepository, never()).deleteByUserUserId(anyLong());
             verify(inventoryRepository, never()).releaseStockAtomic(anyLong(), anyInt(), anyInt());
+        }
+
+        @Test
+        @DisplayName("createOrder fails when BANK_TRANSFER is disabled in system settings")
+        void testCreateOrder_BankTransferDisabled_ThrowsException() {
+            when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(testUser));
+            CartItem cartItem1 = CartItem.builder().cartId(1L).user(testUser).variant(testVariant1).quantity(1).build();
+            when(cartItemRepository.findByUserIdWithDetails(1L)).thenReturn(List.of(cartItem1));
+
+            Inventory inv1 = Inventory.builder().variant(testVariant1).warehouse(warehouseHanoi).quantity(10).reservedQty(0).build();
+            when(inventoryRepository.findWarehousesWithAvailableStock(101L, 1)).thenReturn(List.of(inv1));
+            when(inventoryRepository.reserveStockAtomic(101L, 1, 1)).thenReturn(1);
+
+            when(settingRepository.findBySettingKey("ENABLE_BANK_TRANSFER")).thenReturn(java.util.Optional.of(
+                    com.store.entity.setting.Setting.builder().settingKey("ENABLE_BANK_TRANSFER").settingValue("false").build()
+            ));
+
+            CreateOrderRequest request = CreateOrderRequest.builder()
+                    .paymentMethod(PaymentMethod.BANK_TRANSFER)
+                    .shippingAddress("Hà Nội")
+                    .build();
+
+            assertThatThrownBy(() -> orderService.createOrder(1L, request))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Phương thức thanh toán chuyển khoản qua mã QR hiện đang tạm khóa");
         }
     }
 

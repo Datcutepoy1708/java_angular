@@ -89,31 +89,33 @@ export class OrderSuccessComponent implements OnInit {
   }
 
   private initPollingIfEligible(): void {
-    const currentOrder = this.order();
-    if (!currentOrder || currentOrder.paymentMethod !== 'bank_transfer' || this.isPaid()) {
+    if (!this.isBankTransfer() || this.isPaid()) {
       return;
     }
 
-    if (!this.pollingToken) {
-      return;
-    }
-
-    const token = this.pollingToken;
     const code = this.orderCode();
+    const token = this.pollingToken;
 
-    timer(0, 5000).pipe(
-      exhaustMap(() =>
-        this.paymentService.getPaymentStatus(token).pipe(
-          map(res => res.data),
-          catchError(() => of({ status: 'PENDING' as const, paidAt: null }))
-        )
-      ),
-      takeWhile(res => res.status !== 'PAID', true),
+    timer(0, 3000).pipe(
+      exhaustMap(() => {
+        if (token) {
+          return this.paymentService.getPaymentStatus(token).pipe(
+            map(res => res.data?.status?.toUpperCase() || 'PENDING'),
+            catchError(() => of('PENDING'))
+          );
+        } else {
+          return this.orderService.getOrderByCode(code).pipe(
+            map(res => res.data?.paymentStatus?.toUpperCase() || 'UNPAID'),
+            catchError(() => of('UNPAID'))
+          );
+        }
+      }),
+      takeWhile(status => status !== 'PAID', true),
       takeUntil(timer(15 * 60 * 1000)),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
-      next: (res) => {
-        if (res.status === 'PAID') {
+      next: (status) => {
+        if (status === 'PAID') {
           this.isPaid.set(true);
           this.clearSessionToken(code);
           const o = this.order();
@@ -135,25 +137,49 @@ export class OrderSuccessComponent implements OnInit {
   }
 
   checkPaymentNow(): void {
-    if (!this.pollingToken || this.isChecking()) return;
+    if (this.isChecking() || this.isPaid()) return;
     this.isChecking.set(true);
-    this.paymentService.getPaymentStatus(this.pollingToken).pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe({
-      next: (res) => {
-        this.isChecking.set(false);
-        if (res.data?.status === 'PAID') {
-          this.isPaid.set(true);
-          const o = this.order();
-          if (o) {
-            this.order.set({ ...o, paymentStatus: 'paid' });
+    const code = this.orderCode();
+
+    if (this.pollingToken) {
+      this.paymentService.getPaymentStatus(this.pollingToken).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
+        next: (res) => {
+          this.isChecking.set(false);
+          if (res.data?.status?.toUpperCase() === 'PAID') {
+            this.isPaid.set(true);
+            this.clearSessionToken(code);
+            const o = this.order();
+            if (o) {
+              this.order.set({ ...o, paymentStatus: 'paid' });
+            }
           }
+        },
+        error: () => {
+          this.isChecking.set(false);
         }
-      },
-      error: () => {
-        this.isChecking.set(false);
-      }
-    });
+      });
+    } else {
+      this.orderService.getOrderByCode(code).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
+        next: (res) => {
+          this.isChecking.set(false);
+          if (res.data?.paymentStatus?.toLowerCase() === 'paid') {
+            this.isPaid.set(true);
+            this.clearSessionToken(code);
+            const o = this.order();
+            if (o) {
+              this.order.set({ ...o, paymentStatus: 'paid' });
+            }
+          }
+        },
+        error: () => {
+          this.isChecking.set(false);
+        }
+      });
+    }
   }
 
   copyToClipboard(text: string): void {
@@ -165,5 +191,25 @@ export class OrderSuccessComponent implements OnInit {
 
   formatPrice(price: number): string {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
+  }
+
+  isBankTransfer(): boolean {
+    const method = this.order()?.paymentMethod;
+    return !!method && method.toLowerCase() === 'bank_transfer';
+  }
+
+  getQrCodeUrl(): string {
+    const instruction = this.order()?.paymentInstruction;
+    if (instruction?.qrCodeUrl) {
+      return instruction.qrCodeUrl;
+    }
+    const currentOrder = this.order();
+    if (!currentOrder) return '';
+    const bankId = instruction?.bankId || 'MB';
+    const accountNo = instruction?.bankAccountNo || '090123456789';
+    const amount = currentOrder.totalAmount || 0;
+    const ref = encodeURIComponent(currentOrder.paymentReference || currentOrder.orderCode || '');
+    const name = encodeURIComponent(instruction?.bankAccountName || 'CONG TY COMPLEXUS');
+    return `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${amount}&addInfo=${ref}&accountName=${name}`;
   }
 }

@@ -38,7 +38,7 @@
       }
 
       <!-- Bank Transfer Instructions (If Bank Transfer and not yet paid) -->
-      @if (order()?.paymentMethod === 'bank_transfer' && !isPaid()) {
+      @if (isBankTransfer() && !isPaid()) {
         <div class="bank-instruction-box">
           <div class="box-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="bank-icon" width="20" height="20">
@@ -52,9 +52,9 @@
 
           <div class="bank-transfer-layout">
             <!-- Dynamic VietQR Code -->
-            @if (order()?.paymentInstruction?.qrCodeUrl) {
+            @if (getQrCodeUrl()) {
               <div class="qr-code-section">
-                <img [src]="order()?.paymentInstruction?.qrCodeUrl" alt="VietQR Mã Thanh Toán" class="qr-image" />
+                <img [src]="getQrCodeUrl()" alt="VietQR Mã Thanh Toán" class="qr-image" />
                 <span class="qr-hint">Mở App Ngân hàng bất kỳ để quét mã QR</span>
               </div>
             }

@@ -9,9 +9,12 @@ import { AddressService } from '../../../core/services/address.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DiscountService } from '../../../core/services/discount.service';
 
+import { SettingService } from '../../../core/services/setting.service';
+
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;
   let fixture: ComponentFixture<CheckoutComponent>;
+  let settingService: SettingService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -24,12 +27,14 @@ describe('CheckoutComponent', () => {
         OrderService,
         AddressService,
         AuthService,
-        DiscountService
+        DiscountService,
+        SettingService
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(CheckoutComponent);
     component = fixture.componentInstance;
+    settingService = TestBed.inject(SettingService);
     fixture.detectChanges();
   });
 
@@ -64,6 +69,29 @@ describe('CheckoutComponent', () => {
     component.removeCoupon();
     expect(component.appliedDiscount()).toBeNull();
     expect(component.couponInput()).toBe('');
+  });
+
+  it('should not allow selecting bank_transfer if enableBankTransfer is false', () => {
+    settingService.publicSettings.set({
+      ...settingService.publicSettings(),
+      enableBankTransfer: false,
+      enableCod: true
+    });
+    component.checkoutForm.patchValue({ paymentMethod: 'cod' });
+
+    component.setPaymentMethod('bank_transfer');
+    expect(component.checkoutForm.get('paymentMethod')?.value).toBe('cod');
+  });
+
+  it('should allow selecting bank_transfer if enableBankTransfer is true', () => {
+    settingService.publicSettings.set({
+      ...settingService.publicSettings(),
+      enableBankTransfer: true,
+      enableCod: true
+    });
+
+    component.setPaymentMethod('bank_transfer');
+    expect(component.checkoutForm.get('paymentMethod')?.value).toBe('bank_transfer');
   });
 });
 

@@ -211,60 +211,61 @@
 
             <div class="payment-methods-grid">
               <!-- COD Option -->
-              <div 
-                class="payment-method-card"
-                [class.selected]="checkoutForm.get('paymentMethod')?.value === 'cod'"
-                (click)="setPaymentMethod('cod')"
-              >
-                <div class="card-radio">
-                  <input 
-                    type="radio" 
-                    id="methodCod" 
-                    value="cod" 
-                    name="paymentMethodRadio" 
-                    [checked]="checkoutForm.get('paymentMethod')?.value === 'cod'"
-                  />
-                </div>
-                <div class="card-body">
-                  <div class="method-title">
-                    <strong>Thanh toán khi nhận hàng (COD)</strong>
-                    <span class="badge-tag">Khuyên dùng</span>
+              @if (enableCod()) {
+                <div 
+                  class="payment-method-card"
+                  [class.selected]="checkoutForm.get('paymentMethod')?.value === 'cod'"
+                  (click)="setPaymentMethod('cod')"
+                >
+                  <div class="card-radio">
+                    <input 
+                      type="radio" 
+                      id="methodCod" 
+                      value="cod" 
+                      name="paymentMethodRadio" 
+                      [checked]="checkoutForm.get('paymentMethod')?.value === 'cod'"
+                    />
                   </div>
-                  <p class="method-desc">Quý khách thanh toán tiền mặt trực tiếp cho nhân viên giao hàng khi nhận và kiểm tra hàng.</p>
+                  <div class="card-body">
+                    <div class="method-title">
+                      <strong>Thanh toán khi nhận hàng (COD)</strong>
+                      <span class="badge-tag">Khuyên dùng</span>
+                    </div>
+                    <p class="method-desc">Quý khách thanh toán tiền mặt trực tiếp cho nhân viên giao hàng khi nhận và kiểm tra hàng.</p>
+                  </div>
                 </div>
-              </div>
+              }
 
               <!-- Bank Transfer Option -->
-              <div 
-                class="payment-method-card"
-                [class.selected]="checkoutForm.get('paymentMethod')?.value === 'bank_transfer'"
-                (click)="setPaymentMethod('bank_transfer')"
-              >
-                <div class="card-radio">
-                  <input 
-                    type="radio" 
-                    id="methodBank" 
-                    value="bank_transfer" 
-                    name="paymentMethodRadio" 
-                    [checked]="checkoutForm.get('paymentMethod')?.value === 'bank_transfer'"
-                  />
-                </div>
-                <div class="card-body">
-                  <div class="method-title">
-                    <strong>Chuyển khoản Ngân hàng (VietQR)</strong>
+              @if (enableBankTransfer()) {
+                <div 
+                  class="payment-method-card"
+                  [class.selected]="checkoutForm.get('paymentMethod')?.value === 'bank_transfer'"
+                  (click)="setPaymentMethod('bank_transfer')"
+                >
+                  <div class="card-radio">
+                    <input 
+                      type="radio" 
+                      id="methodBank" 
+                      value="bank_transfer" 
+                      name="paymentMethodRadio" 
+                      [checked]="checkoutForm.get('paymentMethod')?.value === 'bank_transfer'"
+                    />
                   </div>
-                  <p class="method-desc">Quý khách chuyển khoản qua mã VietQR hoặc số tài khoản ngân hàng. Đơn hàng sẽ được xác nhận sau khi nhận thanh toán.</p>
-                  
-                  @if (checkoutForm.get('paymentMethod')?.value === 'bank_transfer') {
-                    <div class="bank-details-box">
-                      <div class="bank-row"><span>Ngân hàng:</span> <strong>MB Bank (Ngân hàng Quân Đội)</strong></div>
-                      <div class="bank-row"><span>Số tài khoản:</span> <strong>090123456789</strong></div>
-                      <div class="bank-row"><span>Chủ tài khoản:</span> <strong>CÔNG TY TNHH CÔNG NGHỆ COMPLEXUS</strong></div>
-                      <div class="bank-row"><span>Nội dung CK:</span> <em>[Mã đơn hàng] - [Số điện thoại]</em></div>
+                  <div class="card-body">
+                    <div class="method-title">
+                      <strong>Chuyển khoản Ngân hàng (VietQR)</strong>
                     </div>
-                  }
+                    <p class="method-desc">Quý khách chuyển khoản quét mã VietQR tự động. Hệ thống sẽ lập tức đối soát và xác nhận đơn hàng.</p>
+                  </div>
                 </div>
-              </div>
+              }
+
+              @if (!enableCod() && !enableBankTransfer()) {
+                <div class="form-error" style="grid-column: 1 / -1; padding: 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.08);">
+                  Hiện tại các phương thức thanh toán trực tuyến đang được tạm khóa bởi quản trị viên. Vui lòng liên hệ với bộ phận CSKH để được hỗ trợ.
+                </div>
+              }
             </div>
           </section>
 

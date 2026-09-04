@@ -319,7 +319,14 @@
                   <span class="slider"></span>
                 </label>
                 <div class="toggle-label-box">
-                  <span class="toggle-title">Thanh toán khi nhận hàng (COD)</span>
+                  <div class="toggle-title-row">
+                    <span class="toggle-title">Thanh toán khi nhận hàng (COD)</span>
+                    @if (settingForm.get('ENABLE_COD')?.value) {
+                      <span class="badge badge-success">Đang bật</span>
+                    } @else {
+                      <span class="badge badge-secondary">Đang tắt</span>
+                    }
+                  </div>
                   <span class="toggle-desc">Cho phép khách hàng thanh toán tiền mặt trực tiếp cho bưu tá khi nhận kiện hàng.</span>
                 </div>
               </div>
@@ -330,8 +337,15 @@
                   <span class="slider"></span>
                 </label>
                 <div class="toggle-label-box">
-                  <span class="toggle-title">Chuyển khoản Ngân hàng / Quét mã QR</span>
-                  <span class="toggle-desc">Hiển thị thông tin tài khoản ngân hàng và mã QR thanh toán tự động tại trang Checkout.</span>
+                  <div class="toggle-title-row">
+                    <span class="toggle-title">Thanh toán Chuyển khoản / Quét mã QR (VietQR - SePay)</span>
+                    @if (settingForm.get('ENABLE_BANK_TRANSFER')?.value) {
+                      <span class="badge badge-success">Đang bật</span>
+                    } @else {
+                      <span class="badge badge-secondary">Đang tắt</span>
+                    }
+                  </div>
+                  <span class="toggle-desc">Bật/tắt thanh toán qua mã QR trên toàn hệ thống. Khi tắt, khách hàng sẽ không thể lựa chọn hoặc quét mã QR thanh toán tại trang Đặt hàng (Checkout).</span>
                 </div>
               </div>
             </div>

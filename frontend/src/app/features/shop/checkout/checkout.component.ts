@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import { OrderService } from '../../../core/services/order.service';
 import { AddressService } from '../../../core/services/address.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DiscountService } from '../../../core/services/discount.service';
+import { SettingService } from '../../../core/services/setting.service';
 import { Address } from '../../../core/models/address.model';
 import { CreateOrderRequest, PaymentMethod } from '../../../core/models/order.model';
 import { Discount, DiscountValidationResult } from '../../../core/models/discount.model';
@@ -25,6 +26,7 @@ export class CheckoutComponent implements OnInit {
   private readonly addressService = inject(AddressService);
   private readonly authService = inject(AuthService);
   private readonly discountService = inject(DiscountService);
+  private readonly settingService = inject(SettingService);
   private readonly router = inject(Router);
 
   readonly savedAddresses = signal<Address[]>([]);
@@ -32,6 +34,9 @@ export class CheckoutComponent implements OnInit {
   readonly useNewAddress = signal<boolean>(false);
   readonly isSubmitting = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
+
+  readonly enableBankTransfer = computed(() => this.settingService.publicSettings().enableBankTransfer);
+  readonly enableCod = computed(() => this.settingService.publicSettings().enableCod);
 
   // Discount & Coupon signals
   readonly couponInput = signal<string>('');
@@ -47,6 +52,20 @@ export class CheckoutComponent implements OnInit {
     this.initForm();
     this.loadSavedAddresses();
     this.loadPublicDiscounts();
+    this.loadPaymentSettings();
+  }
+
+  private loadPaymentSettings(): void {
+    this.settingService.loadPublicSettings().subscribe({
+      next: (settings) => {
+        const current = this.checkoutForm?.get('paymentMethod')?.value;
+        if (current === 'cod' && !settings.enableCod && settings.enableBankTransfer) {
+          this.setPaymentMethod('bank_transfer');
+        } else if (current === 'bank_transfer' && !settings.enableBankTransfer && settings.enableCod) {
+          this.setPaymentMethod('cod');
+        }
+      }
+    });
   }
 
   get isAuthenticated(): boolean {
@@ -119,6 +138,8 @@ export class CheckoutComponent implements OnInit {
   }
 
   setPaymentMethod(method: PaymentMethod): void {
+    if (method === 'bank_transfer' && !this.enableBankTransfer()) return;
+    if (method === 'cod' && !this.enableCod()) return;
     this.checkoutForm.patchValue({ paymentMethod: method });
   }
 
@@ -180,6 +201,16 @@ export class CheckoutComponent implements OnInit {
 
     const isAuth = this.authService.isAuthenticated();
     const paymentMethod = this.checkoutForm.get('paymentMethod')?.value as PaymentMethod;
+
+    if (paymentMethod === 'bank_transfer' && !this.enableBankTransfer()) {
+      this.errorMessage.set('Phương thức chuyển khoản qua mã QR hiện đang tạm khóa.');
+      return;
+    }
+    if (paymentMethod === 'cod' && !this.enableCod()) {
+      this.errorMessage.set('Phương thức thanh toán khi nhận hàng (COD) hiện đang tạm khóa.');
+      return;
+    }
+
     const note = this.checkoutForm.get('note')?.value;
     const discountCode = isAuth && this.appliedDiscount() ? this.appliedDiscount()!.code : undefined;
 

@@ -383,6 +383,31 @@ $radius: 12px;
       flex-direction: column;
       gap: 2px;
 
+      .toggle-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .badge {
+          font-size: 0.7rem;
+          padding: 2px 8px;
+          border-radius: 9999px;
+          font-weight: 600;
+
+          &.badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+          }
+
+          &.badge-secondary {
+            background: rgba(100, 116, 139, 0.12);
+            color: #64748b;
+            border: 1px solid rgba(100, 116, 139, 0.2);
+          }
+        }
+      }
+
       .toggle-title {
         font-size: 0.875rem;
         font-weight: 600;
