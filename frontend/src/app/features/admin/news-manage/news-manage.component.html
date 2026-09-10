@@ -74,6 +74,8 @@
     </div>
   </div>
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="loading()" (completed)="reloadAfterBulk()" />
+
   <!-- News Table -->
   <div class="data-table-card">
     @if (loading()) {
@@ -86,6 +88,16 @@
         <table class="admin-table">
           <thead>
             <tr>
+              <th class="th-checkbox" scope="col">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả"
+                  [checked]="bulk.all(bulkIds())"
+                  [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                  [disabled]="loading() || bulk.busy() || !bulkIds().length"
+                  (change)="bulk.toggleAll(bulkIds())"
+                />
+              </th>
               <th style="width: 60px;">STT</th>
               <th style="width: 100px;">Ảnh đại diện</th>
               <th>Tiêu đề & Tóm tắt</th>
@@ -99,7 +111,17 @@
           </thead>
           <tbody>
             @for (item of newsList(); track item.newsId; let idx = $index) {
-              <tr>
+              <tr [class.selected-row]="bulk.ids().includes(item.newsId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(item.newsId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(item.newsId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(item.newsId)"
+                  />
+                </td>
                 <td class="cell-index">{{ currentPage() * pageSize() + idx + 1 }}</td>
                 <td>
                   <div class="news-thumb-box">

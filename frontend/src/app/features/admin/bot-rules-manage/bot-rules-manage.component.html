@@ -104,6 +104,8 @@
     </div>
   }
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="isLoading()" (completed)="reloadAfterBulk()" />
+
   <!-- ─── Rules Table ───────────────────────────────────────────── -->
   <div class="table-card">
     @if (isLoading()) {
@@ -122,6 +124,16 @@
       <table class="rules-table">
         <thead>
           <tr>
+            <th class="th-checkbox" scope="col">
+              <input
+                type="checkbox"
+                aria-label="Chọn tất cả"
+                [checked]="bulk.all(bulkIds())"
+                [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                [disabled]="isLoading() || bulk.busy() || !bulkIds().length"
+                (change)="bulk.toggleAll(bulkIds())"
+              />
+            </th>
             <th style="width:40px">#</th>
             <th>Tên rule</th>
             <th>Từ khóa</th>
@@ -134,7 +146,17 @@
         </thead>
         <tbody>
           @for (rule of rules(); track rule.ruleId; let i = $index) {
-            <tr [class.row--inactive]="!isRuleActive(rule)">
+            <tr [class.selected-row]="bulk.ids().includes(rule.ruleId)" [class.row--inactive]="!isRuleActive(rule)">
+              <td class="td-checkbox">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn bản ghi"
+                  [checked]="bulk.ids().includes(rule.ruleId)"
+                  [disabled]="bulk.busy() || !bulkIds().includes(rule.ruleId)"
+                  (click)="$event.stopPropagation()"
+                  (change)="bulk.toggle(rule.ruleId)"
+                />
+              </td>
               <td class="cell-id">{{ i + 1 }}</td>
               <td class="cell-name">
                 <span class="rule-name">{{ rule.ruleName }}</span>

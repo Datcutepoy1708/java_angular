@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -15,11 +17,28 @@ import {
 @Component({
   selector: 'app-order-manage',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [BulkActionsComponent, CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './order-manage.component.html',
   styleUrls: ['./order-manage.component.scss']
 })
 export class OrderManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Xác nhận đơn', variant: 'info', run: (id, note) => this.orderService.updateOrderStatus(id, { status: 'confirmed', note }), requiresNote: false },
+    { label: 'Đang xử lý', variant: 'info', run: (id, note) => this.orderService.updateOrderStatus(id, { status: 'processing', note }), requiresNote: false },
+    { label: 'Đang giao', variant: 'info', run: (id, note) => this.orderService.updateOrderStatus(id, { status: 'shipping', note }), requiresNote: false },
+    { label: 'Hoàn tất', variant: 'success', run: (id, note) => this.orderService.updateOrderStatus(id, { status: 'completed', note }), requiresNote: false },
+    { label: 'Hủy đơn', variant: 'danger', run: (id, note) => this.orderService.updateOrderStatus(id, { status: 'cancelled', note }), requiresNote: true },
+  ];
+
+  bulkIds(): number[] {
+    return this.orders().map(item => item.orderId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadOrders(this.currentPage()); this.loadMetrics();
+  }
+
   private readonly orderService = inject(OrderService);
   private readonly fb = inject(FormBuilder);
 
@@ -75,6 +94,8 @@ export class OrderManageComponent implements OnInit {
   }
 
   loadOrders(page = 0): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.isLoading.set(true);
     this.currentPage.set(page);
 

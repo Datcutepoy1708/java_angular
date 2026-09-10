@@ -165,6 +165,8 @@
     </form>
   </div>
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="isLoading()" (completed)="reloadAfterBulk()" />
+
   <!-- Orders Table -->
   <div class="table-card">
     @if (isLoading()) {
@@ -188,6 +190,16 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th class="th-checkbox" scope="col">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả"
+                  [checked]="bulk.all(bulkIds())"
+                  [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                  [disabled]="isLoading() || bulk.busy() || !bulkIds().length"
+                  (change)="bulk.toggleAll(bulkIds())"
+                />
+              </th>
               <th>Mã Đơn Hàng</th>
               <th>Khách Hàng</th>
               <th>Số Điện Thoại</th>
@@ -201,7 +213,17 @@
           </thead>
           <tbody>
             @for (order of orders(); track order.orderId) {
-              <tr (click)="openDetailModal(order)" class="clickable-row">
+              <tr (click)="openDetailModal(order)" class="clickable-row" [class.selected-row]="bulk.ids().includes(order.orderId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(order.orderId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(order.orderId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(order.orderId)"
+                  />
+                </td>
                 <td>
                   <strong class="order-code-text">{{ order.orderCode }}</strong>
                 </td>

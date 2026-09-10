@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import {
   Component,
   OnInit,
@@ -15,12 +17,26 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 @Component({
   selector: 'app-customer-manage',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PaginationComponent],
+  imports: [BulkActionsComponent, CommonModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './customer-manage.component.html',
   styleUrl: './customer-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CustomerManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Mở khóa', variant: 'success', run: (id) => this.adminUserService.updateUserStatus(id, { status: 'active' }), requiresNote: false },
+    { label: 'Khóa tài khoản', variant: 'danger', run: (id) => this.adminUserService.updateUserStatus(id, { status: 'banned' }), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.customers().map(item => item.userId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadCustomers();
+  }
+
   private readonly adminUserService = inject(AdminUserService);
   private readonly fb = inject(FormBuilder);
 
@@ -77,6 +93,8 @@ export class CustomerManageComponent implements OnInit {
   }
 
   loadCustomers(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.isLoading.set(true);
     this.errorMessage.set(null);
 

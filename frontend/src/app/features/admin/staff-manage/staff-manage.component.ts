@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import {
   Component,
   OnInit,
@@ -18,12 +20,26 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 @Component({
   selector: 'app-staff-manage',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PaginationComponent],
+  imports: [BulkActionsComponent, CommonModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './staff-manage.component.html',
   styleUrl: './staff-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StaffManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Mở khóa', variant: 'success', run: (id) => this.adminUserService.updateUserStatus(id, { status: 'active' }), requiresNote: false },
+    { label: 'Khóa tài khoản', variant: 'danger', run: (id) => this.adminUserService.updateUserStatus(id, { status: 'banned' }), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.staffList().filter(item => item.userId !== this.currentUserId()).map(item => item.userId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadStaff();
+  }
+
   private readonly adminUserService = inject(AdminUserService);
   private readonly roleService = inject(RoleService);
   private readonly authService = inject(AuthService);
@@ -120,6 +136,8 @@ export class StaffManageComponent implements OnInit {
   }
 
   loadStaff(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.isLoading.set(true);
     this.errorMessage.set(null);
 

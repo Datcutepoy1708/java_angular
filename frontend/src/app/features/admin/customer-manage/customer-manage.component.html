@@ -91,11 +91,23 @@
       </div>
     </div>
 
+    <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="isLoading()" (completed)="reloadAfterBulk()" />
+
     <!-- Customers Data Table -->
     <div class="table-responsive">
       <table class="data-table">
         <thead>
           <tr>
+            <th class="th-checkbox" scope="col">
+              <input
+                type="checkbox"
+                aria-label="Chọn tất cả"
+                [checked]="bulk.all(bulkIds())"
+                [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                [disabled]="isLoading() || bulk.busy() || !bulkIds().length"
+                (change)="bulk.toggleAll(bulkIds())"
+              />
+            </th>
             <th class="col-user">Khách Hàng</th>
             <th class="col-contact">Liên Hệ</th>
             <th class="col-orders text-center">Đơn Hàng</th>
@@ -107,14 +119,14 @@
         <tbody>
           @if (isLoading()) {
             <tr>
-              <td colspan="6" class="text-center loading-cell">
+              <td colspan="7" class="text-center loading-cell">
                 <div class="spinner"></div>
                 <span>Đang tải dữ liệu khách hàng...</span>
               </td>
             </tr>
           } @else if (customers().length === 0) {
             <tr>
-              <td colspan="6" class="empty-cell">
+              <td colspan="7" class="empty-cell">
                 <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 100-8 4 4 0 000 8z" />
                 </svg>
@@ -123,7 +135,17 @@
             </tr>
           } @else {
             @for (c of customers(); track c.userId) {
-              <tr class="table-row">
+              <tr class="table-row" [class.selected-row]="bulk.ids().includes(c.userId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(c.userId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(c.userId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(c.userId)"
+                  />
+                </td>
                 <!-- Customer Info (Avatar + Name + ID) -->
                 <td class="col-user">
                   <div class="user-cell">

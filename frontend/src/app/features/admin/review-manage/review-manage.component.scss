@@ -390,7 +390,9 @@ $radius: 12px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state-box {
@@ -519,4 +521,28 @@ $radius: 12px;
       }
     }
   }
+}
+
+.th-checkbox,
+.td-checkbox {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  text-align: center !important;
+  padding: 10px 8px !important;
+  vertical-align: middle !important;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+}
+
+tr.selected-row,
+.selected-row {
+  background-color: #eff6ff !important;
 }

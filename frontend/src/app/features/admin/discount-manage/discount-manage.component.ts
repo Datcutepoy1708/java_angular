@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -16,11 +18,27 @@ import { CategoryResponse } from '../../../core/models/category.model';
 @Component({
   selector: 'app-discount-manage',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [BulkActionsComponent, CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './discount-manage.component.html',
   styleUrls: ['./discount-manage.component.scss']
 })
 export class DiscountManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Kích hoạt mã', variant: 'success', run: id => this.discountService.activateDiscount(id) },
+    { label: 'Tạm ngưng mã', variant: 'warning', run: id => this.discountService.deactivateDiscount(id) },
+    { label: 'Vô hiệu hóa', variant: 'danger', run: id => this.discountService.deleteDiscount(id), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.discounts().map(item => item.discountId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadDiscounts();
+    this.loadMetrics();
+  }
+
   private readonly fb = inject(FormBuilder);
   private readonly discountService = inject(DiscountService);
   private readonly categoryService = inject(CategoryService);
@@ -114,6 +132,8 @@ export class DiscountManageComponent implements OnInit {
   }
 
   loadDiscounts(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
@@ -259,6 +279,31 @@ export class DiscountManageComponent implements OnInit {
         }
       });
     }
+  }
+
+  toggleDiscountStatus(discount: Discount): void {
+    const isActivating = discount.status !== 'active';
+    const actionText = isActivating ? 'kích hoạt' : 'tạm ngưng';
+
+    if (!confirm(`Bạn có chắc chắn muốn ${actionText} mã giảm giá '${discount.code}'?`)) {
+      return;
+    }
+
+    const obs$ = isActivating
+      ? this.discountService.activateDiscount(discount.discountId)
+      : this.discountService.deactivateDiscount(discount.discountId);
+
+    obs$.subscribe({
+      next: () => {
+        this.successMessage.set(`Đã ${actionText} mã '${discount.code}' thành công.`);
+        setTimeout(() => this.successMessage.set(null), 3000);
+        this.loadDiscounts();
+        this.loadMetrics();
+      },
+      error: (err) => {
+        alert(err.error?.message || `Không thể ${actionText} mã giảm giá.`);
+      }
+    });
   }
 
   deleteDiscount(discount: Discount): void {

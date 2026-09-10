@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,12 +25,27 @@ import { ImageUploadComponent } from '../../../shared/components/image-upload/im
 @Component({
   selector: 'app-news-manage',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe, ImageUploadComponent],
+  imports: [BulkActionsComponent, CommonModule, ReactiveFormsModule, DatePipe, ImageUploadComponent],
   templateUrl: './news-manage.component.html',
   styleUrl: './news-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewsManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Xuất bản tin', variant: 'success', run: id => this.newsService.setStatus(id, 'published') },
+    { label: 'Ẩn tin', variant: 'warning', run: id => this.newsService.setStatus(id, 'hidden') },
+    { label: 'Xóa tin tức', variant: 'danger', run: (id) => this.newsService.deleteNews(id), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.newsList().map(item => item.newsId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadNews();
+  }
+
   private readonly newsService = inject(NewsService);
   private readonly uploadService = inject(UploadService);
   private readonly fb = inject(FormBuilder);
@@ -97,6 +114,8 @@ export class NewsManageComponent implements OnInit {
   }
 
   loadNews(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.loading.set(true);
     const filter: NewsFilterParams = {
       categoryId: this.filterCategoryId() ?? undefined,

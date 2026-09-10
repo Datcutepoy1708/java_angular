@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, switchMap } from 'rxjs';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
@@ -31,6 +31,16 @@ const CHAT_CONV_KEY = 'complexus_chat_conv_id';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService implements OnDestroy {
+  setBotRuleActive(id: number, active: boolean): Observable<ApiResponse<ChatBotRuleResponse>> {
+    return this.getBotRule(id).pipe(switchMap(response => {
+      if (!response.success || !response.data) throw new Error(response.message || 'Không tìm thấy kịch bản');
+      const { ruleName, keywords, matchType, responseMessage, quickReplies, actionType, priority } = response.data;
+      return this.updateBotRule(id, {
+        ruleName, keywords, matchType, responseMessage,
+        quickReplies: JSON.stringify(quickReplies ?? []), actionType, priority, active
+      });
+    }));
+  }
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly authService = inject(AuthService);

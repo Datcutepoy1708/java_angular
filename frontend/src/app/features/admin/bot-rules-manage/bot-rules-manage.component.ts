@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import {
   Component,
   OnInit,
@@ -17,11 +19,26 @@ import {
 @Component({
   selector: 'app-bot-rules-manage',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [BulkActionsComponent, CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './bot-rules-manage.component.html',
   styleUrls: ['./bot-rules-manage.component.scss'],
 })
 export class BotRulesManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Bật kịch bản', variant: 'success', run: id => this.chatService.setBotRuleActive(id, true) },
+    { label: 'Tắt kịch bản', variant: 'warning', run: id => this.chatService.setBotRuleActive(id, false) },
+    { label: 'Xóa kịch bản', variant: 'danger', run: (id) => this.chatService.deleteBotRule(id), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.rules().map(item => item.ruleId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadRules();
+  }
+
   private readonly chatService = inject(ChatService);
   private readonly fb = inject(FormBuilder);
 
@@ -66,6 +83,8 @@ export class BotRulesManageComponent implements OnInit {
   }
 
   loadRules(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.isLoading.set(true);
     this.chatService.getAllBotRules().subscribe({
       next: (resp) => {
@@ -120,7 +139,6 @@ export class BotRulesManageComponent implements OnInit {
     this.isSaving.set(true);
 
     const v = this.form.value;
-    // Convert comma-separated quickReplies string to JSON array string
     const quickRepliesArray = v.quickReplies
       ? v.quickReplies.split(',').map((s: string) => s.trim()).filter((s: string) => s)
       : [];

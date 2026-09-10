@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,12 +15,27 @@ import { RatingStarsComponent } from '../../../shared/components/rating-stars/ra
 @Component({
   selector: 'app-review-manage',
   standalone: true,
-  imports: [CommonModule, DatePipe, RatingStarsComponent],
+  imports: [BulkActionsComponent, CommonModule, DatePipe, RatingStarsComponent],
   templateUrl: './review-manage.component.html',
   styleUrl: './review-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviewManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Duyệt đánh giá', variant: 'success', run: (id) => this.reviewService.updateReviewStatus(id, 'APPROVED'), requiresNote: false },
+    { label: 'Ẩn đánh giá', variant: 'warning', run: (id) => this.reviewService.updateReviewStatus(id, 'HIDDEN'), requiresNote: false },
+    { label: 'Xóa đánh giá', variant: 'danger', run: (id) => this.reviewService.deleteReview(id), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.reviews().map(item => item.reviewId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadReviews();
+  }
+
   private readonly reviewService = inject(ReviewService);
 
   readonly reviews = signal<Review[]>([]);
@@ -43,6 +60,8 @@ export class ReviewManageComponent implements OnInit {
   }
 
   loadReviews(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.loading.set(true);
     const filter: ReviewFilterParams = {
       rating: this.filterRating() ?? undefined,

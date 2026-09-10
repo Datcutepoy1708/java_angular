@@ -61,6 +61,8 @@
     </div>
   </div>
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="loading()" (completed)="reloadAfterBulk()" />
+
   <!-- Reviews Table -->
   <div class="data-table-card">
     @if (loading()) {
@@ -73,6 +75,16 @@
         <table class="admin-table">
           <thead>
             <tr>
+              <th class="th-checkbox" scope="col">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả"
+                  [checked]="bulk.all(bulkIds())"
+                  [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                  [disabled]="loading() || bulk.busy() || !bulkIds().length"
+                  (change)="bulk.toggleAll(bulkIds())"
+                />
+              </th>
               <th style="width: 60px;">STT</th>
               <th style="width: 220px;">Sản phẩm</th>
               <th style="width: 180px;">Khách hàng</th>
@@ -85,7 +97,17 @@
           </thead>
           <tbody>
             @for (rev of reviews(); track rev.reviewId; let idx = $index) {
-              <tr>
+              <tr [class.selected-row]="bulk.ids().includes(rev.reviewId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(rev.reviewId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(rev.reviewId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(rev.reviewId)"
+                  />
+                </td>
                 <td class="cell-index">{{ currentPage() * pageSize() + idx + 1 }}</td>
                 <td>
                   <span class="product-name-link">{{ rev.productName || 'Sản phẩm #' + rev.productId }}</span>

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.model';
 import { PageResponse } from '../models/discount.model';
@@ -17,6 +17,13 @@ import {
   providedIn: 'root'
 })
 export class NewsService {
+  setStatus(id: number, status: 'published' | 'hidden'): Observable<ApiResponse<News>> {
+    return this.getNewsById(id).pipe(switchMap(response => {
+      if (!response.success || !response.data) throw new Error(response.message || 'Không tìm thấy tin tức');
+      const { newsCatId, title, slug, thumbnailUrl, summary, content } = response.data;
+      return this.updateNews(id, { newsCatId, title, slug, thumbnailUrl, summary, content, status });
+    }));
+  }
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 

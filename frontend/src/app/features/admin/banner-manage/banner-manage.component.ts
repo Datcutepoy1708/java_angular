@@ -1,3 +1,6 @@
+
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,12 +18,27 @@ import { ImageUploadComponent } from '../../../shared/components/image-upload/im
 @Component({
   selector: 'app-banner-manage',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe, ImageUploadComponent],
+  imports: [BulkActionsComponent, CommonModule, ReactiveFormsModule, DatePipe, ImageUploadComponent],
   templateUrl: './banner-manage.component.html',
   styleUrl: './banner-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BannerManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Hiển thị banner', variant: 'success', run: id => this.bannerService.setStatus(id, 'active') },
+    { label: 'Ẩn banner', variant: 'warning', run: id => this.bannerService.setStatus(id, 'inactive') },
+    { label: 'Xóa banner', variant: 'danger', run: (id) => this.bannerService.deleteBanner(id), requiresNote: false },
+  ];
+
+  bulkIds(): number[] {
+    return this.banners().map(item => item.bannerId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadBanners();
+  }
+
   private readonly bannerService = inject(BannerService);
   private readonly uploadService = inject(UploadService);
   private readonly fb = inject(FormBuilder);
@@ -58,6 +76,8 @@ export class BannerManageComponent implements OnInit {
   }
 
   loadBanners(): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.loading.set(true);
     const pos = this.filterPosition() ? (this.filterPosition() as BannerPosition) : undefined;
     this.bannerService.getAdminBanners(pos).subscribe({

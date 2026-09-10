@@ -1,3 +1,5 @@
+import { BulkActionsComponent } from '../../../shared/components/bulk-actions/bulk-actions.component';
+import { BulkOperation, BulkSelection } from '../../../shared/components/bulk-actions/bulk-selection';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,12 +17,26 @@ import { Warehouse } from '../../../core/models/inventory.model';
 @Component({
   selector: 'app-return-manage',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [BulkActionsComponent, CommonModule, FormsModule],
   templateUrl: './return-manage.component.html',
   styleUrl: './return-manage.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ReturnManageComponent implements OnInit {
+  readonly bulk = new BulkSelection();
+  readonly bulkOperations: BulkOperation[] = [
+    { label: 'Duyệt yêu cầu', variant: 'success', run: (id, note) => this.returnService.reviewReturnRequest(id, { approved: true, adminNote: note }), requiresNote: false },
+    { label: 'Từ chối yêu cầu', variant: 'danger', run: (id, note) => this.returnService.reviewReturnRequest(id, { approved: false, adminNote: note }), requiresNote: true },
+  ];
+
+  bulkIds(): number[] {
+    return this.requests().filter(item => item.status === 'REQUESTED').map(item => item.returnId);
+  }
+
+  reloadAfterBulk(): void {
+    this.loadRequests(this.currentPage()); this.loadMetrics();
+  }
+
   private readonly returnService = inject(ReturnService);
   private readonly inventoryService = inject(InventoryService);
 
@@ -112,6 +128,8 @@ export class ReturnManageComponent implements OnInit {
   }
 
   loadRequests(page: number = 0): void {
+    if (this.bulk.busy()) return;
+    this.bulk.clear();
     this.isLoading.set(true);
     this.errorMessage.set(null);
     this.filter.page = page;

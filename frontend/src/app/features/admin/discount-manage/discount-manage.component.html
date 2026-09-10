@@ -143,6 +143,8 @@
     </div>
   </div>
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="isLoading()" (completed)="reloadAfterBulk()" />
+
   <!-- Data Table Card -->
   <div class="card table-card">
     @if (isLoading()) {
@@ -169,6 +171,16 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th class="th-checkbox" scope="col">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả"
+                  [checked]="bulk.all(bulkIds())"
+                  [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                  [disabled]="isLoading() || bulk.busy() || !bulkIds().length"
+                  (change)="bulk.toggleAll(bulkIds())"
+                />
+              </th>
               <th>MÃ VOUCHER</th>
               <th>MỨC GIẢM GIÁ</th>
               <th>ĐƠN TỐI THIỂU</th>
@@ -181,7 +193,17 @@
           </thead>
           <tbody>
             @for (disc of discounts(); track disc.discountId) {
-              <tr>
+              <tr [class.selected-row]="bulk.ids().includes(disc.discountId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(disc.discountId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(disc.discountId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(disc.discountId)"
+                  />
+                </td>
                 <td>
                   <div class="code-cell">
                     <span class="code-badge">{{ disc.code }}</span>
@@ -234,26 +256,42 @@
                 </td>
                 <td class="text-right">
                   <div class="actions-group">
-                    <button type="button" class="btn-icon" title="Xem lịch sử sử dụng" (click)="openUsagesModal(disc)">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="btn-icon btn-history" title="Xem lịch sử sử dụng" (click)="openUsagesModal(disc)">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
                         <polyline points="12 6 12 12 16 14"/>
                       </svg>
                     </button>
-                    <button type="button" class="btn-icon btn-edit" title="Chỉnh sửa" (click)="openEditModal(disc)">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="btn-icon btn-edit" title="Chỉnh sửa voucher" (click)="openEditModal(disc)">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </button>
-                    @if (disc.status === 'active') {
-                      <button type="button" class="btn-icon btn-delete" title="Vô hiệu hóa" (click)="deleteDiscount(disc)">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    <button
+                      type="button"
+                      class="btn-icon btn-toggle-status"
+                      [class.is-active]="disc.status === 'active'"
+                      [title]="disc.status === 'active' ? 'Chuyển sang tạm ngưng' : 'Kích hoạt voucher'"
+                      (click)="toggleDiscountStatus(disc)"
+                    >
+                      @if (disc.status === 'active') {
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="6" y="4" width="4" height="16" rx="1"/>
+                          <rect x="14" y="4" width="4" height="16" rx="1"/>
                         </svg>
-                      </button>
-                    }
+                      } @else {
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                          <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                      }
+                    </button>
+                    <button type="button" class="btn-icon btn-delete" title="Vô hiệu hóa voucher" (click)="deleteDiscount(disc)">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                      </svg>
+                    </button>
                   </div>
                 </td>
               </tr>

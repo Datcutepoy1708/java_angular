@@ -116,12 +116,24 @@
     </div>
   </div>
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="isLoading()" (completed)="reloadAfterBulk()" />
+
   <!-- Data Table -->
   <div class="table-card">
     <div class="table-responsive">
       <table class="data-table">
         <thead>
           <tr>
+            <th class="th-checkbox" scope="col">
+              <input
+                type="checkbox"
+                aria-label="Chọn tất cả"
+                [checked]="bulk.all(bulkIds())"
+                [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                [disabled]="isLoading() || bulk.busy() || !bulkIds().length"
+                (change)="bulk.toggleAll(bulkIds())"
+              />
+            </th>
             <th>Mã RMA</th>
             <th>Đơn hàng</th>
             <th>Khách hàng</th>
@@ -135,20 +147,30 @@
         <tbody>
           @if (isLoading()) {
             <tr>
-              <td colspan="8" class="text-center py-5">
+              <td colspan="9" class="text-center py-5">
                 <div class="spinner"></div>
                 <p class="mt-2 text-muted">Đang tải danh sách đổi trả...</p>
               </td>
             </tr>
           } @else if (requests().length === 0) {
             <tr>
-              <td colspan="8" class="text-center py-5 text-muted">
+              <td colspan="9" class="text-center py-5 text-muted">
                 Không tìm thấy yêu cầu đổi trả nào.
               </td>
             </tr>
           } @else {
             @for (req of requests(); track req.returnId) {
-              <tr>
+              <tr [class.selected-row]="bulk.ids().includes(req.returnId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(req.returnId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(req.returnId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(req.returnId)"
+                  />
+                </td>
                 <td class="font-mono font-medium whitespace-nowrap">
                   {{ req.returnCode }}
                 </td>

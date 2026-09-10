@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.model';
 import {
@@ -16,6 +16,39 @@ import {
   providedIn: 'root'
 })
 export class DiscountService {
+  activateDiscount(id: number): Observable<ApiResponse<Discount>> {
+    return this.getDiscountById(id).pipe(switchMap(response => {
+      if (!response.success || !response.data) throw new Error(response.message || 'Không tìm thấy mã giảm giá');
+      const { code, description, discountType, discountValue, maxDiscountAmount, minOrderValue,
+        usageLimit, usageLimitPerUser, applicableCategoryId, startDate, endDate } = response.data;
+      return this.updateDiscount(id, {
+        code, description, discountType, discountValue, maxDiscountAmount, minOrderValue,
+        usageLimit, usageLimitPerUser, applicableCategoryId, startDate, endDate, status: 'active'
+      });
+    }));
+  }
+
+  deactivateDiscount(id: number): Observable<ApiResponse<Discount>> {
+    return this.getDiscountById(id).pipe(switchMap(response => {
+      if (!response.success || !response.data) throw new Error(response.message || 'Không tìm thấy mã giảm giá');
+      const { code, description, discountType, discountValue, maxDiscountAmount, minOrderValue,
+        usageLimit, usageLimitPerUser, applicableCategoryId, startDate, endDate } = response.data;
+      return this.updateDiscount(id, {
+        code, description, discountType, discountValue, maxDiscountAmount, minOrderValue,
+        usageLimit, usageLimitPerUser, applicableCategoryId, startDate, endDate, status: 'inactive'
+      });
+    }));
+  }
+
+  toggleDiscountStatus(discount: Discount): Observable<ApiResponse<Discount>> {
+    const nextStatus = discount.status === 'active' ? 'inactive' : 'active';
+    const { code, description, discountType, discountValue, maxDiscountAmount, minOrderValue,
+      usageLimit, usageLimitPerUser, applicableCategoryId, startDate, endDate } = discount;
+    return this.updateDiscount(discount.discountId, {
+      code, description, discountType, discountValue, maxDiscountAmount, minOrderValue,
+      usageLimit, usageLimitPerUser, applicableCategoryId, startDate, endDate, status: nextStatus
+    });
+  }
   private readonly http = inject(HttpClient);
   private readonly customerUrl = `${environment.apiUrl}/api/v1/discounts`;
   private readonly adminUrl = `${environment.apiUrl}/api/v1/admin/discount-codes`;

@@ -36,6 +36,8 @@
     </div>
   </div>
 
+  <app-bulk-actions [selection]="bulk" [operations]="bulkOperations" [disabled]="loading()" (completed)="reloadAfterBulk()" />
+
   <!-- Banners Data Table -->
   <div class="data-table-card">
     @if (loading()) {
@@ -48,6 +50,16 @@
         <table class="admin-table">
           <thead>
             <tr>
+              <th class="th-checkbox" scope="col">
+                <input
+                  type="checkbox"
+                  aria-label="Chọn tất cả"
+                  [checked]="bulk.all(bulkIds())"
+                  [indeterminate]="bulk.count() > 0 && !bulk.all(bulkIds())"
+                  [disabled]="loading() || bulk.busy() || !bulkIds().length"
+                  (change)="bulk.toggleAll(bulkIds())"
+                />
+              </th>
               <th style="width: 70px;">STT</th>
               <th style="width: 140px;">Ảnh xem trước</th>
               <th>Tiêu đề & Liên kết</th>
@@ -60,7 +72,17 @@
           </thead>
           <tbody>
             @for (b of banners(); track b.bannerId; let idx = $index) {
-              <tr>
+              <tr [class.selected-row]="bulk.ids().includes(b.bannerId)">
+                <td class="td-checkbox">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn bản ghi"
+                    [checked]="bulk.ids().includes(b.bannerId)"
+                    [disabled]="bulk.busy() || !bulkIds().includes(b.bannerId)"
+                    (click)="$event.stopPropagation()"
+                    (change)="bulk.toggle(b.bannerId)"
+                  />
+                </td>
                 <td class="cell-index">{{ idx + 1 }}</td>
                 <td>
                   <div class="banner-thumb-box">
