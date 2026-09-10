@@ -537,6 +537,9 @@ export class BulkActionsComponent {
   }
 
   async confirm(op: BulkOperation): Promise<void> {
+    if (this.disabled() || this.selection().busy()) {
+      return;
+    }
     const currentNote = this.note();
     await this.selection().execute(op, currentNote);
     this.pending.set(null);

@@ -15,18 +15,29 @@ describe('BulkActionsComponent', () => {
     const completed = vi.fn();
     fixture.componentInstance.completed.subscribe(completed);
     fixture.detectChanges();
+
     const element = fixture.nativeElement as HTMLElement;
-    element.querySelector('button')!.click();
+    // Click action button to open modal
+    const actionBtn = element.querySelector('.bulk-btns button') as HTMLButtonElement;
+    actionBtn.click();
     fixture.detectChanges();
+
     expect(run).not.toHaveBeenCalled();
-    const confirmation = element.querySelector('.confirmation')!;
-    expect(confirmation.querySelector('button')!.disabled).toBe(true);
-    const note = confirmation.querySelector('input')!;
+    const dialog = element.querySelector('.confirm-dialog')!;
+    expect(dialog).toBeTruthy();
+
+    const confirmBtn = dialog.querySelector('.confirm-actions .btn:last-child') as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(true);
+
+    const note = dialog.querySelector('.note-input') as HTMLInputElement;
     note.value = 'Không đủ điều kiện';
     note.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    confirmation.querySelector('button')!.click();
+
+    expect(confirmBtn.disabled).toBe(false);
+    confirmBtn.click();
     await fixture.whenStable();
+
     expect(run).toHaveBeenCalledTimes(2);
     expect(run).toHaveBeenCalledWith(10, 'Không đủ điều kiện');
     expect(completed).toHaveBeenCalledTimes(1);
