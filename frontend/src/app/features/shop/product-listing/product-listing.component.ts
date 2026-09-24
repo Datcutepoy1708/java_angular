@@ -16,6 +16,8 @@ import { ProductFilterRequest, ProductResponse } from '../../../core/models/prod
 import { CategoryResponse } from '../../../core/models/category.model';
 import { BrandResponse } from '../../../core/models/brand.model';
 import { AttributeResponse } from '../../../core/models/attribute.model';
+import { Banner } from '../../../core/models/banner.model';
+import { BannerService } from '../../../core/services/banner.service';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
@@ -38,6 +40,7 @@ export class ProductListingComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly brandService = inject(BrandService);
   private readonly attributeService = inject(AttributeService);
+  private readonly bannerService = inject(BannerService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -45,6 +48,7 @@ export class ProductListingComponent implements OnInit {
   readonly products = signal<ProductResponse[]>([]);
   readonly categoriesTree = signal<CategoryResponse[]>([]);
   readonly allBrands = signal<BrandResponse[]>([]);
+  readonly sidebarBanners = signal<Banner[]>([]);
 
   // ── Dynamic Attribute Filters (EAV) ───────────────────────────
   readonly categoryAttributes = signal<AttributeResponse[]>([]);
@@ -107,6 +111,19 @@ export class ProductListingComponent implements OnInit {
       if (params['page']) this.page.set(Number(params['page']));
 
       this.loadProducts();
+    });
+
+    this.loadSidebarBanners();
+  }
+
+  loadSidebarBanners(): void {
+    this.bannerService.getPublicBanners('sidebar').subscribe({
+      next: (res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          this.sidebarBanners.set(res.data);
+        }
+      },
+      error: (err) => console.error('Error loading sidebar banners:', err)
     });
   }
 

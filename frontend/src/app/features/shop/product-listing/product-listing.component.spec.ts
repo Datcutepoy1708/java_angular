@@ -6,6 +6,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { BrandService } from '../../../core/services/brand.service';
 import { AttributeService } from '../../../core/services/attribute.service';
+import { BannerService } from '../../../core/services/banner.service';
 
 describe('ProductListingComponent', () => {
   let component: ProductListingComponent;
@@ -47,6 +48,10 @@ describe('ProductListingComponent', () => {
       }),
   };
 
+  const mockBannerService = {
+    getPublicBanners: () => of({ success: true, message: 'OK', data: [] }),
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProductListingComponent],
@@ -56,6 +61,7 @@ describe('ProductListingComponent', () => {
         { provide: CategoryService, useValue: mockCategoryService },
         { provide: BrandService, useValue: mockBrandService },
         { provide: AttributeService, useValue: mockAttributeService },
+        { provide: BannerService, useValue: mockBannerService },
       ],
     }).compileComponents();
 

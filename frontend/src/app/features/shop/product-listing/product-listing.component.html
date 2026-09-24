@@ -186,6 +186,29 @@
             }
           }
         }
+
+        <!-- ── Filter Group 5: Sidebar Promotion Banners ──────────────── -->
+        @if (sidebarBanners().length > 0) {
+          <div class="sidebar-banners-group">
+            @for (banner of sidebarBanners(); track banner.bannerId) {
+              <a
+                [routerLink]="banner.linkUrl || '/products'"
+                class="sidebar-banner-card"
+                [title]="banner.title || 'Khuyến mãi đặc biệt'"
+              >
+                <img
+                  [src]="banner.imageUrl"
+                  [alt]="banner.title || 'Banner quảng cáo'"
+                  loading="lazy"
+                  class="sidebar-banner-img"
+                />
+                @if (banner.title) {
+                  <span class="sidebar-banner-caption">{{ banner.title }}</span>
+                }
+              </a>
+            }
+          </div>
+        }
       </aside>
 
       <!-- ── Product Content Area ──────────────────────────────────── -->
