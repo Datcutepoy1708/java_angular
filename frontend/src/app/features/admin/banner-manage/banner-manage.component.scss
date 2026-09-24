@@ -227,7 +227,8 @@ $radius: 12px;
   }
 
   &[data-pos="flank_left"],
-  &[data-pos="flank_right"] {
+  &[data-pos="flank_right"],
+  &[data-pos="flank_both"] {
     background: #fdf2f8;
     color: #9d174d;
     border-color: #fbcfe8;

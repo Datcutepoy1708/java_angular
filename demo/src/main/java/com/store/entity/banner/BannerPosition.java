@@ -9,7 +9,8 @@ public enum BannerPosition {
     POPUP("popup"),
     CATEGORY_TOP("category_top"),
     FLANK_LEFT("flank_left"),
-    FLANK_RIGHT("flank_right");
+    FLANK_RIGHT("flank_right"),
+    FLANK_BOTH("flank_both");
 
     private final String value;
 

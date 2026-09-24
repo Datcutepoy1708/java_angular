@@ -38,7 +38,7 @@ public class Banner {
     @Column(name = "link_url", length = 500)
     private String linkUrl;
 
-    @Column(name = "position", columnDefinition = "enum('homepage_slider','sidebar','popup','category_top','flank_left','flank_right')")
+    @Column(name = "position", columnDefinition = "enum('homepage_slider','sidebar','popup','category_top','flank_left','flank_right','flank_both')")
     @Builder.Default
     private BannerPosition position = BannerPosition.HOMEPAGE_SLIDER;
 

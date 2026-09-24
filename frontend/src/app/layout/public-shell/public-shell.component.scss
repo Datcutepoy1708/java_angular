@@ -434,35 +434,64 @@ $radius: 8px;
 // ── Floating Side Flank Banners ──────────────────────────────────
 .flank-banner-wrap {
   position: fixed;
-  top: 130px;
+  top: 95px;
   z-index: 85;
-  width: 125px;
   display: none;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  width: 140px;
 
-  @media (min-width: 1540px) {
+  @media (min-width: 1480px) {
     display: flex;
+    width: 140px;
+    &.flank-banner-left {
+      left: calc(50% - 640px - 150px);
+    }
+    &.flank-banner-right {
+      right: calc(50% - 640px - 150px);
+    }
   }
 
-  &.flank-banner-left {
-    left: calc(50% - 640px - 135px);
+  @media (min-width: 1620px) {
+    width: 165px;
+    &.flank-banner-left {
+      left: calc(50% - 640px - 178px);
+    }
+    &.flank-banner-right {
+      right: calc(50% - 640px - 178px);
+    }
   }
 
-  &.flank-banner-right {
-    right: calc(50% - 640px - 135px);
+  @media (min-width: 1780px) {
+    width: 185px;
+    &.flank-banner-left {
+      left: calc(50% - 640px - 200px);
+    }
+    &.flank-banner-right {
+      right: calc(50% - 640px - 200px);
+    }
+  }
+
+  @media (min-width: 1920px) {
+    width: 205px;
+    &.flank-banner-left {
+      left: calc(50% - 640px - 222px);
+    }
+    &.flank-banner-right {
+      right: calc(50% - 640px - 222px);
+    }
   }
 
   .flank-banner-link {
     display: block;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
 
     &:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
     }
   }
 
@@ -470,7 +499,9 @@ $radius: 8px;
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 8px;
+    min-height: 480px;
+    max-height: calc(100vh - 120px);
+    border-radius: 10px;
     object-fit: cover;
   }
 }
