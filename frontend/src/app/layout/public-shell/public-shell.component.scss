@@ -434,52 +434,52 @@ $radius: 8px;
 // ── Floating Side Flank Banners ──────────────────────────────────
 .flank-banner-wrap {
   position: fixed;
-  top: 90px;
+  top: 110px;
   z-index: 85;
   display: none;
   flex-direction: column;
   gap: 14px;
-  height: clamp(540px, 68vh, 700px);
+  height: clamp(520px, 65vh, 670px);
   pointer-events: none;
 
-  @media (min-width: 1480px) {
+  @media (min-width: 1540px) {
     display: flex;
-    width: 145px;
+    width: 135px;
     &.flank-banner-left {
-      left: calc(50% - 640px - 158px);
+      left: calc(50% - 640px - 135px - 26px);
     }
     &.flank-banner-right {
-      right: calc(50% - 640px - 158px);
+      right: calc(50% - 640px - 135px - 26px);
     }
   }
 
-  @media (min-width: 1620px) {
-    width: 170px;
+  @media (min-width: 1650px) {
+    width: 160px;
     &.flank-banner-left {
-      left: calc(50% - 640px - 185px);
+      left: calc(50% - 640px - 160px - 30px);
     }
     &.flank-banner-right {
-      right: calc(50% - 640px - 185px);
+      right: calc(50% - 640px - 160px - 30px);
     }
   }
 
   @media (min-width: 1780px) {
-    width: 195px;
+    width: 185px;
     &.flank-banner-left {
-      left: calc(50% - 640px - 212px);
+      left: calc(50% - 640px - 185px - 34px);
     }
     &.flank-banner-right {
-      right: calc(50% - 640px - 212px);
+      right: calc(50% - 640px - 185px - 34px);
     }
   }
 
   @media (min-width: 1920px) {
-    width: 215px;
+    width: 205px;
     &.flank-banner-left {
-      left: calc(50% - 640px - 235px);
+      left: calc(50% - 640px - 205px - 38px);
     }
     &.flank-banner-right {
-      right: calc(50% - 640px - 235px);
+      right: calc(50% - 640px - 205px - 38px);
     }
   }
 
