@@ -57,24 +57,59 @@
         </div>
       </div>
 
-      <!-- Side Promo Cards -->
+      <!-- Side Promo Cards (Sidebar Banners) -->
       <div class="hero-side-promos">
-        <div class="promo-card promo-card-1">
-          <span class="promo-tag">ƯU ĐÃI LINH KIỆN</span>
-          <h3 class="promo-title">Nâng cấp RAM & SSD Gen 4</h3>
-          <p class="promo-desc">Tốc độ đọc tới 7450MB/s giảm tới 25%</p>
-          <a [routerLink]="['/products']" [queryParams]="{ category: 'linh-kien-may-tinh' }" class="promo-link">
-            Xem ngay &rarr;
-          </a>
-        </div>
-        <div class="promo-card promo-card-2">
-          <span class="promo-tag">GAMING GEAR</span>
-          <h3 class="promo-title">Bàn phím cơ & Chuột Pro</h3>
-          <p class="promo-desc">Switch quang học & Wireless 4000Hz</p>
-          <a [routerLink]="['/products']" [queryParams]="{ category: 'phu-kien-thiet-bi-ngoai-vi' }" class="promo-link">
-            Xem ngay &rarr;
-          </a>
-        </div>
+        @if (sidebarBanners().length > 0) {
+          @for (banner of sidebarBanners().slice(0, 2); track banner.bannerId; let idx = $index) {
+            <a
+              [routerLink]="banner.linkUrl || '/products'"
+              class="promo-card promo-banner-card"
+              [class.promo-card-1]="idx === 0"
+              [class.promo-card-2]="idx === 1"
+              [title]="banner.title || 'Khuyến mãi nổi bật'"
+            >
+              @if (banner.imageUrl) {
+                <div class="promo-banner-media">
+                  <img [src]="banner.imageUrl" [alt]="banner.title || 'Banner'" class="promo-banner-img" />
+                </div>
+              }
+              <div class="promo-banner-text">
+                <span class="promo-tag">KHUYẾN MÃI HOT</span>
+                <h3 class="promo-title">{{ banner.title || 'Ưu đãi đặc biệt' }}</h3>
+                <span class="promo-link">Khám phá ngay &rarr;</span>
+              </div>
+            </a>
+          }
+          @if (sidebarBanners().length === 1) {
+            <!-- Thẻ bổ trợ thứ 2 nếu chỉ có 1 banner sidebar trong DB -->
+            <div class="promo-card promo-card-2">
+              <span class="promo-tag">GAMING GEAR</span>
+              <h3 class="promo-title">Bàn phím cơ & Chuột Pro</h3>
+              <p class="promo-desc">Switch quang học & Wireless 4000Hz</p>
+              <a [routerLink]="['/products']" [queryParams]="{ category: 'phu-kien-thiet-bi-ngoai-vi' }" class="promo-link">
+                Xem ngay &rarr;
+              </a>
+            </div>
+          }
+        } @else {
+          <!-- Fallback khi chưa có banner sidebar -->
+          <div class="promo-card promo-card-1">
+            <span class="promo-tag">ƯU ĐÃI LINH KIỆN</span>
+            <h3 class="promo-title">Nâng cấp RAM & SSD Gen 4</h3>
+            <p class="promo-desc">Tốc độ đọc tới 7450MB/s giảm tới 25%</p>
+            <a [routerLink]="['/products']" [queryParams]="{ category: 'linh-kien-may-tinh' }" class="promo-link">
+              Xem ngay &rarr;
+            </a>
+          </div>
+          <div class="promo-card promo-card-2">
+            <span class="promo-tag">GAMING GEAR</span>
+            <h3 class="promo-title">Bàn phím cơ & Chuột Pro</h3>
+            <p class="promo-desc">Switch quang học & Wireless 4000Hz</p>
+            <a [routerLink]="['/products']" [queryParams]="{ category: 'phu-kien-thiet-bi-ngoai-vi' }" class="promo-link">
+              Xem ngay &rarr;
+            </a>
+          </div>
+        }
       </div>
     </div>
   </section>

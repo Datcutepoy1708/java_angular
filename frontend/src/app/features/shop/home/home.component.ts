@@ -46,6 +46,7 @@ export class HomeComponent implements OnInit {
   // ── Hero Slider State ──────────────────────────────────────────
   readonly currentSlideIndex = signal(0);
   readonly liveBanners = signal<Banner[]>([]);
+  readonly sidebarBanners = signal<Banner[]>([]);
   readonly latestNews = signal<News[]>([]);
 
   readonly fallbackSlides: HeroSlide[] = [
@@ -133,7 +134,16 @@ export class HomeComponent implements OnInit {
           this.liveBanners.set(res.data);
         }
       },
-      error: (err) => console.error('Error loading banners:', err)
+      error: (err) => console.error('Error loading slider banners:', err)
+    });
+
+    this.bannerService.getPublicBanners('sidebar').subscribe({
+      next: (res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          this.sidebarBanners.set(res.data);
+        }
+      },
+      error: (err) => console.error('Error loading sidebar banners:', err)
     });
   }
 
