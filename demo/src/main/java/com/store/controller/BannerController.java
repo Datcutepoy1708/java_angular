@@ -33,7 +33,7 @@ public class BannerController {
             try {
                 bannerPosition = BannerPosition.fromValue(position);
             } catch (IllegalArgumentException e) {
-                // Ignore invalid position and return empty list or all
+                return ResponseEntity.ok(ApiResponse.success("Lấy danh sách banner thành công", List.of()));
             }
         }
         List<BannerResponse> banners = bannerService.getPublicBanners(bannerPosition);
