@@ -226,6 +226,13 @@ $radius: 12px;
     border-color: #bbf7d0;
   }
 
+  &[data-pos="flank_left"],
+  &[data-pos="flank_right"] {
+    background: #fdf2f8;
+    color: #9d174d;
+    border-color: #fbcfe8;
+  }
+
   &[data-pos="popup"] {
     background: #fef3c7;
     color: #92400e;

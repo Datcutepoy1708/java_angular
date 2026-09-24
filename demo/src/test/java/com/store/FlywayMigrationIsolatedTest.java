@@ -69,7 +69,7 @@ class FlywayMigrationIsolatedTest {
 
             MigrateResult firstRun = flyway.migrate();
             System.out.println("First migrate result on " + testDbName + ": " + firstRun.migrationsExecuted + " migrations executed.");
-            assertEquals(5, firstRun.migrationsExecuted, "Expected V1 through V5 to execute on blank database");
+            assertEquals(6, firstRun.migrationsExecuted, "Expected V1 through V6 to execute on blank database");
             assertTrue(firstRun.success, "First migration run must succeed");
 
             // 4. Verify tables, reference data, and exact role mappings

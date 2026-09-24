@@ -8,6 +8,7 @@ import { CartService } from '../../core/services/cart.service';
 
 import { SettingService } from '../../core/services/setting.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { BannerService } from '../../core/services/banner.service';
 import { signal } from '@angular/core';
 
 describe('PublicShellComponent', () => {
@@ -66,6 +67,10 @@ describe('PublicShellComponent', () => {
     })
   };
 
+  const mockBannerService = {
+    getPublicBanners: () => of({ success: true, message: 'OK', data: [] })
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PublicShellComponent],
@@ -75,7 +80,8 @@ describe('PublicShellComponent', () => {
         { provide: AuthService, useValue: mockAuthService },
         { provide: CartService, useValue: mockCartService },
         { provide: SettingService, useValue: mockSettingService },
-        { provide: ThemeService, useValue: mockThemeService }
+        { provide: ThemeService, useValue: mockThemeService },
+        { provide: BannerService, useValue: mockBannerService }
       ],
     }).compileComponents();
 

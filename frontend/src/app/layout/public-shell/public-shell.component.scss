@@ -431,6 +431,50 @@ $radius: 8px;
   }
 }
 
+// ── Floating Side Flank Banners ──────────────────────────────────
+.flank-banner-wrap {
+  position: fixed;
+  top: 130px;
+  z-index: 85;
+  width: 125px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (min-width: 1540px) {
+    display: flex;
+  }
+
+  &.flank-banner-left {
+    left: calc(50% - 640px - 135px);
+  }
+
+  &.flank-banner-right {
+    right: calc(50% - 640px - 135px);
+  }
+
+  .flank-banner-link {
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+  }
+
+  .flank-banner-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+}
+
 // ── Main Content Area ─────────────────────────────────────────────
 .storefront-main {
   flex: 1;

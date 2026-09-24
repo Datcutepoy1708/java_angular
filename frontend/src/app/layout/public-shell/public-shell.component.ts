@@ -13,6 +13,8 @@ import { CartService } from '../../core/services/cart.service';
 import { SettingService } from '../../core/services/setting.service';
 import { CategoryResponse } from '../../core/models/category.model';
 import { ThemeService } from '../../core/services/theme.service';
+import { BannerService } from '../../core/services/banner.service';
+import { Banner } from '../../core/models/banner.model';
 import { ChatWidgetComponent } from '../../shared/chat-widget/chat-widget.component';
 
 @Component({
@@ -26,6 +28,7 @@ import { ChatWidgetComponent } from '../../shared/chat-widget/chat-widget.compon
 export class PublicShellComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly settingService = inject(SettingService);
+  private readonly bannerService = inject(BannerService);
   readonly authService = inject(AuthService);
   readonly cartService = inject(CartService);
   readonly themeService = inject(ThemeService);
@@ -38,6 +41,8 @@ export class PublicShellComponent implements OnInit {
   readonly cartCount = this.cartService.totalQuantity;
   readonly toastMessage = this.cartService.toastMessage;
   readonly publicSettings = this.settingService.publicSettings;
+  readonly flankBannersLeft = signal<Banner[]>([]);
+  readonly flankBannersRight = signal<Banner[]>([]);
 
   ngOnInit(): void {
     // 0. Ensure public storefront always defaults to clean light theme
@@ -56,6 +61,29 @@ export class PublicShellComponent implements OnInit {
       error: (err: unknown) => {
         console.error('Error fetching category tree in PublicShell:', err);
       },
+    });
+
+    // 3. Fetch floating side flank banners (Left and Right)
+    this.loadFlankBanners();
+  }
+
+  loadFlankBanners(): void {
+    this.bannerService.getPublicBanners('flank_left').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.flankBannersLeft.set(res.data);
+        }
+      },
+      error: () => {}
+    });
+
+    this.bannerService.getPublicBanners('flank_right').subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.flankBannersRight.set(res.data);
+        }
+      },
+      error: () => {}
     });
   }
 

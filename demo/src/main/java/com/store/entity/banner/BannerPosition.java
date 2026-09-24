@@ -7,7 +7,9 @@ public enum BannerPosition {
     HOMEPAGE_SLIDER("homepage_slider"),
     SIDEBAR("sidebar"),
     POPUP("popup"),
-    CATEGORY_TOP("category_top");
+    CATEGORY_TOP("category_top"),
+    FLANK_LEFT("flank_left"),
+    FLANK_RIGHT("flank_right");
 
     private final String value;
 

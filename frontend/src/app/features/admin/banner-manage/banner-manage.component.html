@@ -26,6 +26,8 @@
         <option value="">Tất cả vị trí</option>
         <option value="homepage_slider">Slider Trang chủ</option>
         <option value="sidebar">Thanh bên (Sidebar)</option>
+        <option value="flank_left">Banner sườn trái (Trang chủ)</option>
+        <option value="flank_right">Banner sườn phải (Trang chủ)</option>
         <option value="popup">Popup</option>
         <option value="category_top">Đầu danh mục (Category Top)</option>
       </select>
@@ -102,6 +104,8 @@
                     @switch (b.position) {
                       @case ('homepage_slider') { Slider Trang chủ }
                       @case ('sidebar') { Thanh bên }
+                      @case ('flank_left') { Sườn trái }
+                      @case ('flank_right') { Sườn phải }
                       @case ('popup') { Popup }
                       @case ('category_top') { Đầu danh mục }
                       @default { {{ b.position }} }
@@ -241,6 +245,8 @@
                 <select class="form-control" formControlName="position">
                   <option value="homepage_slider">Slider Trang chủ</option>
                   <option value="sidebar">Thanh bên (Sidebar)</option>
+                  <option value="flank_left">Banner sườn trái (Dọc 2 bên web)</option>
+                  <option value="flank_right">Banner sườn phải (Dọc 2 bên web)</option>
                   <option value="popup">Popup</option>
                   <option value="category_top">Đầu danh mục</option>
                 </select>
