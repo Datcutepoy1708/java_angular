@@ -57,11 +57,17 @@ public class CustomerChatController {
     @Operation(summary = "Gửi tin nhắn khách (REST, dùng khi WebSocket chưa kết nối)")
     public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(
             @PathVariable Long conversationId,
-            @Valid @RequestBody com.store.dto.request.ChatMessageSendRequest request,
+            @RequestBody(required = false) com.store.dto.request.ChatMessageSendRequest request,
             @RequestHeader("X-Session-Id") String sessionId) {
 
+        String content = (request != null && request.content() != null) ? request.content() : "";
+        String attachmentUrl = (request != null) ? request.attachmentUrl() : null;
+        if (content.isBlank() && (attachmentUrl == null || attachmentUrl.isBlank())) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Nội dung tin nhắn không được để trống"));
+        }
+
         var payload = new ChatMessageSendRequest(
-                conversationId, request.content(), request.attachmentUrl());
+                conversationId, content, attachmentUrl);
         ChatMessageDto saved = chatService.sendCustomerMessage(payload, sessionId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Đã gửi tin nhắn", saved));

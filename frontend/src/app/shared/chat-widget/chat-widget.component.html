@@ -152,8 +152,8 @@
             <button type="button" (click)="retryHistory()">Thử lại</button>
           </div>
         }
-        @if (!isConnected() && !isClosed()) {
-          <p role="status">Đang kết nối chat, vui lòng chờ...</p>
+        @if (isLoading() && !convId()) {
+          <p role="status">Đang khởi tạo cuộc trò chuyện...</p>
         }
         @if (isWaiting()) {
           <div class="waiting-notice">

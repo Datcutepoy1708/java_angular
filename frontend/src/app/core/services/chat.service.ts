@@ -396,7 +396,7 @@ export class ChatService implements OnDestroy {
   sendCustomerMessageRest(convId: number, content: string, attachmentUrl?: string): Observable<ApiResponse<ChatMessageDto>> {
     return this.http.post<ApiResponse<ChatMessageDto>>(
       `${this.baseUrl}/${convId}/messages`,
-      { content, attachmentUrl: attachmentUrl ?? null },
+      { conversationId: convId, content, attachmentUrl: attachmentUrl ?? null },
       { headers: this.sessionHeaders() }
     );
   }
