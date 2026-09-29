@@ -146,6 +146,15 @@
 
       <!-- Input Area -->
       <footer class="chat-input-area">
+        @if (historyError()) {
+          <div role="alert">
+            Không tải được lịch sử chat.
+            <button type="button" (click)="retryHistory()">Thử lại</button>
+          </div>
+        }
+        @if (!isConnected() && !isClosed()) {
+          <p role="status">Đang kết nối chat, vui lòng chờ...</p>
+        }
         @if (isWaiting()) {
           <div class="waiting-notice">
             <span class="spinner spinner--sm"></span>
@@ -159,7 +168,7 @@
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               (change)="onFileSelected($event)"
-              [disabled]="isClosed() || isUploadingImage()"
+              [disabled]="isClosed() || isUploadingImage() || !isConnected()"
               hidden
             >
             @if (isUploadingImage()) {
@@ -186,7 +195,7 @@
           <button
             id="chat-send-btn"
             class="send-btn"
-            [disabled]="!inputText().trim() || isClosed() || isSending()"
+            [disabled]="!inputText().trim() || isClosed() || isSending() || !isConnected()"
             (click)="sendMessage()"
             aria-label="Gửi tin nhắn"
           >

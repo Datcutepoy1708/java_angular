@@ -35,6 +35,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   // ─── UI State ────────────────────────────────────────────────────────────
   readonly isOpen = signal(false);
   readonly isLoading = signal(false);
+  readonly historyError = signal(false);
   readonly isSending = signal(false);
   readonly isUploadingImage = signal(false);
   readonly inputText = signal('');
@@ -95,8 +96,6 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.isOpen.set(false);
   }
 
-  private hasResetOnce = false;
-
   // ─── Init Chat ─────────────────────────────────────────────────────────────
   private initChat(): void {
     this.isLoading.set(true);
@@ -119,6 +118,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   private loadHistory(convId: number): void {
+    this.historyError.set(false);
     this.chatService.loadMessages(convId).subscribe({
       next: (resp) => {
         if (resp.success && resp.data) {
@@ -126,25 +126,25 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
           this.shouldScrollBottom.set(true);
         }
         this.isLoading.set(false);
-        this.hasResetOnce = false;
       },
       error: (err) => {
         console.error('Failed to load chat history:', err);
         this.isLoading.set(false);
-        // Only retry ONCE to recover from stale session, never loop indefinitely
-        if (!this.hasResetOnce) {
-          this.hasResetOnce = true;
-          this.chatService.resetSession();
-          this.initChat();
-        }
+        // A server error does not invalidate the guest's conversation identity.
+        this.historyError.set(true);
       },
     });
+  }
+
+  retryHistory(): void {
+    const id = this.convId();
+    if (id) this.loadHistory(id);
   }
 
   // ─── Send Message ──────────────────────────────────────────────────────────
   sendMessage(): void {
     const text = this.inputText().trim();
-    if (!text || this.isSending() || this.isClosed()) return;
+    if (!text || this.isSending() || this.isClosed() || !this.isConnected()) return;
 
     const convId = this.convId();
     if (!convId) return;
@@ -180,7 +180,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   sendQuickReply(text: string): void {
     const convId = this.convId();
-    if (!convId || this.isClosed()) return;
+    if (!convId || this.isClosed() || !this.isConnected()) return;
     this.chatService.sendMessageViaWs(convId, text);
 
     const optimistic: ChatMessageDto = {
@@ -206,7 +206,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     const file = input.files[0];
 
     const convId = this.convId();
-    if (!convId || this.isClosed()) return;
+    if (!convId || this.isClosed() || !this.isConnected()) return;
 
     this.isUploadingImage.set(true);
     this.chatService.uploadChatImage(file).subscribe({

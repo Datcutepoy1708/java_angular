@@ -2,6 +2,7 @@ package com.store.controller;
 
 import com.store.dto.request.ChatInitRequest;
 import com.store.dto.request.ChatMergeSessionRequest;
+import com.store.dto.request.ChatMessageSendRequest;
 import com.store.dto.response.ApiResponse;
 import com.store.dto.response.ChatInitResponse;
 import com.store.dto.response.ChatMessageDto;
@@ -50,6 +51,20 @@ public class CustomerChatController {
 
         List<ChatMessageDto> messages = chatService.getMessages(conversationId, sessionId);
         return ResponseEntity.ok(ApiResponse.success("Tải tin nhắn thành công", messages));
+    }
+
+    @PostMapping("/{conversationId}/messages")
+    @Operation(summary = "Gửi tin nhắn khách (REST, dùng khi WebSocket chưa kết nối)")
+    public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(
+            @PathVariable Long conversationId,
+            @Valid @RequestBody com.store.dto.request.ChatMessageSendRequest request,
+            @RequestHeader("X-Session-Id") String sessionId) {
+
+        var payload = new ChatMessageSendRequest(
+                conversationId, request.content(), request.attachmentUrl());
+        ChatMessageDto saved = chatService.sendCustomerMessage(payload, sessionId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Đã gửi tin nhắn", saved));
     }
 
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

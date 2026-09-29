@@ -18,6 +18,7 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonObjectReader;
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 import org.springframework.data.redis.serializer.SerializationException;
 
@@ -42,7 +43,12 @@ public class RedisConfig implements CachingConfigurer {
                 JsonTypeInfo.As.WRAPPER_ARRAY
         );
 
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        // Redis reads values as Object. Use the same declared root type when writing,
+        // including immutable Stream.toList() results and final record DTOs.
+        var cacheWriter = objectMapper.writerFor(Object.class);
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(
+                objectMapper, JacksonObjectReader.create(),
+                (mapper, value) -> cacheWriter.writeValueAsBytes(value));
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))

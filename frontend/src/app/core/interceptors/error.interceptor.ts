@@ -1,13 +1,18 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, EMPTY, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { isAbortError } from '../errors/abort-error';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (isAbortError(error)) {
+        return EMPTY;
+      }
+
       // 401 Unauthorized handling (token expired)
       if (error.status === 401 && !req.url.includes('/api/v1/auth/')) {
         // If the user has no refresh token, they are an unauthenticated guest.

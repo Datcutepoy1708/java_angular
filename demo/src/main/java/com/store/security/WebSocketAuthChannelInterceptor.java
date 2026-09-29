@@ -1,13 +1,15 @@
 package com.store.security;
 
-import com.store.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +26,7 @@ import java.security.Principal;
  */
 @Slf4j
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 99)
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
@@ -38,6 +41,8 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             return message;
         }
 
+        Principal userPrincipal = null;
+
         // Thử xác thực JWT từ header Authorization
         String authHeader = accessor.getFirstNativeHeader("Authorization");
         if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
@@ -46,9 +51,7 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                 if (jwtTokenProvider.validateToken(token)) {
                     String email = jwtTokenProvider.getEmailFromToken(token);
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    accessor.setUser(auth);
+                    userPrincipal = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     log.debug("[WebSocket] Authenticated user connected: {}", email);
                 }
             } catch (Exception e) {
@@ -59,8 +62,20 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             // Guest: dùng sessionId từ header X-Session-Id làm anonymous principal
             String sessionId = accessor.getFirstNativeHeader("X-Session-Id");
             if (StringUtils.hasText(sessionId)) {
-                accessor.setUser(new GuestPrincipal(sessionId));
+                userPrincipal = new GuestPrincipal(sessionId);
                 log.debug("[WebSocket] Guest connected with sessionId: {}", sessionId);
+            }
+        }
+
+        if (userPrincipal != null) {
+            MessageHeaderAccessor mutable = MessageHeaderAccessor.getMutableAccessor(message);
+            if (mutable instanceof org.springframework.messaging.simp.SimpMessageHeaderAccessor simpAccessor) {
+                simpAccessor.setUser(userPrincipal);
+                return MessageBuilder.createMessage(message.getPayload(), simpAccessor.getMessageHeaders());
+            } else {
+                StompHeaderAccessor stompAccessor = StompHeaderAccessor.wrap(message);
+                stompAccessor.setUser(userPrincipal);
+                return MessageBuilder.createMessage(message.getPayload(), stompAccessor.getMessageHeaders());
             }
         }
 

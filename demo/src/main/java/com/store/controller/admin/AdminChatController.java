@@ -70,6 +70,22 @@ public class AdminChatController {
                 chatService.getMessages(conversationId, null)));
     }
 
+    @PostMapping("/conversations/{conversationId}/messages")
+    @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_RESPOND', 'CHAT_MANAGE')")
+    @Operation(summary = "Gửi tin nhắn nhân viên (REST, dùng khi WebSocket chưa kết nối)")
+    public ResponseEntity<ApiResponse<ChatMessageDto>> sendMessage(
+            @PathVariable Long conversationId,
+            @Valid @RequestBody ChatMessageSendRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        ChatMessageSendRequest payload = new ChatMessageSendRequest(
+                conversationId, request.content(), request.attachmentUrl());
+        ChatMessageDto saved = chatService.sendStaffMessage(
+                payload, userDetails.getUserId(), userDetails.getFullName());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Đã gửi tin nhắn", saved));
+    }
+
     @PostMapping("/conversations/{conversationId}/claim")
     @PreAuthorize("hasRole('ADMIN') or hasAnyAuthority('CHAT_RESPOND', 'CHAT_MANAGE')")
     @Operation(summary = "Tiếp nhận hội thoại (atomic, chống race condition)")

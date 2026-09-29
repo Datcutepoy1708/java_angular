@@ -57,8 +57,8 @@ public class ChatServiceImpl implements ChatService {
         // Tìm hội thoại đang hoạt động của session
         var existing = conversationRepo.findFirstBySessionIdAndStatusInOrderByCreatedAtDesc(
                 request.sessionId(),
-                List.of(ConversationStatus.BOT_ACTIVE, ConversationStatus.WAITING_STAFF, ConversationStatus.STAFF_ACTIVE)
-        );
+                List.of(ConversationStatus.BOT_ACTIVE, ConversationStatus.WAITING_STAFF,
+                        ConversationStatus.STAFF_ACTIVE));
 
         if (existing.isPresent()) {
             ChatConversation conv = existing.get();
@@ -69,8 +69,7 @@ public class ChatServiceImpl implements ChatService {
                     conv.getSessionId(),
                     conv.getStatus(),
                     0,
-                    conv.getCreatedAt()
-            );
+                    conv.getCreatedAt());
         }
 
         // Tạo mới hội thoại
@@ -92,8 +91,7 @@ public class ChatServiceImpl implements ChatService {
                 newConv.getSessionId(),
                 newConv.getStatus(),
                 0,
-                newConv.getCreatedAt()
-        );
+                newConv.getCreatedAt());
     }
 
     // ─── 2. Get Messages ─────────────────────────────────────────────────────
@@ -138,20 +136,17 @@ public class ChatServiceImpl implements ChatService {
                 conv.getCustomerName() != null ? conv.getCustomerName() : "Khách",
                 request.content(),
                 request.attachmentUrl(),
-                null
-        );
+                null);
 
         // Tăng unread staff atomic
         conversationRepo.incrementUnreadStaffCountAtomic(
                 conv.getConversationId(),
                 truncateLastMessage(request.content()),
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
 
         ChatMessageDto customerMsgDto = toMessageDto(customerMsg);
 
-        // Broadcast tin nhắn khách tới nhân viên
-        broadcastToStaff(conv.getConversationId(), customerMsgDto);
+        broadcastMessage(conv.getConversationId(), customerMsgDto);
 
         // Xử lý bot nếu hội thoại đang BOT_ACTIVE
         if (conv.getStatus() == ConversationStatus.BOT_ACTIVE) {
@@ -179,22 +174,17 @@ public class ChatServiceImpl implements ChatService {
                 staffName,
                 request.content(),
                 request.attachmentUrl(),
-                null
-        );
+                null);
 
         // Tăng unread customer atomic
         conversationRepo.incrementUnreadCustomerCountAtomic(
                 conv.getConversationId(),
                 truncateLastMessage(request.content()),
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
 
         ChatMessageDto staffMsgDto = toMessageDto(staffMsg);
 
-        // Broadcast tới khách hàng
-        broadcastToCustomer(conv.getConversationId(), staffMsgDto);
-
-        // Broadcast tới admin queue để cập nhật last_message
+        broadcastMessage(conv.getConversationId(), staffMsgDto);
         broadcastQueueUpdate(conv.getConversationId());
 
         return staffMsgDto;
@@ -228,7 +218,8 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public void closeConversation(Long conversationId, Long closedByStaffId) {
         ChatConversation conv = getConversationByIdOrThrow(conversationId);
-        if (conv.getStatus() == ConversationStatus.CLOSED) return;
+        if (conv.getStatus() == ConversationStatus.CLOSED)
+            return;
 
         conversationRepo.updateStatusAtomic(conversationId, ConversationStatus.CLOSED, LocalDateTime.now());
 
@@ -268,7 +259,8 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public void markReadByCustomer(Long conversationId, String sessionId) {
         ChatConversation conv = getConversationByIdOrThrow(conversationId);
-        if (!conv.getSessionId().equals(sessionId)) return;
+        if (!conv.getSessionId().equals(sessionId))
+            return;
         conversationRepo.resetUnreadCustomerCountAtomic(conversationId);
     }
 
@@ -278,8 +270,7 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public void mergeGuestSession(ChatMergeSessionRequest request, Long userId, String userName, String userEmail) {
         int updated = conversationRepo.mergeGuestSession(
-                request.sessionId(), userId, userName, userEmail, LocalDateTime.now()
-        );
+                request.sessionId(), userId, userName, userEmail, LocalDateTime.now());
         log.info("[Chat] Merged {} conversation(s) for session {} → userId {}", updated, request.sessionId(), userId);
     }
 
@@ -302,7 +293,8 @@ public class ChatServiceImpl implements ChatService {
 
         try {
             Path uploadDir = Paths.get("uploads", "chat").toAbsolutePath().normalize();
-            if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
+            if (!Files.exists(uploadDir))
+                Files.createDirectories(uploadDir);
 
             String newFilename = UUID.randomUUID() + extension;
             Path targetLocation = uploadDir.resolve(newFilename).normalize();
@@ -338,7 +330,7 @@ public class ChatServiceImpl implements ChatService {
 
             ChatMessage handoverMsg = saveMessage(convId, MessageSenderType.BOT, null, "Complexus Bot",
                     botEngine.buildExplicitHandoverResponse(), null, null);
-            broadcastToCustomer(convId, toMessageDto(handoverMsg));
+            broadcastMessage(convId, toMessageDto(handoverMsg));
             broadcastAdminQueue(convId);
             log.info("[Chat] Explicit handover requested for conversation {}", convId);
             return;
@@ -359,9 +351,7 @@ public class ChatServiceImpl implements ChatService {
 
             ChatMessage botMsg = saveMessage(convId, MessageSenderType.BOT, null, "Complexus Bot",
                     matchedRule.responseMessage(), null, metadata);
-            ChatMessageDto botMsgDto = toMessageDto(botMsg);
-            // Set quick replies vào DTO khi broadcast
-            broadcastToCustomer(convId, toMessageDtoWithQuickReplies(botMsg, quickReplies));
+            broadcastMessage(convId, toMessageDtoWithQuickReplies(botMsg, quickReplies));
 
             // Nếu rule là HANDOVER_STAFF → chuyển trạng thái luôn
             if (matchedRule.actionType() == com.store.entity.chat.RuleActionType.HANDOVER_STAFF) {
@@ -380,29 +370,35 @@ public class ChatServiceImpl implements ChatService {
                 conversationRepo.updateStatusAtomic(convId, ConversationStatus.WAITING_STAFF, LocalDateTime.now());
                 ChatMessage escalateMsg = saveMessage(convId, MessageSenderType.BOT, null, "Complexus Bot",
                         botEngine.buildEscalationResponse(), null, null);
-                broadcastToCustomer(convId, toMessageDto(escalateMsg));
+                broadcastMessage(convId, toMessageDto(escalateMsg));
                 broadcastAdminQueue(convId);
-                log.info("[Chat] Auto-escalated conversation {} to WAITING_STAFF (unmatched={})", convId, unmatchedCount);
+                log.info("[Chat] Auto-escalated conversation {} to WAITING_STAFF (unmatched={})", convId,
+                        unmatchedCount);
             } else {
                 // Lần 1 → gợi ý thân thiện
                 List<String> quickReplies = botEngine.buildDefaultQuickReplies();
                 ChatMessage helpMsg = saveMessage(convId, MessageSenderType.BOT, null, "Complexus Bot",
                         botEngine.buildFirstUnmatchedResponse(), null, toJson(quickReplies));
-                broadcastToCustomer(convId, toMessageDtoWithQuickReplies(helpMsg, quickReplies));
+                broadcastMessage(convId, toMessageDtoWithQuickReplies(helpMsg, quickReplies));
             }
         }
 
-        // Tăng unread customer (bot gửi tin)
         conversationRepo.incrementUnreadCustomerCountAtomic(convId, "", LocalDateTime.now());
     }
 
     private void sendBotWelcomeMessage(Long convId) {
-        List<String> quickReplies = List.of("Tư vấn sản phẩm", "Kiểm tra bảo hành", "Chính sách đổi trả", "Báo giá", "Gặp nhân viên tư vấn");
+        List<String> quickReplies = List.of("Tư vấn sản phẩm", "Kiểm tra bảo hành", "Chính sách đổi trả", "Báo giá",
+                "Gặp nhân viên tư vấn");
         String welcome = "Xin chào! Tôi là trợ lý ảo của Complexus. Tôi có thể giúp bạn tư vấn về sản phẩm, bảo hành, đổi trả và nhiều hơn nữa. Bạn cần hỗ trợ gì hôm nay?";
         saveMessage(convId, MessageSenderType.BOT, null, "Complexus Bot", welcome, null, toJson(quickReplies));
     }
 
     // ─── WebSocket Broadcasts ─────────────────────────────────────────────────
+
+    private void broadcastMessage(Long conversationId, ChatMessageDto msg) {
+        broadcastToCustomer(conversationId, msg);
+        broadcastToStaff(conversationId, msg);
+    }
 
     /** Broadcast tin nhắn tới khách hàng đang xem conversation */
     private void broadcastToCustomer(Long conversationId, ChatMessageDto msg) {
@@ -432,8 +428,8 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private ChatMessage saveMessage(Long conversationId, MessageSenderType senderType,
-                                    Long senderId, String senderName,
-                                    String content, String attachmentUrl, String metadata) {
+            Long senderId, String senderName,
+            String content, String attachmentUrl, String metadata) {
         ChatMessage msg = ChatMessage.builder()
                 .conversationId(conversationId)
                 .senderType(senderType)
@@ -461,8 +457,7 @@ public class ChatServiceImpl implements ChatService {
                 msg.getAttachmentUrl(),
                 quickReplies,
                 msg.isRead(),
-                msg.getCreatedAt()
-        );
+                msg.getCreatedAt());
     }
 
     private ChatConversationSummaryResponse toSummaryResponse(ChatConversation conv) {
@@ -480,12 +475,12 @@ public class ChatServiceImpl implements ChatService {
                 conv.getUnreadCustomerCount(),
                 conv.getLastMessage(),
                 conv.getLastMessageAt(),
-                conv.getCreatedAt()
-        );
+                conv.getCreatedAt());
     }
 
     private String truncateLastMessage(String content) {
-        if (content == null) return "";
+        if (content == null)
+            return "";
         return content.length() > 100 ? content.substring(0, 100) + "..." : content;
     }
 
@@ -498,7 +493,8 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private List<String> parseQuickReplies(String metadata) {
-        if (metadata == null || metadata.isBlank()) return List.of();
+        if (metadata == null || metadata.isBlank())
+            return List.of();
         try {
             return objectMapper.readValue(metadata,
                     objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));

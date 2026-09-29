@@ -10,7 +10,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, Subject, switchMap } from 'rxjs';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -48,6 +47,12 @@ export class ChatService implements OnDestroy {
   private readonly baseUrl = `${environment.apiUrl}/api/v1/chat`;
   private readonly adminUrl = `${environment.apiUrl}/api/v1/admin/chat`;
   private readonly wsUrl = `${environment.apiUrl}/ws-chat`;
+
+  private socketUrl(): string {
+    const url = new URL(this.wsUrl, window.location.href);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    return url.toString();
+  }
 
   // ─── STOMP Client ────────────────────────────────────────────────────────
   private stompClient: Client | null = null;
@@ -243,11 +248,11 @@ export class ChatService implements OnDestroy {
 
     this.disconnect();
     const sessionId = this.getOrCreateSessionId();
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const nativeWsUrl = `${wsProtocol}//${window.location.host}/ws-chat`;
 
     this.stompClient = new Client({
-      webSocketFactory: () => new WebSocket(nativeWsUrl),
+      webSocketFactory: () => new WebSocket(this.socketUrl()),
+      connectionTimeout: 10000,
+      onWebSocketClose: () => this.isConnected.set(false),
       connectHeaders: {
         'X-Session-Id': sessionId,
       },
@@ -316,11 +321,11 @@ export class ChatService implements OnDestroy {
     if (!token) return;
 
     this.disconnect();
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const nativeWsUrl = `${wsProtocol}//${window.location.host}/ws-chat`;
 
     this.stompClient = new Client({
-      webSocketFactory: () => new WebSocket(nativeWsUrl),
+      webSocketFactory: () => new WebSocket(this.socketUrl()),
+      connectionTimeout: 10000,
+      onWebSocketClose: () => this.isConnected.set(false),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
