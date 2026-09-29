@@ -39,7 +39,7 @@ public class RedisConfig implements CachingConfigurer {
         objectMapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
+                JsonTypeInfo.As.WRAPPER_ARRAY
         );
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
