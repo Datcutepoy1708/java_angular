@@ -123,6 +123,11 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
           this.shouldScrollBottom.set(true);
         }
       },
+      error: () => {
+        // Session mismatch or conversation no longer valid — reset and start fresh
+        this.chatService.resetSession();
+        this.initChat();
+      },
     });
   }
 

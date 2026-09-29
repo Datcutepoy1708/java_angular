@@ -80,6 +80,19 @@ export class ChatService implements OnDestroy {
     return localStorage.getItem(CHAT_SESSION_KEY);
   }
 
+  /** Clear all session state — used to recover from stale/mismatched sessions */
+  resetSession(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    localStorage.removeItem(CHAT_SESSION_KEY);
+    this.disconnect();
+    this.messages.set([]);
+    this.conversationId.set(null);
+    this.status.set(null);
+    this.unreadCount.set(0);
+    this.isConnected.set(false);
+    this.isTyping.set(false);
+  }
+
   private sessionHeaders(): Record<string, string> {
     return { 'X-Session-Id': this.getOrCreateSessionId() };
   }
