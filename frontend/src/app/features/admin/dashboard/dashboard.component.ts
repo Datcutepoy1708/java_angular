@@ -19,6 +19,24 @@ export interface DashboardChartPoint {
   data: RevenueChartDataPoint;
 }
 
+export interface DashboardChartBar {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  data: RevenueChartDataPoint;
+}
+
+export interface YAxisGuide {
+  y: number;
+  label: string;
+}
+
+export interface XAxisGuide {
+  x: number;
+  label: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -32,23 +50,105 @@ export class DashboardComponent implements OnInit {
   private readonly orderService = inject(OrderService);
 
   readonly isLoading = signal<boolean>(true);
+  readonly isTrendLoading = signal<boolean>(false);
   readonly overview = signal<DashboardOverview | null>(null);
   readonly topSellers = signal<TopSellingProduct[]>([]);
   readonly recentOrders = signal<Order[]>([]);
   readonly revenueTrend = signal<RevenueChartDataPoint[]>([]);
 
-  readonly chartPath = signal<string>('M 30 160 L 440 160');
-  readonly chartPoints = signal<DashboardChartPoint[]>([]);
+  // Chart configuration & state
+  readonly selectedPeriod = signal<'7d' | '30d'>('30d');
+  readonly chartType = signal<'area' | 'bar'>('area');
   readonly hoveredPoint = signal<RevenueChartDataPoint | null>(null);
+  readonly activeChartPoint = signal<DashboardChartPoint | null>(null);
 
-  readonly totalRevenue30Days = computed(() => {
+  readonly chartWidth = 640;
+  readonly chartHeight = 220;
+  readonly paddingLeft = 55;
+  readonly paddingRight = 20;
+  readonly paddingTop = 25;
+  readonly paddingBottom = 35;
+
+  readonly chartPath = signal<string>('M 55 185 L 620 185');
+  readonly chartAreaPath = signal<string>('M 55 185 L 620 185 Z');
+  readonly chartPoints = signal<DashboardChartPoint[]>([]);
+
+  // Summary metrics in chart card
+  readonly totalPeriodRevenue = computed(() => {
     return this.revenueTrend().reduce((sum, d) => sum + (Number(d.revenue) || 0), 0);
   });
 
-  readonly peakRevenue = computed(() => {
+  readonly totalPeriodOrders = computed(() => {
+    return this.revenueTrend().reduce((sum, d) => sum + (Number(d.orderCount) || 0), 0);
+  });
+
+  readonly dailyAverageRevenue = computed(() => {
     const list = this.revenueTrend();
     if (!list || list.length === 0) return 0;
-    return Math.max(...list.map(d => Number(d.revenue) || 0));
+    return Math.round(this.totalPeriodRevenue() / list.length);
+  });
+
+  readonly peakPoint = computed(() => {
+    const list = this.revenueTrend();
+    if (!list || list.length === 0) return null;
+    return list.reduce((max, curr) => (Number(curr.revenue) > Number(max.revenue) ? curr : max), list[0]);
+  });
+
+  readonly peakRevenue = computed(() => {
+    return Number(this.peakPoint()?.revenue) || 0;
+  });
+
+  // Y-Axis grid lines with formatted labels
+  readonly yGridLines = computed<YAxisGuide[]>(() => {
+    const list = this.revenueTrend();
+    const maxRev = Math.max(...list.map(d => Number(d.revenue) || 0), 1000000);
+    const usableHeight = this.chartHeight - this.paddingTop - this.paddingBottom;
+    const steps = 3;
+    const lines: YAxisGuide[] = [];
+
+    for (let i = 0; i <= steps; i++) {
+      const val = (maxRev / steps) * (steps - i);
+      const y = this.paddingTop + (i / steps) * usableHeight;
+      lines.push({ y, label: this.formatShortCurrency(val) });
+    }
+    return lines;
+  });
+
+  // X-Axis sample labels
+  readonly xGridLabels = computed<XAxisGuide[]>(() => {
+    const pts = this.chartPoints();
+    if (pts.length === 0) return [];
+    if (pts.length <= 6) {
+      return pts.map(p => ({ x: p.x, label: this.formatDateLabel(p.data.dateLabel) }));
+    }
+    const count = 5;
+    const step = (pts.length - 1) / (count - 1);
+    const result: XAxisGuide[] = [];
+    for (let i = 0; i < count; i++) {
+      const idx = Math.min(Math.round(i * step), pts.length - 1);
+      result.push({ x: pts[idx].x, label: this.formatDateLabel(pts[idx].data.dateLabel) });
+    }
+    return result;
+  });
+
+  // Bar representation for Bar chart mode
+  readonly chartBars = computed<DashboardChartBar[]>(() => {
+    const data = this.revenueTrend();
+    if (!data || data.length === 0) return [];
+
+    const usableWidth = this.chartWidth - this.paddingLeft - this.paddingRight;
+    const usableHeight = this.chartHeight - this.paddingTop - this.paddingBottom;
+    const maxRev = Math.max(...data.map(d => Number(d.revenue) || 0), 1000000);
+    const stepX = usableWidth / data.length;
+    const barWidth = Math.max(Math.min(stepX * 0.65, 26), 6);
+
+    return data.map((d, i) => {
+      const rev = Number(d.revenue) || 0;
+      const h = Math.max((rev / maxRev) * usableHeight, rev > 0 ? 4 : 2);
+      const x = this.paddingLeft + i * stepX + (stepX - barWidth) / 2;
+      const y = this.chartHeight - this.paddingBottom - h;
+      return { x, y, width: barWidth, height: h, data: d };
+    });
   });
 
   ngOnInit(): void {
@@ -71,16 +171,8 @@ export class DashboardComponent implements OnInit {
       error: (err) => console.error('Failed to load overview', err)
     });
 
-    // 2. Revenue Trend (30 days)
-    this.statisticsService.getRevenueTrend('day', thirtyDaysAgo, today).subscribe({
-      next: (res) => {
-        if (res.data && res.data.length > 0) {
-          this.revenueTrend.set(res.data);
-          this.generateChartPath(res.data);
-        }
-      },
-      error: (err) => console.error('Failed to load trend', err)
-    });
+    // 2. Revenue Trend
+    this.loadRevenueTrend();
 
     // 3. Top Selling
     this.statisticsService.getTopSelling(5, thirtyDaysAgo, today).subscribe({
@@ -107,28 +199,62 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  loadRevenueTrend(): void {
+    this.isTrendLoading.set(true);
+    const today = new Date().toISOString().split('T')[0];
+    const days = this.selectedPeriod() === '7d' ? 7 : 30;
+    const startDate = new Date(Date.now() - (days - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    this.statisticsService.getRevenueTrend('day', startDate, today).subscribe({
+      next: (res) => {
+        if (res.data && res.data.length > 0) {
+          this.revenueTrend.set(res.data);
+          this.generateChartPath(res.data);
+        } else {
+          this.revenueTrend.set([]);
+          this.chartPoints.set([]);
+        }
+        this.isTrendLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load trend', err);
+        this.isTrendLoading.set(false);
+      }
+    });
+  }
+
+  setPeriod(period: '7d' | '30d'): void {
+    if (this.selectedPeriod() === period) return;
+    this.selectedPeriod.set(period);
+    this.loadRevenueTrend();
+  }
+
+  setChartType(type: 'area' | 'bar'): void {
+    this.chartType.set(type);
+  }
+
   private generateChartPath(data: RevenueChartDataPoint[]): void {
     if (!data || data.length === 0) return;
 
-    const width = 440;
-    const height = 140;
-    const paddingX = 30;
-    const paddingY = 20;
+    const usableWidth = this.chartWidth - this.paddingLeft - this.paddingRight;
+    const usableHeight = this.chartHeight - this.paddingTop - this.paddingBottom;
+    const baseFloorY = this.chartHeight - this.paddingBottom;
 
     const maxRev = Math.max(...data.map(d => Number(d.revenue) || 0), 1000000);
-    const stepX = (width - paddingX) / Math.max(data.length - 1, 1);
+    const stepX = usableWidth / Math.max(data.length - 1, 1);
 
     const points: DashboardChartPoint[] = data.map((d, i) => {
-      const x = paddingX + i * stepX;
+      const x = this.paddingLeft + i * stepX;
       const normalizedY = (Number(d.revenue) || 0) / maxRev;
-      const y = (height + paddingY) - (normalizedY * height);
+      const y = baseFloorY - (normalizedY * usableHeight);
       return { x, y, data: d };
     });
 
     this.chartPoints.set(points);
 
     if (points.length === 1) {
-      this.chartPath.set(`M ${points[0].x} ${points[0].y} L 440 ${points[0].y}`);
+      this.chartPath.set(`M ${points[0].x} ${points[0].y} L ${this.chartWidth - this.paddingRight} ${points[0].y}`);
+      this.chartAreaPath.set(`M ${points[0].x} ${points[0].y} L ${this.chartWidth - this.paddingRight} ${points[0].y} L ${this.chartWidth - this.paddingRight} ${baseFloorY} L ${points[0].x} ${baseFloorY} Z`);
       return;
     }
 
@@ -141,14 +267,53 @@ export class DashboardComponent implements OnInit {
     }
 
     this.chartPath.set(d);
+    const lastX = points[points.length - 1].x.toFixed(1);
+    const firstX = points[0].x.toFixed(1);
+    this.chartAreaPath.set(`${d} L ${lastX} ${baseFloorY} L ${firstX} ${baseFloorY} Z`);
   }
 
   onPointHover(pt: DashboardChartPoint): void {
+    this.activeChartPoint.set(pt);
     this.hoveredPoint.set(pt.data);
+  }
+
+  onBarHover(bar: DashboardChartBar): void {
+    const pt: DashboardChartPoint = {
+      x: bar.x + bar.width / 2,
+      y: bar.y,
+      data: bar.data
+    };
+    this.activeChartPoint.set(pt);
+    this.hoveredPoint.set(bar.data);
   }
 
   onPointLeave(): void {
     this.hoveredPoint.set(null);
+    this.activeChartPoint.set(null);
+  }
+
+  formatShortCurrency(val: number): string {
+    if (val >= 1_000_000_000) return (val / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + ' tỷ';
+    if (val >= 1_000_000) return (val / 1_000_000).toFixed(1).replace(/\.0$/, '') + ' tr';
+    if (val >= 1_000) return (val / 1_000).toFixed(0) + ' k';
+    return val.toString() + ' ₫';
+  }
+
+  formatDateLabel(dateStr: string): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}`;
+    }
+    return dateStr;
+  }
+
+  getTooltipTop(y: number): number {
+    return Math.max(y - 65, 10);
+  }
+
+  getTooltipLeft(x: number): number {
+    return Math.max(Math.min((x / this.chartWidth) * 100, 90), 10);
   }
 
   formatCurrency(value: number | undefined): string {
