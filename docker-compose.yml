@@ -1,0 +1,104 @@
+services:
+  # ============================================================
+  # MySQL 8 Database
+  # ============================================================
+  mysql:
+    image: mysql:8.0
+    container_name: store_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - store_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # Redis 7 Cache
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: store_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - store_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # Spring Boot Backend
+  # ============================================================
+  backend:
+    build:
+      context: ./demo
+      dockerfile: Dockerfile
+    container_name: store_backend
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - store_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================================
+  # Angular Frontend (Nginx)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: store_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - store_network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ============================================================
+# Volumes (dữ liệu persistent)
+# ============================================================
+volumes:
+  mysql_data:
+  redis_data:
+  uploads_data:
+
+# ============================================================
+# Network nội bộ (không expose ra ngoài)
+# ============================================================
+networks:
+  store_network:
+    driver: bridge
