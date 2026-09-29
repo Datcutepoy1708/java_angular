@@ -168,7 +168,7 @@
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               (change)="onFileSelected($event)"
-              [disabled]="isClosed() || isUploadingImage() || !isConnected()"
+              [disabled]="isClosed() || isUploadingImage()"
               hidden
             >
             @if (isUploadingImage()) {
@@ -195,7 +195,7 @@
           <button
             id="chat-send-btn"
             class="send-btn"
-            [disabled]="!inputText().trim() || isClosed() || isSending() || !isConnected()"
+            [disabled]="!inputText().trim() || isClosed() || isSending()"
             (click)="sendMessage()"
             aria-label="Gửi tin nhắn"
           >

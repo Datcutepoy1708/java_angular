@@ -144,7 +144,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   // ─── Send Message ──────────────────────────────────────────────────────────
   sendMessage(): void {
     const text = this.inputText().trim();
-    if (!text || this.isSending() || this.isClosed() || !this.isConnected()) return;
+    if (!text || this.isSending() || this.isClosed()) return;
 
     const convId = this.convId();
     if (!convId) return;
@@ -152,9 +152,6 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.isSending.set(true);
     this.inputText.set('');
     this.resetTextareaHeight();
-
-    // Send via WebSocket
-    this.chatService.sendMessageViaWs(convId, text);
 
     // Optimistic local message for immediate feedback
     const optimistic: ChatMessageDto = {
@@ -172,16 +169,30 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.chatService.messages.update((msgs) => [...msgs, optimistic]);
     this.shouldScrollBottom.set(true);
 
-    // The server will broadcast the real message back; we deduplicate by ignoring
-    // duplicates with same content+timestamp. For now we allow both (server echo
-    // is identified by messageId from DB which won't equal Date.now()).
-    setTimeout(() => this.isSending.set(false), 500);
+    if (this.isConnected()) {
+      // Send via WebSocket
+      this.chatService.sendMessageViaWs(convId, text);
+      setTimeout(() => this.isSending.set(false), 400);
+    } else {
+      // Fallback via HTTP REST
+      this.chatService.sendCustomerMessageRest(convId, text).subscribe({
+        next: (resp) => {
+          this.isSending.set(false);
+          if (resp.success && resp.data) {
+            // Replace optimistic with persisted message
+            this.chatService.messages.update((msgs) =>
+              msgs.map((m) => (m.messageId === optimistic.messageId ? resp.data! : m))
+            );
+          }
+        },
+        error: () => this.isSending.set(false),
+      });
+    }
   }
 
   sendQuickReply(text: string): void {
     const convId = this.convId();
-    if (!convId || this.isClosed() || !this.isConnected()) return;
-    this.chatService.sendMessageViaWs(convId, text);
+    if (!convId || this.isClosed()) return;
 
     const optimistic: ChatMessageDto = {
       messageId: Date.now(),
@@ -197,6 +208,20 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     };
     this.chatService.messages.update((msgs) => [...msgs, optimistic]);
     this.shouldScrollBottom.set(true);
+
+    if (this.isConnected()) {
+      this.chatService.sendMessageViaWs(convId, text);
+    } else {
+      this.chatService.sendCustomerMessageRest(convId, text).subscribe({
+        next: (resp) => {
+          if (resp.success && resp.data) {
+            this.chatService.messages.update((msgs) =>
+              msgs.map((m) => (m.messageId === optimistic.messageId ? resp.data! : m))
+            );
+          }
+        },
+      });
+    }
   }
 
   // ─── Image Upload ──────────────────────────────────────────────────────────
@@ -206,13 +231,18 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     const file = input.files[0];
 
     const convId = this.convId();
-    if (!convId || this.isClosed() || !this.isConnected()) return;
+    if (!convId || this.isClosed()) return;
 
     this.isUploadingImage.set(true);
     this.chatService.uploadChatImage(file).subscribe({
       next: (resp) => {
         if (resp.success && resp.data?.url) {
-          this.chatService.sendMessageViaWs(convId, '', resp.data.url);
+          const imgUrl = resp.data.url;
+          if (this.isConnected()) {
+            this.chatService.sendMessageViaWs(convId, '', imgUrl);
+          } else {
+            this.chatService.sendCustomerMessageRest(convId, '', imgUrl).subscribe();
+          }
         }
         this.isUploadingImage.set(false);
       },

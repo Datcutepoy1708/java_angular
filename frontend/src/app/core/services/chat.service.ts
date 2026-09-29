@@ -392,6 +392,15 @@ export class ChatService implements OnDestroy {
     });
   }
 
+  /** REST fallback to send customer message when WebSocket is disconnected */
+  sendCustomerMessageRest(convId: number, content: string, attachmentUrl?: string): Observable<ApiResponse<ChatMessageDto>> {
+    return this.http.post<ApiResponse<ChatMessageDto>>(
+      `${this.baseUrl}/${convId}/messages`,
+      { content, attachmentUrl: attachmentUrl ?? null },
+      { headers: this.sessionHeaders() }
+    );
+  }
+
   /** Send typing signal */
   sendTypingSignal(convId: number, isTyping: boolean, senderType: string, senderName: string): void {
     if (!this.stompClient?.connected) return;
