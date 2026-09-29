@@ -92,7 +92,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         // WebSocket endpoint (native WS and SockJS)
-                        .requestMatchers("/ws-chat", "/ws-chat/**").permitAll()
+                        .requestMatchers("/ws-chat", "/ws-chat/**", "/ws-chat-sockjs", "/ws-chat-sockjs/**").permitAll()
                         // Customer Chat APIs (public — guest access)
                         .requestMatchers("/api/v1/chat/init").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/chat/*/messages").permitAll()

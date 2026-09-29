@@ -12,6 +12,7 @@ import { Observable, Subject, switchMap } from 'rxjs';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
 import { environment } from '../../../environments/environment';
+import SockJS from 'sockjs-client';
 import { AuthService } from './auth.service';
 import {
   ChatBotRuleRequest,
@@ -47,6 +48,7 @@ export class ChatService implements OnDestroy {
   private readonly baseUrl = `${environment.apiUrl}/api/v1/chat`;
   private readonly adminUrl = `${environment.apiUrl}/api/v1/admin/chat`;
   private readonly wsUrl = `${environment.apiUrl}/ws-chat`;
+  private readonly sockJsUrl = `${environment.apiUrl}/ws-chat-sockjs`;
 
   private socketUrl(): string {
     const url = new URL(this.wsUrl, window.location.href);
@@ -250,7 +252,7 @@ export class ChatService implements OnDestroy {
     const sessionId = this.getOrCreateSessionId();
 
     this.stompClient = new Client({
-      webSocketFactory: () => new WebSocket(this.socketUrl()),
+      webSocketFactory: () => new SockJS(this.sockJsUrl),
       connectionTimeout: 10000,
       onWebSocketClose: () => this.isConnected.set(false),
       connectHeaders: {
@@ -323,7 +325,7 @@ export class ChatService implements OnDestroy {
     this.disconnect();
 
     this.stompClient = new Client({
-      webSocketFactory: () => new WebSocket(this.socketUrl()),
+      webSocketFactory: () => new SockJS(this.sockJsUrl),
       connectionTimeout: 10000,
       onWebSocketClose: () => this.isConnected.set(false),
       connectHeaders: {
