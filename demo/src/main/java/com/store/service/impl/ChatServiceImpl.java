@@ -102,7 +102,7 @@ public class ChatServiceImpl implements ChatService {
     public List<ChatMessageDto> getMessages(Long conversationId, String sessionId) {
         ChatConversation conv = getConversationByIdOrThrow(conversationId);
         // sessionId = null means admin/staff access — no session validation needed
-        if (sessionId != null && !conv.getSessionId().equals(sessionId)) {
+        if (sessionId != null && !java.util.Objects.equals(conv.getSessionId(), sessionId)) {
             throw new BadRequestException("Bạn không có quyền xem hội thoại này");
         }
         // Reset unread customer (khi khách gọi)
@@ -122,7 +122,7 @@ public class ChatServiceImpl implements ChatService {
     public ChatMessageDto sendCustomerMessage(ChatMessageSendRequest request, String sessionId) {
         ChatConversation conv = getConversationByIdOrThrow(request.conversationId());
 
-        if (!conv.getSessionId().equals(sessionId)) {
+        if (!java.util.Objects.equals(conv.getSessionId(), sessionId)) {
             throw new BadRequestException("Session không hợp lệ cho hội thoại này");
         }
         if (conv.getStatus() == ConversationStatus.CLOSED) {
