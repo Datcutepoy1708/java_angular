@@ -230,9 +230,11 @@ export class ChatService implements OnDestroy {
 
     this.disconnect();
     const sessionId = this.getOrCreateSessionId();
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const nativeWsUrl = `${wsProtocol}//${window.location.host}/ws-chat`;
 
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(this.wsUrl),
+      webSocketFactory: () => new WebSocket(nativeWsUrl),
       connectHeaders: {
         'X-Session-Id': sessionId,
       },
@@ -301,9 +303,11 @@ export class ChatService implements OnDestroy {
     if (!token) return;
 
     this.disconnect();
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const nativeWsUrl = `${wsProtocol}//${window.location.host}/ws-chat`;
 
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(this.wsUrl),
+      webSocketFactory: () => new WebSocket(nativeWsUrl),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
