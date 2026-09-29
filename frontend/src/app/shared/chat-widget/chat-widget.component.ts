@@ -95,6 +95,8 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.isOpen.set(false);
   }
 
+  private hasResetOnce = false;
+
   // ─── Init Chat ─────────────────────────────────────────────────────────────
   private initChat(): void {
     this.isLoading.set(true);
@@ -108,8 +110,9 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
           // Load message history then connect WS
           this.loadHistory(data.conversationId);
           this.chatService.connectAsCustomer(data.conversationId);
+        } else {
+          this.isLoading.set(false);
         }
-        this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false),
     });
@@ -122,11 +125,18 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
           this.chatService.messages.set(resp.data);
           this.shouldScrollBottom.set(true);
         }
+        this.isLoading.set(false);
+        this.hasResetOnce = false;
       },
-      error: () => {
-        // Session mismatch or conversation no longer valid — reset and start fresh
-        this.chatService.resetSession();
-        this.initChat();
+      error: (err) => {
+        console.error('Failed to load chat history:', err);
+        this.isLoading.set(false);
+        // Only retry ONCE to recover from stale session, never loop indefinitely
+        if (!this.hasResetOnce) {
+          this.hasResetOnce = true;
+          this.chatService.resetSession();
+          this.initChat();
+        }
       },
     });
   }

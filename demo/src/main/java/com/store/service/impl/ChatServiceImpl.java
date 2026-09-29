@@ -99,6 +99,7 @@ public class ChatServiceImpl implements ChatService {
     // ─── 2. Get Messages ─────────────────────────────────────────────────────
 
     @Override
+    @Transactional
     public List<ChatMessageDto> getMessages(Long conversationId, String sessionId) {
         ChatConversation conv = getConversationByIdOrThrow(conversationId);
         // sessionId = null means admin/staff access — no session validation needed
