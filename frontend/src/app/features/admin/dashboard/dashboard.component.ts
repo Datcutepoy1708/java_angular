@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StatisticsService } from '../../../core/services/statistics.service';
@@ -11,6 +11,12 @@ interface StatCard {
   value: string;
   delta: string;
   positive: boolean;
+}
+
+export interface DashboardChartPoint {
+  x: number;
+  y: number;
+  data: RevenueChartDataPoint;
 }
 
 @Component({
@@ -32,6 +38,18 @@ export class DashboardComponent implements OnInit {
   readonly revenueTrend = signal<RevenueChartDataPoint[]>([]);
 
   readonly chartPath = signal<string>('M 30 160 L 440 160');
+  readonly chartPoints = signal<DashboardChartPoint[]>([]);
+  readonly hoveredPoint = signal<RevenueChartDataPoint | null>(null);
+
+  readonly totalRevenue30Days = computed(() => {
+    return this.revenueTrend().reduce((sum, d) => sum + (Number(d.revenue) || 0), 0);
+  });
+
+  readonly peakRevenue = computed(() => {
+    const list = this.revenueTrend();
+    if (!list || list.length === 0) return 0;
+    return Math.max(...list.map(d => Number(d.revenue) || 0));
+  });
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -100,12 +118,14 @@ export class DashboardComponent implements OnInit {
     const maxRev = Math.max(...data.map(d => Number(d.revenue) || 0), 1000000);
     const stepX = (width - paddingX) / Math.max(data.length - 1, 1);
 
-    const points = data.map((d, i) => {
+    const points: DashboardChartPoint[] = data.map((d, i) => {
       const x = paddingX + i * stepX;
       const normalizedY = (Number(d.revenue) || 0) / maxRev;
       const y = (height + paddingY) - (normalizedY * height);
-      return { x, y };
+      return { x, y, data: d };
     });
+
+    this.chartPoints.set(points);
 
     if (points.length === 1) {
       this.chartPath.set(`M ${points[0].x} ${points[0].y} L 440 ${points[0].y}`);
@@ -121,6 +141,14 @@ export class DashboardComponent implements OnInit {
     }
 
     this.chartPath.set(d);
+  }
+
+  onPointHover(pt: DashboardChartPoint): void {
+    this.hoveredPoint.set(pt.data);
+  }
+
+  onPointLeave(): void {
+    this.hoveredPoint.set(null);
   }
 
   formatCurrency(value: number | undefined): string {
