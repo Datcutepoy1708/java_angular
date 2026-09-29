@@ -18,9 +18,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Native WebSocket endpoint (used by Angular @stomp/stompjs)
         registry.addEndpoint("/ws-chat")
                 .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws-chat")
+
+        // SockJS fallback endpoint (separate path to prevent wire protocol frame collision)
+        registry.addEndpoint("/ws-chat-sockjs")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
