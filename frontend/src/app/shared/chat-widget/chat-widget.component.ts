@@ -331,6 +331,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   private resetTextareaHeight(): void {
     if (this.inputEl?.nativeElement) {
       this.inputEl.nativeElement.style.height = 'auto';
+      this.inputEl.nativeElement.value = '';
     }
   }
 

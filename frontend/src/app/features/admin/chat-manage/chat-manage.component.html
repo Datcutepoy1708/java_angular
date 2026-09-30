@@ -174,6 +174,7 @@
       @if (activeConv()!.status !== 'CLOSED') {
         <footer class="admin-chat-input">
           <textarea
+            #adminInputEl
             class="admin-input-field"
             placeholder="Nhập phản hồi... (Enter để gửi, Shift+Enter xuống dòng)"
             rows="2"

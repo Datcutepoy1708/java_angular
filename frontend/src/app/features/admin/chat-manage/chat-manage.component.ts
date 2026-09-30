@@ -4,6 +4,8 @@ import {
   OnDestroy,
   signal,
   inject,
+  ViewChild,
+  ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -24,6 +26,8 @@ import {
   styleUrls: ['./chat-manage.component.scss'],
 })
 export class ChatManageComponent implements OnInit, OnDestroy {
+  @ViewChild('adminInputEl') adminInputEl?: ElementRef<HTMLTextAreaElement>;
+
   private readonly chatService = inject(ChatService);
   private readonly authService = inject(AuthService);
 
@@ -83,6 +87,10 @@ export class ChatManageComponent implements OnInit, OnDestroy {
 
     this.activeConv.set(conv);
     this.messages.set([]);
+    this.inputText.set('');
+    if (this.adminInputEl?.nativeElement) {
+      this.adminInputEl.nativeElement.value = '';
+    }
     this.isLoadingMessages.set(true);
 
     this.chatService.getAdminMessages(conv.conversationId).subscribe({
@@ -156,6 +164,12 @@ export class ChatManageComponent implements OnInit, OnDestroy {
     const text = this.inputText().trim();
     const conv = this.activeConv();
     if (!text || !conv || this.isSending()) return;
+
+    this.isSending.set(true);
+    this.inputText.set('');
+    if (this.adminInputEl?.nativeElement) {
+      this.adminInputEl.nativeElement.value = '';
+    }
 
     const user = this.authService.currentUser();
     const optimistic: ChatMessageDto = {
