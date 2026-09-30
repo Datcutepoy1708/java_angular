@@ -17,6 +17,11 @@ import java.io.IOException;
 @EnableAsync
 public class StoreApplication {
 
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    }
+
     public static void main(String[] args) {
         loadDotEnv();
         SpringApplication.run(StoreApplication.class, args);

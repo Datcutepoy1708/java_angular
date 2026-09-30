@@ -55,6 +55,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   private newMsgSub?: Subscription;
   private typingTimer?: ReturnType<typeof setTimeout>;
+  private pollTimer?: ReturnType<typeof setInterval>;
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -67,6 +68,8 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
         this.shouldScrollBottom.set(true);
       }
     });
+
+    this.startFallbackPolling();
   }
 
   ngAfterViewChecked(): void {
@@ -78,7 +81,30 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   ngOnDestroy(): void {
     this.newMsgSub?.unsubscribe();
+    if (this.pollTimer) clearInterval(this.pollTimer);
     this.chatService.disconnect();
+  }
+
+  private startFallbackPolling(): void {
+    this.pollTimer = setInterval(() => {
+      const convId = this.convId();
+      if (!this.isOpen() || !convId) return;
+      // When WebSocket is disconnected, poll messages via REST to ensure customer receives staff replies
+      if (!this.isConnected()) {
+        this.chatService.loadMessages(convId).subscribe({
+          next: (resp) => {
+            if (resp.success && resp.data) {
+              const current = this.chatService.messages();
+              if (resp.data.length > current.length) {
+                this.chatService.messages.set(resp.data);
+                this.shouldScrollBottom.set(true);
+              }
+            }
+          },
+          error: () => {}
+        });
+      }
+    }, 3500);
   }
 
   // ─── Toggle Widget ─────────────────────────────────────────────────────────
@@ -309,7 +335,9 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString('vi-VN', {
+    if (!iso) return '';
+    const date = new Date(iso);
+    return isNaN(date.getTime()) ? iso : date.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
     });

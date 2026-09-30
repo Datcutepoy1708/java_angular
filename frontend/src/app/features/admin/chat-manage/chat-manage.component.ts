@@ -157,12 +157,6 @@ export class ChatManageComponent implements OnInit, OnDestroy {
     const conv = this.activeConv();
     if (!text || !conv || this.isSending()) return;
 
-    this.isSending.set(true);
-    this.inputText.set('');
-
-    this.chatService.sendMessageViaWs(conv.conversationId, text);
-
-    // Optimistic message
     const user = this.authService.currentUser();
     const optimistic: ChatMessageDto = {
       messageId: Date.now(),
@@ -177,7 +171,26 @@ export class ChatManageComponent implements OnInit, OnDestroy {
       createdAt: new Date().toISOString(),
     };
     this.messages.update((msgs) => [...msgs, optimistic]);
-    setTimeout(() => this.isSending.set(false), 500);
+
+    if (this.chatService.isConnected()) {
+      this.chatService.sendMessageViaWs(conv.conversationId, text);
+      setTimeout(() => this.isSending.set(false), 400);
+    } else {
+      this.chatService.sendStaffMessageRest(conv.conversationId, text).subscribe({
+        next: (resp) => {
+          this.isSending.set(false);
+          if (resp.success && resp.data) {
+            this.messages.update((msgs) =>
+              msgs.map((m) => (m.messageId === optimistic.messageId ? resp.data! : m))
+            );
+          }
+        },
+        error: (err) => {
+          console.error('[ChatAdmin] Failed to send staff message via REST', err);
+          this.isSending.set(false);
+        },
+      });
+    }
   }
 
   onKeydown(event: KeyboardEvent): void {
@@ -204,7 +217,9 @@ export class ChatManageComponent implements OnInit, OnDestroy {
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   formatTime(iso: string): string {
-    return new Date(iso).toLocaleString('vi-VN', {
+    if (!iso) return '';
+    const date = new Date(iso);
+    return isNaN(date.getTime()) ? iso : date.toLocaleString('vi-VN', {
       hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit',
     });
   }

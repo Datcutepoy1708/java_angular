@@ -403,6 +403,14 @@ export class ChatService implements OnDestroy {
     );
   }
 
+  /** REST fallback to send staff message when WebSocket is disconnected */
+  sendStaffMessageRest(convId: number, content: string, attachmentUrl?: string): Observable<ApiResponse<ChatMessageDto>> {
+    return this.http.post<ApiResponse<ChatMessageDto>>(
+      `${this.adminUrl}/conversations/${convId}/messages`,
+      { conversationId: convId, content, attachmentUrl: attachmentUrl ?? null }
+    );
+  }
+
   /** Send typing signal */
   sendTypingSignal(convId: number, isTyping: boolean, senderType: string, senderName: string): void {
     if (!this.stompClient?.connected) return;
