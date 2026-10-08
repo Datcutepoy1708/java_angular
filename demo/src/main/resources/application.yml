@@ -91,12 +91,12 @@ app:
       secret-key: ${ZALO_SECRET_KEY:}
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:d41d8cd98f00b204e9800998ecf8427e9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d}
   access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:1800000}
   refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
 
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://datprojects.click,https://datprojects.click,http://103.110.33.47}
 
 springdoc:
   api-docs:
