@@ -9,6 +9,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { ProductResponse } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
+import { normalizeImageUrl } from '../../../core/util/image-url.util';
 
 export interface DisplayPriceResult {
   price: number;
@@ -37,7 +38,8 @@ export class ProductCardComponent {
   getMainImageUrl(product: ProductResponse): string {
     if (product.images && product.images.length > 0) {
       const main = product.images.find((img) => img.imageType === 'MAIN');
-      return main ? main.imageUrl : product.images[0].imageUrl;
+      const url = main ? main.imageUrl : product.images[0].imageUrl;
+      return normalizeImageUrl(url) || 'assets/placeholder-product.png';
     }
     return 'assets/placeholder-product.png';
   }

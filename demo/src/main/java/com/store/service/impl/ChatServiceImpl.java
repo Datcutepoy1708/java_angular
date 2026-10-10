@@ -308,10 +308,7 @@ public class ChatServiceImpl implements ChatService {
                 Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/chat/")
-                    .path(newFilename)
-                    .toUriString();
+            return "/uploads/chat/" + newFilename;
         } catch (IOException ex) {
             log.error("[Chat] Failed to save chat image", ex);
             throw new BadRequestException("Không thể lưu ảnh. Vui lòng thử lại");

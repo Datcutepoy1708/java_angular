@@ -18,6 +18,7 @@ import { BrandResponse } from '../../../core/models/brand.model';
 import { Banner } from '../../../core/models/banner.model';
 import { News } from '../../../core/models/news.model';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
+import { normalizeImageUrl } from '../../../core/util/image-url.util';
 
 interface HeroSlide {
   title: string;
@@ -231,15 +232,15 @@ export class HomeComponent implements OnInit {
   }
 
   formatCategoryIcon(url: string | null | undefined, slug?: string): string {
-    if (url && url.trim()) return url;
+    const normalized = normalizeImageUrl(url);
+    if (normalized) return normalized;
     if (slug) return `/assets/categories/${slug}.png`;
     return '/assets/categories/laptop.png';
   }
 
   formatBrandLogo(url: string | null | undefined, slug?: string): string {
     if (slug) return `/assets/brands/${slug}.svg`;
-    if (url && url.trim()) return url;
-    return '';
+    return normalizeImageUrl(url);
   }
 
   handleImageError(event: Event, fallbackUrl: string): void {

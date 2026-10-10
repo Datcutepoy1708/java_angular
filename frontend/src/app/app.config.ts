@@ -4,6 +4,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 
 import { routes } from './app.routes';
 import { jwtInterceptor } from './core/interceptors/jwt.interceptor';
+import { imageUrlInterceptor } from './core/interceptors/image-url.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { AppErrorHandler } from './core/errors/app-error-handler';
 
@@ -14,7 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
     provideHttpClient(
       withFetch(),
-      withInterceptors([jwtInterceptor, errorInterceptor])
+      withInterceptors([jwtInterceptor, imageUrlInterceptor, errorInterceptor])
     )
   ]
 };

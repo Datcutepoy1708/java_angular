@@ -84,10 +84,7 @@ public class FileUploadController {
                 Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/")
-                    .path(newFilename)
-                    .toUriString();
+            String fileUrl = "/uploads/" + newFilename;
 
             Map<String, String> data = new HashMap<>();
             data.put("url", fileUrl);

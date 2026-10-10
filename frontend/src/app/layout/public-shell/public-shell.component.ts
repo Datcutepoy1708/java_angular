@@ -16,6 +16,7 @@ import { ThemeService } from '../../core/services/theme.service';
 import { BannerService } from '../../core/services/banner.service';
 import { Banner } from '../../core/models/banner.model';
 import { ChatWidgetComponent } from '../../shared/chat-widget/chat-widget.component';
+import { normalizeImageUrl } from '../../core/util/image-url.util';
 
 @Component({
   selector: 'app-public-shell',
@@ -108,7 +109,8 @@ export class PublicShellComponent implements OnInit {
   }
 
   formatCategoryIcon(url: string | null | undefined, slug?: string): string {
-    if (url && url.trim()) return url;
+    const normalized = normalizeImageUrl(url);
+    if (normalized) return normalized;
     if (slug) return `/assets/categories/${slug}.png`;
     return '/assets/categories/laptop.png';
   }
