@@ -28,6 +28,7 @@
                 <a
                   [routerLink]="slide.link"
                   [queryParams]="slide.queryParams"
+                  (click)="onExploreClick(slide, $event)"
                   class="btn-hero-primary"
                 >
                   Khám phá ngay

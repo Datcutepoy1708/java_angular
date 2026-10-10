@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { BrandService } from '../../../core/services/brand.service';
@@ -46,6 +46,7 @@ export class HomeComponent implements OnInit {
   private readonly brandService = inject(BrandService);
   private readonly bannerService = inject(BannerService);
   private readonly newsService = inject(NewsService);
+  private readonly router = inject(Router);
 
   // ── Hero Slider State ──────────────────────────────────────────
   readonly currentSlideIndex = signal(0);
@@ -279,5 +280,17 @@ export class HomeComponent implements OnInit {
     if (target && target.parentElement) {
       target.parentElement.style.display = 'none';
     }
+  }
+
+  onExploreClick(slide: HeroSlide, event?: Event): void {
+    if (slide.isExternal) {
+      return;
+    }
+    if (event) {
+      event.preventDefault();
+    }
+    this.router.navigate([slide.link || '/products'], {
+      queryParams: slide.queryParams,
+    });
   }
 }
