@@ -19,12 +19,15 @@ import { Banner } from '../../../core/models/banner.model';
 import { News } from '../../../core/models/news.model';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { normalizeImageUrl } from '../../../core/util/image-url.util';
+import { parseRouteUrl, ParsedRouteLink } from '../../../core/util/route-url.util';
 
 interface HeroSlide {
   title: string;
   subtitle: string;
   tag: string;
   link: string;
+  queryParams?: Record<string, string>;
+  isExternal?: boolean;
   categoryQuery?: string;
   image: string;
 }
@@ -108,15 +111,28 @@ export class HomeComponent implements OnInit {
   get slides(): HeroSlide[] {
     const live = this.liveBanners();
     if (live && live.length > 0) {
-      return live.map((b) => ({
-        title: b.title || 'ƯU ĐÃI ĐẶC BIỆT',
-        subtitle: 'Khám phá ngay các dòng sản phẩm máy tính và linh kiện cao cấp tại Complexus',
-        tag: 'KHUYẾN MÃI NỔI BẬT',
-        link: b.linkUrl || '/products',
-        image: b.imageUrl,
-      }));
+      return live.map((b) => {
+        const route = parseRouteUrl(b.linkUrl);
+        return {
+          title: b.title || 'ƯU ĐÃI ĐẶC BIỆT',
+          subtitle: 'Khám phá ngay các dòng sản phẩm máy tính và linh kiện cao cấp tại Complexus',
+          tag: 'KHUYẾN MÃI NỔI BẬT',
+          link: route.path,
+          queryParams: route.queryParams,
+          isExternal: route.isExternal,
+          image: normalizeImageUrl(b.imageUrl) || 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?q=80&w=1600&auto=format&fit=crop',
+        };
+      });
     }
-    return this.fallbackSlides;
+    return this.fallbackSlides.map((s) => {
+      const route = parseRouteUrl(s.categoryQuery ? `${s.link}?category=${s.categoryQuery}` : s.link);
+      return {
+        ...s,
+        link: route.path,
+        queryParams: route.queryParams,
+        isExternal: false,
+      };
+    });
   }
 
   ngOnInit(): void {
@@ -247,6 +263,21 @@ export class HomeComponent implements OnInit {
     const target = event.target as HTMLImageElement;
     if (target && target.src !== fallbackUrl) {
       target.src = fallbackUrl;
+    }
+  }
+
+  parseBannerLink(url?: string | null): ParsedRouteLink {
+    return parseRouteUrl(url);
+  }
+
+  normalizeBannerImage(url?: string | null): string {
+    return normalizeImageUrl(url);
+  }
+
+  handleSidebarImgError(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (target && target.parentElement) {
+      target.parentElement.style.display = 'none';
     }
   }
 }

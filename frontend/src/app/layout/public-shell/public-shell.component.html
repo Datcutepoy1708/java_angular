@@ -204,9 +204,16 @@
     @if (flankBannersLeft().length > 0) {
       <aside class="flank-banner-wrap flank-banner-left" aria-label="Banner sườn trái">
         @for (b of flankBannersLeft(); track b.bannerId) {
-          <a [routerLink]="b.linkUrl || '/'" class="flank-banner-link" [title]="b.title || 'Quảng cáo'">
-            <img [src]="b.imageUrl" [alt]="b.title || 'Banner sườn trái'" class="flank-banner-img" />
-          </a>
+          @let link = parseFlankLink(b.linkUrl);
+          @if (link.isExternal) {
+            <a [href]="link.path" target="_blank" rel="noopener noreferrer" class="flank-banner-link" [title]="b.title || 'Quảng cáo'">
+              <img [src]="normalizeFlankImage(b.imageUrl, 'left')" [alt]="b.title || 'Banner sườn trái'" class="flank-banner-img" (error)="handleFlankImgError($event, 'left')" />
+            </a>
+          } @else {
+            <a [routerLink]="link.path" [queryParams]="link.queryParams" class="flank-banner-link" [title]="b.title || 'Quảng cáo'">
+              <img [src]="normalizeFlankImage(b.imageUrl, 'left')" [alt]="b.title || 'Banner sườn trái'" class="flank-banner-img" (error)="handleFlankImgError($event, 'left')" />
+            </a>
+          }
         }
       </aside>
     }
@@ -214,9 +221,16 @@
     @if (flankBannersRight().length > 0) {
       <aside class="flank-banner-wrap flank-banner-right" aria-label="Banner sườn phải">
         @for (b of flankBannersRight(); track b.bannerId) {
-          <a [routerLink]="b.linkUrl || '/'" class="flank-banner-link" [title]="b.title || 'Quảng cáo'">
-            <img [src]="b.imageUrl" [alt]="b.title || 'Banner sườn phải'" class="flank-banner-img" />
-          </a>
+          @let link = parseFlankLink(b.linkUrl);
+          @if (link.isExternal) {
+            <a [href]="link.path" target="_blank" rel="noopener noreferrer" class="flank-banner-link" [title]="b.title || 'Quảng cáo'">
+              <img [src]="normalizeFlankImage(b.imageUrl, 'right')" [alt]="b.title || 'Banner sườn phải'" class="flank-banner-img" (error)="handleFlankImgError($event, 'right')" />
+            </a>
+          } @else {
+            <a [routerLink]="link.path" [queryParams]="link.queryParams" class="flank-banner-link" [title]="b.title || 'Quảng cáo'">
+              <img [src]="normalizeFlankImage(b.imageUrl, 'right')" [alt]="b.title || 'Banner sườn phải'" class="flank-banner-img" (error)="handleFlankImgError($event, 'right')" />
+            </a>
+          }
         }
       </aside>
     }

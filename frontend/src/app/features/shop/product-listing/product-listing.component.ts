@@ -20,6 +20,8 @@ import { Banner } from '../../../core/models/banner.model';
 import { BannerService } from '../../../core/services/banner.service';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { normalizeImageUrl } from '../../../core/util/image-url.util';
+import { parseRouteUrl, ParsedRouteLink } from '../../../core/util/route-url.util';
 
 interface PricePreset {
   label: string;
@@ -432,5 +434,20 @@ export class ProductListingComponent implements OnInit {
 
   onAddToCart(product: ProductResponse): void {
     console.log('Thêm vào giỏ hàng từ listing:', product.name);
+  }
+
+  parseBannerLink(url?: string | null): ParsedRouteLink {
+    return parseRouteUrl(url);
+  }
+
+  normalizeBannerImage(url?: string | null): string {
+    return normalizeImageUrl(url);
+  }
+
+  handleSidebarImgError(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (target && target.parentElement) {
+      target.parentElement.style.display = 'none';
+    }
   }
 }

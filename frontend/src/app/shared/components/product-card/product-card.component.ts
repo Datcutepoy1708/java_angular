@@ -36,12 +36,27 @@ export class ProductCardComponent {
   readonly isAdded = signal(false);
 
   getMainImageUrl(product: ProductResponse): string {
-    if (product.images && product.images.length > 0) {
-      const main = product.images.find((img) => img.imageType === 'MAIN');
-      const url = main ? main.imageUrl : product.images[0].imageUrl;
-      return normalizeImageUrl(url) || 'assets/placeholder-product.png';
+    if (product.mainImageUrl) {
+      const normalized = normalizeImageUrl(product.mainImageUrl);
+      if (normalized) return normalized;
     }
-    return 'assets/placeholder-product.png';
+    if (product.images && product.images.length > 0) {
+      const main = product.images.find(
+        (img) => (img.imageType as string)?.toLowerCase() === 'main'
+      );
+      const url = main ? main.imageUrl : product.images[0].imageUrl;
+      const normalized = normalizeImageUrl(url);
+      if (normalized) return normalized;
+    }
+    return '/assets/images/complexus-logo.png';
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    const fallback = '/assets/images/complexus-logo.png';
+    if (img && !img.src.includes('complexus-logo.png')) {
+      img.src = fallback;
+    }
   }
 
   getDisplayPrice(product: ProductResponse): DisplayPriceResult {

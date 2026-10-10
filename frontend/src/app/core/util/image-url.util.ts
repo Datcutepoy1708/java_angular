@@ -11,7 +11,11 @@ export function normalizeImageUrl(url?: string | null): string {
   const trimmed = url.trim();
 
   // Strip localhost:8080 or http://localhost:8080 if present
-  const clean = trimmed.replace(/^https?:\/\/localhost:8080/, '');
+  let clean = trimmed.replace(/^https?:\/\/localhost:8080\/?/, '/');
+
+  if (clean.startsWith('uploads/')) {
+    clean = '/' + clean;
+  }
 
   if (clean.startsWith('/uploads/')) {
     return environment.apiUrl ? `${environment.apiUrl}${clean}` : clean;

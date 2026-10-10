@@ -37,12 +37,20 @@
           <div class="main-image-box">
             @if (p.images && p.images.length > 0) {
               <img
-                [src]="p.images[activeImageIndex()]?.imageUrl || p.images[0].imageUrl"
+                [src]="getProductImageUrl(p.images[activeImageIndex()]?.imageUrl || p.images[0].imageUrl)"
                 [alt]="p.name"
                 class="main-product-img"
+                (error)="onImageError($event)"
+              />
+            } @else if (p.mainImageUrl) {
+              <img
+                [src]="getProductImageUrl(p.mainImageUrl)"
+                [alt]="p.name"
+                class="main-product-img"
+                (error)="onImageError($event)"
               />
             } @else {
-              <img src="assets/placeholder-product.png" [alt]="p.name" class="main-product-img" />
+              <img src="/assets/images/complexus-logo.png" [alt]="p.name" class="main-product-img" />
             }
 
             @if (discountPercent) {
@@ -61,7 +69,13 @@
                   (click)="selectImage(i)"
                   [attr.aria-label]="'Ảnh ' + (i + 1)"
                 >
-                  <img [src]="img.imageUrl" [alt]="img.altText || p.name" loading="lazy" class="thumb-img" />
+                  <img
+                    [src]="getProductImageUrl(img.imageUrl)"
+                    [alt]="img.altText || p.name"
+                    loading="lazy"
+                    class="thumb-img"
+                    (error)="onImageError($event)"
+                  />
                 </button>
               }
             </div>

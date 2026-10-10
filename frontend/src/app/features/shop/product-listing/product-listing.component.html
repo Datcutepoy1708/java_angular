@@ -191,21 +191,45 @@
         @if (sidebarBanners().length > 0) {
           <div class="sidebar-banners-group">
             @for (banner of sidebarBanners(); track banner.bannerId) {
-              <a
-                [routerLink]="banner.linkUrl || '/products'"
-                class="sidebar-banner-card"
-                [title]="banner.title || 'Khuyến mãi đặc biệt'"
-              >
-                <img
-                  [src]="banner.imageUrl"
-                  [alt]="banner.title || 'Banner quảng cáo'"
-                  loading="lazy"
-                  class="sidebar-banner-img"
-                />
-                @if (banner.title) {
-                  <span class="sidebar-banner-caption">{{ banner.title }}</span>
-                }
-              </a>
+              @let linkInfo = parseBannerLink(banner.linkUrl);
+              @if (linkInfo.isExternal) {
+                <a
+                  [href]="linkInfo.path"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="sidebar-banner-card"
+                  [title]="banner.title || 'Khuyến mãi đặc biệt'"
+                >
+                  <img
+                    [src]="normalizeBannerImage(banner.imageUrl)"
+                    [alt]="banner.title || 'Banner quảng cáo'"
+                    loading="lazy"
+                    class="sidebar-banner-img"
+                    (error)="handleSidebarImgError($event)"
+                  />
+                  @if (banner.title) {
+                    <span class="sidebar-banner-caption">{{ banner.title }}</span>
+                  }
+                </a>
+              } @else {
+                <a
+                  [routerLink]="linkInfo.path"
+                  [queryParams]="linkInfo.queryParams"
+                  class="sidebar-banner-card"
+                  [title]="banner.title || 'Khuyến mãi đặc biệt'"
+                >
+                  <img
+                    [src]="normalizeBannerImage(banner.imageUrl)"
+                    [alt]="banner.title || 'Banner quảng cáo'"
+                    loading="lazy"
+                    class="sidebar-banner-img"
+                    (error)="handleSidebarImgError($event)"
+                  />
+                  @if (banner.title) {
+                    <span class="sidebar-banner-caption">{{ banner.title }}</span>
+                  }
+                </a>
+              }
             }
           </div>
         }

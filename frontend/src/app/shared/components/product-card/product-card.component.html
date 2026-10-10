@@ -14,6 +14,7 @@
       [alt]="p.name"
       loading="lazy"
       class="card-img"
+      (error)="onImageError($event)"
     />
   </a>
 

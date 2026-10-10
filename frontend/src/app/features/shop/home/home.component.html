@@ -11,17 +11,32 @@
             <h1 class="slide-title">{{ slide.title }}</h1>
             <p class="slide-subtitle">{{ slide.subtitle }}</p>
             <div class="slide-cta">
-              <a
-                [routerLink]="[slide.link]"
-                [queryParams]="{ category: slide.categoryQuery }"
-                class="btn-hero-primary"
-              >
-                Khám phá ngay
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                  <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-              </a>
+              @if (slide.isExternal) {
+                <a
+                  [href]="slide.link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn-hero-primary"
+                >
+                  Khám phá ngay
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </a>
+              } @else {
+                <a
+                  [routerLink]="slide.link"
+                  [queryParams]="slide.queryParams"
+                  class="btn-hero-primary"
+                >
+                  Khám phá ngay
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-svg">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </a>
+              }
             </div>
           </div>
           <div class="slide-image-wrap">
@@ -61,24 +76,49 @@
       <div class="hero-side-promos">
         @if (sidebarBanners().length > 0) {
           @for (banner of sidebarBanners().slice(0, 2); track banner.bannerId; let idx = $index) {
-            <a
-              [routerLink]="banner.linkUrl || '/products'"
-              class="promo-card promo-banner-card"
-              [class.promo-card-1]="idx === 0"
-              [class.promo-card-2]="idx === 1"
-              [title]="banner.title || 'Khuyến mãi nổi bật'"
-            >
-              @if (banner.imageUrl) {
-                <div class="promo-banner-media">
-                  <img [src]="banner.imageUrl" [alt]="banner.title || 'Banner'" class="promo-banner-img" />
+            @let linkInfo = parseBannerLink(banner.linkUrl);
+            @if (linkInfo.isExternal) {
+              <a
+                [href]="linkInfo.path"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="promo-card promo-banner-card"
+                [class.promo-card-1]="idx === 0"
+                [class.promo-card-2]="idx === 1"
+                [title]="banner.title || 'Khuyến mãi nổi bật'"
+              >
+                @if (banner.imageUrl) {
+                  <div class="promo-banner-media">
+                    <img [src]="normalizeBannerImage(banner.imageUrl)" [alt]="banner.title || 'Banner'" class="promo-banner-img" (error)="handleSidebarImgError($event)" />
+                  </div>
+                }
+                <div class="promo-banner-text">
+                  <span class="promo-tag">KHUYẾN MÃI HOT</span>
+                  <h3 class="promo-title">{{ banner.title || 'Ưu đãi đặc biệt' }}</h3>
+                  <span class="promo-link">Khám phá ngay &rarr;</span>
                 </div>
-              }
-              <div class="promo-banner-text">
-                <span class="promo-tag">KHUYẾN MÃI HOT</span>
-                <h3 class="promo-title">{{ banner.title || 'Ưu đãi đặc biệt' }}</h3>
-                <span class="promo-link">Khám phá ngay &rarr;</span>
-              </div>
-            </a>
+              </a>
+            } @else {
+              <a
+                [routerLink]="linkInfo.path"
+                [queryParams]="linkInfo.queryParams"
+                class="promo-card promo-banner-card"
+                [class.promo-card-1]="idx === 0"
+                [class.promo-card-2]="idx === 1"
+                [title]="banner.title || 'Khuyến mãi nổi bật'"
+              >
+                @if (banner.imageUrl) {
+                  <div class="promo-banner-media">
+                    <img [src]="normalizeBannerImage(banner.imageUrl)" [alt]="banner.title || 'Banner'" class="promo-banner-img" (error)="handleSidebarImgError($event)" />
+                  </div>
+                }
+                <div class="promo-banner-text">
+                  <span class="promo-tag">KHUYẾN MÃI HOT</span>
+                  <h3 class="promo-title">{{ banner.title || 'Ưu đãi đặc biệt' }}</h3>
+                  <span class="promo-link">Khám phá ngay &rarr;</span>
+                </div>
+              </a>
+            }
           }
           @if (sidebarBanners().length === 1) {
             <!-- Thẻ bổ trợ thứ 2 nếu chỉ có 1 banner sidebar trong DB -->

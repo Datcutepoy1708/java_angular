@@ -21,6 +21,7 @@ import { VariantStockSummary } from '../../../core/models/inventory.model';
 import { RatingSummary, Review } from '../../../core/models/review.model';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { RatingStarsComponent } from '../../../shared/components/rating-stars/rating-stars.component';
+import { normalizeImageUrl } from '../../../core/util/image-url.util';
 
 @Component({
   selector: 'app-product-detail',
@@ -292,6 +293,19 @@ export class ProductDetailComponent implements OnInit {
           this.router.navigate(['/checkout']);
         }
       });
+    }
+  }
+
+  getProductImageUrl(url?: string | null): string {
+    const normalized = normalizeImageUrl(url);
+    return normalized || '/assets/images/complexus-logo.png';
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    const fallback = '/assets/images/complexus-logo.png';
+    if (img && !img.src.includes('complexus-logo.png')) {
+      img.src = fallback;
     }
   }
 }

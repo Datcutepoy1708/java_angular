@@ -17,6 +17,7 @@ import { BannerService } from '../../core/services/banner.service';
 import { Banner } from '../../core/models/banner.model';
 import { ChatWidgetComponent } from '../../shared/chat-widget/chat-widget.component';
 import { normalizeImageUrl } from '../../core/util/image-url.util';
+import { parseRouteUrl, ParsedRouteLink } from '../../core/util/route-url.util';
 
 @Component({
   selector: 'app-public-shell',
@@ -120,5 +121,23 @@ export class PublicShellComponent implements OnInit {
     if (target && target.src !== fallbackUrl) {
       target.src = fallbackUrl;
     }
+  }
+
+  handleFlankImgError(event: Event, side: 'left' | 'right'): void {
+    const img = event.target as HTMLImageElement;
+    const fallback = side === 'left' ? '/assets/images/flank_banner_left.jpg' : '/assets/images/flank_banner_right.jpg';
+    if (img && img.src !== fallback) {
+      img.src = fallback;
+    }
+  }
+
+  parseFlankLink(url?: string | null): ParsedRouteLink {
+    return parseRouteUrl(url);
+  }
+
+  normalizeFlankImage(url?: string | null, side: 'left' | 'right' = 'left'): string {
+    const normalized = normalizeImageUrl(url);
+    if (normalized) return normalized;
+    return side === 'left' ? '/assets/images/flank_banner_left.jpg' : '/assets/images/flank_banner_right.jpg';
   }
 }
