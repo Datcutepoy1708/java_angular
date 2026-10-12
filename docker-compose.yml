@@ -8,16 +8,16 @@ services:
     restart: unless-stopped
     environment:
       TZ: Asia/Ho_Chi_Minh
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-RootStrongPass@2026}
+      MYSQL_DATABASE: ${DB_NAME:-computer_store_db}
+      MYSQL_USER: ${DB_USERNAME:-storeuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-StorePass@2026}
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - store_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-RootStrongPass@2026}"]
       interval: 10s
       timeout: 5s
       retries: 5
