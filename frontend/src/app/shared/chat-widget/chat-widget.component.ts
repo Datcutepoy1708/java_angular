@@ -95,7 +95,8 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
           next: (resp) => {
             if (resp.success && resp.data) {
               const current = this.chatService.messages();
-              if (resp.data.length > current.length) {
+              const hasOptimistic = current.some((m) => m.isOptimistic || this.chatService.isOptimisticId(m.messageId));
+              if (resp.data.length > current.length || hasOptimistic) {
                 this.chatService.messages.set(resp.data);
                 this.shouldScrollBottom.set(true);
               }
@@ -191,6 +192,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
       quickReplies: [],
       read: false,
       createdAt: new Date().toISOString(),
+      isOptimistic: true,
     };
     this.chatService.messages.update((msgs) => [...msgs, optimistic]);
     this.shouldScrollBottom.set(true);
@@ -207,7 +209,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
           if (resp.success && resp.data) {
             // Replace optimistic with persisted message
             this.chatService.messages.update((msgs) =>
-              msgs.map((m) => (m.messageId === optimistic.messageId ? resp.data! : m))
+              this.chatService.appendOrReconcile(msgs, resp.data!)
             );
           }
         },
@@ -231,6 +233,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
       quickReplies: [],
       read: false,
       createdAt: new Date().toISOString(),
+      isOptimistic: true,
     };
     this.chatService.messages.update((msgs) => [...msgs, optimistic]);
     this.shouldScrollBottom.set(true);
@@ -242,7 +245,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
         next: (resp) => {
           if (resp.success && resp.data) {
             this.chatService.messages.update((msgs) =>
-              msgs.map((m) => (m.messageId === optimistic.messageId ? resp.data! : m))
+              this.chatService.appendOrReconcile(msgs, resp.data!)
             );
           }
         },
@@ -298,6 +301,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   onKeydown(event: KeyboardEvent): void {
+    if (event.isComposing) return;
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendMessage();

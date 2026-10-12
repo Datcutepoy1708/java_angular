@@ -106,7 +106,7 @@ export class ChatManageComponent implements OnInit, OnDestroy {
     this.chatService.connectAsStaff(
       conv.conversationId,
       (msg: ChatMessageDto) => {
-        this.messages.update((msgs) => [...msgs, msg]);
+        this.messages.update((msgs) => this.chatService.appendOrReconcile(msgs, msg));
       },
       (typing: ChatTypingSignal) => {
         if (typing.senderType === 'CUSTOMER') {
@@ -183,6 +183,7 @@ export class ChatManageComponent implements OnInit, OnDestroy {
       quickReplies: [],
       read: true,
       createdAt: new Date().toISOString(),
+      isOptimistic: true,
     };
     this.messages.update((msgs) => [...msgs, optimistic]);
 
@@ -195,7 +196,7 @@ export class ChatManageComponent implements OnInit, OnDestroy {
           this.isSending.set(false);
           if (resp.success && resp.data) {
             this.messages.update((msgs) =>
-              msgs.map((m) => (m.messageId === optimistic.messageId ? resp.data! : m))
+              this.chatService.appendOrReconcile(msgs, resp.data!)
             );
           }
         },
@@ -208,6 +209,7 @@ export class ChatManageComponent implements OnInit, OnDestroy {
   }
 
   onKeydown(event: KeyboardEvent): void {
+    if (event.isComposing) return;
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendMessage();

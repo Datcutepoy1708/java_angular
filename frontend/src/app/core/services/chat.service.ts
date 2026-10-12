@@ -71,6 +71,44 @@ export class ChatService implements OnDestroy {
   /** Message stream for components that need raw events */
   readonly newMessage$ = new Subject<ChatMessageDto>();
 
+  /**
+   * Reconciles an incoming message with existing messages:
+   * 1. If incoming message already exists by real messageId, ignores duplicate.
+   * 2. If incoming message matches a pending optimistic message, replaces optimistic message in place.
+   * 3. Otherwise appends the new message.
+   */
+  appendOrReconcile(msgs: ChatMessageDto[], incoming: ChatMessageDto): ChatMessageDto[] {
+    // 1. If incoming message already exists by real messageId, ignore
+    if (incoming.messageId && !this.isOptimisticId(incoming.messageId) && msgs.some((m) => m.messageId === incoming.messageId)) {
+      return msgs;
+    }
+
+    // 2. Look for matching optimistic message (by senderType, content, attachment)
+    const incomingContent = (incoming.content ?? '').trim();
+    const incomingAttachment = incoming.attachmentUrl ?? null;
+
+    const optimisticIdx = msgs.findIndex(
+      (m) =>
+        (m.isOptimistic || this.isOptimisticId(m.messageId)) &&
+        m.senderType === incoming.senderType &&
+        (m.content ?? '').trim() === incomingContent &&
+        (m.attachmentUrl ?? null) === incomingAttachment
+    );
+
+    if (optimisticIdx !== -1) {
+      const copy = [...msgs];
+      copy[optimisticIdx] = incoming;
+      return copy;
+    }
+
+    // 3. Normal incoming message -> append
+    return [...msgs, incoming];
+  }
+
+  isOptimisticId(id: number): boolean {
+    return !id || id >= 1_000_000_000_000 || id < 0;
+  }
+
   // ─── Session ID ───────────────────────────────────────────────────────────
   getOrCreateSessionId(): string {
     if (!isPlatformBrowser(this.platformId)) return '';
@@ -272,7 +310,7 @@ export class ChatService implements OnDestroy {
             }
             try {
               const msg: ChatMessageDto = JSON.parse(body);
-              this.messages.update((msgs) => [...msgs, msg]);
+              this.messages.update((msgs) => this.appendOrReconcile(msgs, msg));
               this.newMessage$.next(msg);
             } catch (e) {
               // Ignore parse errors

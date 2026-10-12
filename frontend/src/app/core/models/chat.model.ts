@@ -29,6 +29,7 @@ export interface ChatMessageDto {
   quickReplies: string[];
   read: boolean;
   createdAt: string;
+  isOptimistic?: boolean;
 }
 
 export interface ChatConversationSummaryResponse {

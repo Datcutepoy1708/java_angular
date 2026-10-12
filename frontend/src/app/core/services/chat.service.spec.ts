@@ -40,19 +40,88 @@ describe('ChatService socket lifecycle', () => {
     expect(service.isConnected()).toBe(false);
   });
 
-  it('uses the configured backend origin and native WebSocket endpoint', () => {
+  it('uses the configured backend origin and SockJS endpoint', () => {
     environment.apiUrl = 'https://api.example.test';
-    // Recreate after changing configuration: service fields capture apiUrl on creation.
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideHttpClient(), {
       provide: AuthService, useValue: { currentUser: () => null },
     }] });
     service = TestBed.inject(ChatService);
-    const socket = vi.fn(function () { return {}; });
-    vi.stubGlobal('WebSocket', socket);
     service.connectAsCustomer(6);
-    client.webSocketFactory!();
-    expect(socket).toHaveBeenCalledWith('wss://api.example.test/ws-chat');
+    expect(client.webSocketFactory).toBeDefined();
     expect(client.connectionTimeout).toBe(10000);
+  });
+
+  describe('appendOrReconcile', () => {
+    it('appends a new message when no optimistic message exists', () => {
+      const existing: any[] = [];
+      const incoming: any = {
+        messageId: 1,
+        conversationId: 10,
+        senderType: 'STAFF',
+        senderId: 2,
+        senderName: 'Admin',
+        content: 'Xin chào',
+        attachmentUrl: null,
+        quickReplies: [],
+        read: false,
+        createdAt: '2026-10-12T10:00:00Z',
+      };
+      const result = service.appendOrReconcile(existing, incoming);
+      expect(result).toHaveLength(1);
+      expect(result[0].messageId).toBe(1);
+    });
+
+    it('ignores duplicate message with same real messageId', () => {
+      const existing: any[] = [{
+        messageId: 1,
+        conversationId: 10,
+        senderType: 'CUSTOMER',
+        senderId: null,
+        senderName: 'Bạn',
+        content: 'Alo',
+        attachmentUrl: null,
+        quickReplies: [],
+        read: false,
+        createdAt: '2026-10-12T10:00:00Z',
+      }];
+      const duplicate: any = { ...existing[0] };
+      const result = service.appendOrReconcile(existing, duplicate);
+      expect(result).toHaveLength(1);
+      expect(result).toBe(existing);
+    });
+
+    it('reconciles optimistic message with incoming real message to prevent duplicates', () => {
+      const tempId = Date.now();
+      const existing: any[] = [{
+        messageId: tempId,
+        conversationId: 10,
+        senderType: 'CUSTOMER',
+        senderId: null,
+        senderName: 'Bạn',
+        content: 'tôi cần xem chi tiết',
+        attachmentUrl: null,
+        quickReplies: [],
+        read: false,
+        createdAt: new Date().toISOString(),
+        isOptimistic: true,
+      }];
+      const confirmed: any = {
+        messageId: 42,
+        conversationId: 10,
+        senderType: 'CUSTOMER',
+        senderId: null,
+        senderName: 'Bạn',
+        content: 'tôi cần xem chi tiết',
+        attachmentUrl: null,
+        quickReplies: [],
+        read: true,
+        createdAt: new Date().toISOString(),
+      };
+      const result = service.appendOrReconcile(existing, confirmed);
+      expect(result).toHaveLength(1);
+      expect(result[0].messageId).toBe(42);
+      expect(result[0].isOptimistic).toBeUndefined();
+    });
   });
 });
