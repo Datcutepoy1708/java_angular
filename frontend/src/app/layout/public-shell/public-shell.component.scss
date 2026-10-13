@@ -442,14 +442,24 @@ $radius: 8px;
   height: clamp(520px, 65vh, 670px);
   pointer-events: none;
 
-  @media (min-width: 1540px) {
+  @media (min-width: 1360px) {
     display: flex;
-    width: 135px;
+    width: 95px;
     &.flank-banner-left {
-      left: calc(50% - 640px - 135px - 26px);
+      left: calc(50% - 640px - 95px - 12px);
     }
     &.flank-banner-right {
-      right: calc(50% - 640px - 135px - 26px);
+      right: calc(50% - 640px - 95px - 12px);
+    }
+  }
+
+  @media (min-width: 1500px) {
+    width: 135px;
+    &.flank-banner-left {
+      left: calc(50% - 640px - 135px - 22px);
+    }
+    &.flank-banner-right {
+      right: calc(50% - 640px - 135px - 22px);
     }
   }
 
