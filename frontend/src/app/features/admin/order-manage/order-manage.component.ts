@@ -4,6 +4,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { OrderService } from '../../../core/services/order.service';
+import { ReportExportService } from '../../../core/services/report-export.service';
 import {
   Order,
   OrderFilter,
@@ -40,6 +41,7 @@ export class OrderManageComponent implements OnInit {
   }
 
   private readonly orderService = inject(OrderService);
+  private readonly reportExportService = inject(ReportExportService);
   private readonly fb = inject(FormBuilder);
 
   readonly orders = signal<Order[]>([]);
@@ -49,6 +51,7 @@ export class OrderManageComponent implements OnInit {
   readonly currentPage = signal<number>(0);
   readonly pageSize = signal<number>(10);
   readonly isLoading = signal<boolean>(false);
+  readonly isExporting = signal<boolean>(false);
   readonly toastMessage = signal<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Selected Order for Detail Modal
@@ -141,6 +144,30 @@ export class OrderManageComponent implements OnInit {
       endDate: ''
     });
     this.loadOrders(0);
+  }
+
+  exportExcel(): void {
+    this.isExporting.set(true);
+    const f = this.filterForm.value;
+    this.reportExportService.exportOrdersExcel({
+      keyword: f.keyword ? f.keyword.trim() : undefined,
+      status: f.status || undefined,
+      paymentStatus: f.paymentStatus || undefined,
+      startDate: f.startDate || undefined,
+      endDate: f.endDate || undefined
+    }).subscribe({
+      next: (blob) => {
+        const filename = `Danh_sach_don_hang_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        this.reportExportService.downloadBlob(blob, filename);
+        this.isExporting.set(false);
+        this.showToast('Xuất báo cáo đơn hàng Excel thành công', 'success');
+      },
+      error: (err) => {
+        console.error('Failed to export orders Excel', err);
+        this.isExporting.set(false);
+        this.showToast('Không thể xuất file Excel đơn hàng. Vui lòng thử lại!', 'error');
+      }
+    });
   }
 
   openDetailModal(order: Order): void {

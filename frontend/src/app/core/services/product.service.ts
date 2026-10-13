@@ -12,6 +12,7 @@ import {
   ProductVariantResponse,
 } from '../models/product.model';
 import { BulkActionRequest, BulkActionResult } from '../models/bulk.model';
+import { ProductAttributeValueResponse } from '../models/attribute.model';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -69,6 +70,10 @@ export class ProductService {
 
   getProductBySlug(slug: string): Observable<ApiResponse<ProductResponse>> {
     return this.getBySlug(slug);
+  }
+
+  getProductAttributes(productId: number): Observable<ApiResponse<ProductAttributeValueResponse[]>> {
+    return this.http.get<ApiResponse<ProductAttributeValueResponse[]>>(`${this.base}/products/${productId}/attributes`);
   }
 
   create(request: ProductRequest): Observable<ApiResponse<ProductResponse>> {

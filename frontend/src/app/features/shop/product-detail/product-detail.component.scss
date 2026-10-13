@@ -399,12 +399,13 @@ $radius: 12px;
 }
 
 .action-buttons-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .btn-add-cart {
+  flex: 1 1 180px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -439,6 +440,7 @@ $radius: 12px;
 }
 
 .btn-buy-now {
+  flex: 1 1 180px;
   padding: 12px 20px;
   border-radius: 8px;
   border: none;
@@ -458,6 +460,50 @@ $radius: 12px;
     cursor: not-allowed;
     background: #e2e8f0;
     color: #94a3b8;
+  }
+}
+
+.btn-compare-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1.5px solid $border;
+  background: $surface;
+  color: $on-surface;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  .compare-icon {
+    width: 18px;
+    height: 18px;
+    color: #64748b;
+  }
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: #eff6ff;
+
+    .compare-icon {
+      color: $primary;
+    }
+  }
+
+  &.active {
+    border-color: $primary;
+    color: $primary;
+    background: #eff6ff;
+    font-weight: 700;
+
+    .compare-icon {
+      color: $primary;
+    }
   }
 }
 

@@ -84,8 +84,16 @@ $radius: 10px;
 .card-meta {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   margin-bottom: 6px;
+
+  .meta-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
 
   .brand-tag {
     font-size: 0.72rem;
@@ -93,6 +101,9 @@ $radius: 10px;
     color: $primary;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .warranty-tag {
@@ -103,6 +114,40 @@ $radius: 10px;
     padding: 1px 5px;
     border-radius: 4px;
     border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  .compare-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.72rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    .compare-icon {
+      width: 12px;
+      height: 12px;
+    }
+
+    &:hover {
+      border-color: $primary;
+      color: $primary;
+      background: #eff6ff;
+    }
+
+    &.active {
+      background: #eff6ff;
+      border-color: $primary;
+      color: $primary;
+      font-weight: 600;
+    }
   }
 }
 

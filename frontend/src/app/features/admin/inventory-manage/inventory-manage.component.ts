@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { ProductService } from '../../../core/services/product.service';
+import { ReportExportService } from '../../../core/services/report-export.service';
 import {
   InventoryItem,
   InventoryLog,
@@ -31,10 +32,12 @@ import { PaginationComponent } from '../../../shared';
 export class InventoryManageComponent implements OnInit {
   private readonly inventoryService = inject(InventoryService);
   private readonly productService = inject(ProductService);
+  private readonly reportExportService = inject(ReportExportService);
   private readonly fb = inject(FormBuilder);
 
   // Active Tab: 'stock' | 'logs'
   readonly activeTab = signal<'stock' | 'logs'>('stock');
+  readonly isExporting = signal<boolean>(false);
 
   // Warehouses & Metrics
   readonly warehouses = signal<Warehouse[]>([]);
@@ -207,6 +210,25 @@ export class InventoryManageComponent implements OnInit {
     this.selectedStockStatus.set(status);
     this.currentPage.set(0);
     this.loadInventory();
+  }
+
+  exportExcel(): void {
+    this.isExporting.set(true);
+    this.reportExportService.exportInventoryExcel(
+      this.selectedWarehouseId() ?? undefined,
+      this.searchKeyword() || undefined,
+      this.selectedStockStatus()
+    ).subscribe({
+      next: (blob) => {
+        const filename = `Bao_cao_ton_kho_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        this.reportExportService.downloadBlob(blob, filename);
+        this.isExporting.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to export inventory Excel', err);
+        this.isExporting.set(false);
+      }
+    });
   }
 
   onSearch(event: Event): void {

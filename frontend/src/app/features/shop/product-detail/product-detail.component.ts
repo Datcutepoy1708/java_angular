@@ -13,6 +13,7 @@ import { InventoryService } from '../../../core/services/inventory.service';
 import { CartService } from '../../../core/services/cart.service';
 import { ReviewService } from '../../../core/services/review.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { CompareService } from '../../../core/services/compare.service';
 import {
   ProductResponse,
   ProductVariantResponse,
@@ -37,8 +38,35 @@ export class ProductDetailComponent implements OnInit {
   private readonly cartService = inject(CartService);
   private readonly reviewService = inject(ReviewService);
   readonly authService = inject(AuthService);
+  readonly compareService = inject(CompareService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  isInCompare(): boolean {
+    const p = this.product();
+    return p ? this.compareService.isInCompare(p.productId) : false;
+  }
+
+  toggleCompare(): void {
+    const p = this.product();
+    if (!p) return;
+    const v = this.selectedVariant();
+    const price = v ? v.price : (p.variants?.[0]?.price || 0);
+    const salePrice = v ? v.salePrice : (p.variants?.[0]?.salePrice || null);
+    const mainImg = p.images?.[this.activeImageIndex()]?.imageUrl || p.mainImageUrl || '';
+
+    this.compareService.toggleCompare({
+      productId: p.productId,
+      name: p.name,
+      slug: p.slug,
+      imageUrl: normalizeImageUrl(mainImg) || '/assets/images/complexus-logo.png',
+      price,
+      salePrice,
+      categoryId: p.categoryId,
+      categoryName: p.categoryName,
+      brandName: p.brandName,
+    });
+  }
 
   // ── Data Signals ───────────────────────────────────────────────
   readonly product = signal<ProductResponse | null>(null);

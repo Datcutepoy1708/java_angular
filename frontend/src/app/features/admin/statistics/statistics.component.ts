@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatisticsService } from '../../../core/services/statistics.service';
+import { ReportExportService } from '../../../core/services/report-export.service';
 import {
   CategoryRevenueShare,
   DashboardOverview,
@@ -53,10 +54,12 @@ export interface XAxisTick {
 })
 export class StatisticsComponent implements OnInit {
   private readonly statisticsService = inject(StatisticsService);
+  private readonly reportExportService = inject(ReportExportService);
 
   readonly activePeriod = signal<PeriodFilter>('30days');
   readonly customStartDate = signal<string>('');
   readonly customEndDate = signal<string>('');
+  readonly isExporting = signal<boolean>(false);
 
   readonly isLoading = signal<boolean>(false);
   readonly isRefreshing = signal<boolean>(false);
@@ -235,6 +238,24 @@ export class StatisticsComponent implements OnInit {
       },
       error: () => {
         this.isRefreshing.set(false);
+      }
+    });
+  }
+
+  exportExcel(): void {
+    this.isExporting.set(true);
+    const { start, end } = this.calculateDateRange(this.activePeriod());
+    const period = this.activePeriod() === 'year' ? 'month' : 'day';
+
+    this.reportExportService.exportRevenueExcel(start, end, period).subscribe({
+      next: (blob) => {
+        const filename = `Bao_cao_doanh_thu_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        this.reportExportService.downloadBlob(blob, filename);
+        this.isExporting.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to export Excel report:', err);
+        this.isExporting.set(false);
       }
     });
   }

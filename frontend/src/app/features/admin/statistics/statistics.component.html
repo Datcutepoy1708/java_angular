@@ -10,6 +10,14 @@
       @if (refreshMessage()) {
         <span class="refresh-msg">{{ refreshMessage() }}</span>
       }
+      <button class="btn-export-excel" (click)="exportExcel()" [disabled]="isExporting()" title="Xuất báo cáo doanh thu ra file Excel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" [class.spinning]="isExporting()">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        {{ isExporting() ? 'Đang xuất file...' : 'Xuất Excel' }}
+      </button>
       <button class="btn-refresh" (click)="refreshCache()" [disabled]="isRefreshing()" title="Xóa cache và tính toán lại">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" [class.spinning]="isRefreshing()">
           <polyline points="23 4 23 10 17 10"></polyline>

@@ -20,12 +20,30 @@
 
   <!-- Card Body -->
   <div class="card-body">
-    <!-- Brand Name & Warranty Badge -->
+    <!-- Brand Name & Warranty Badge & Compare Toggle -->
     <div class="card-meta">
-      <span class="brand-tag">{{ p.brandName || 'Chính hãng' }}</span>
-      @if (p.warrantyMonths) {
-        <span class="warranty-tag">BH {{ p.warrantyMonths }}T</span>
-      }
+      <div class="meta-left">
+        <span class="brand-tag">{{ p.brandName || 'Chính hãng' }}</span>
+        @if (p.warrantyMonths) {
+          <span class="warranty-tag">BH {{ p.warrantyMonths }}T</span>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="compare-toggle-btn"
+        [class.active]="isInCompare()"
+        (click)="onToggleCompare($event)"
+        [title]="isInCompare() ? 'Bỏ chọn so sánh' : 'Thêm vào so sánh'"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="compare-icon">
+          <polyline points="16 3 21 3 21 8"/>
+          <line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/>
+          <line x1="15" y1="15" x2="21" y2="21"/>
+        </svg>
+        <span>{{ isInCompare() ? 'Đã chọn' : 'So sánh' }}</span>
+      </button>
     </div>
 
     <!-- Product Title -->

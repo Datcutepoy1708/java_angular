@@ -9,6 +9,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { ProductResponse } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
+import { CompareService } from '../../../core/services/compare.service';
 import { normalizeImageUrl } from '../../../core/util/image-url.util';
 
 export interface DisplayPriceResult {
@@ -27,6 +28,7 @@ export interface DisplayPriceResult {
 })
 export class ProductCardComponent {
   private readonly cartService = inject(CartService);
+  readonly compareService = inject(CompareService);
   private readonly router = inject(Router);
 
   readonly product = input.required<ProductResponse>();
@@ -34,6 +36,28 @@ export class ProductCardComponent {
 
   readonly isAdding = signal(false);
   readonly isAdded = signal(false);
+
+  isInCompare(): boolean {
+    return this.compareService.isInCompare(this.product().productId);
+  }
+
+  onToggleCompare(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const p = this.product();
+    const priceInfo = this.getDisplayPrice(p);
+    this.compareService.toggleCompare({
+      productId: p.productId,
+      name: p.name,
+      slug: p.slug,
+      imageUrl: this.getMainImageUrl(p),
+      price: priceInfo.price,
+      salePrice: priceInfo.salePrice,
+      categoryId: p.categoryId,
+      categoryName: p.categoryName,
+      brandName: p.brandName,
+    });
+  }
 
   getMainImageUrl(product: ProductResponse): string {
     if (product.mainImageUrl) {

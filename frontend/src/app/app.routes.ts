@@ -261,6 +261,11 @@ export const routes: Routes = [
           import('./features/shop/product-detail/product-detail.component').then((m) => m.ProductDetailComponent),
       },
       {
+        path: 'compare',
+        loadComponent: () =>
+          import('./features/shop/compare/compare.component').then((m) => m.CompareComponent),
+      },
+      {
         path: 'cart',
         loadComponent: () =>
           import('./features/shop/cart/cart.component').then((m) => m.CartComponent),

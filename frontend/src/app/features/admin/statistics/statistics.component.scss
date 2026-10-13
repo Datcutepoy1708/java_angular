@@ -42,6 +42,44 @@
     }
   }
 
+  .btn-export-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #16a34a;
+    background: #16a34a;
+    border-radius: 0.5rem;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px 0 rgba(22, 163, 74, 0.25);
+
+    &:hover:not(:disabled) {
+      background: #15803d;
+      border-color: #15803d;
+      box-shadow: 0 3px 6px 0 rgba(22, 163, 74, 0.35);
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .icon {
+      width: 1.125rem;
+      height: 1.125rem;
+
+      &.spinning {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+
   .btn-refresh {
     display: inline-flex;
     align-items: center;

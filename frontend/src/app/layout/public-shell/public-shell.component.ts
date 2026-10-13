@@ -16,13 +16,14 @@ import { ThemeService } from '../../core/services/theme.service';
 import { BannerService } from '../../core/services/banner.service';
 import { Banner } from '../../core/models/banner.model';
 import { ChatWidgetComponent } from '../../shared/chat-widget/chat-widget.component';
+import { CompareBarComponent } from '../../shared/components/compare-bar/compare-bar.component';
 import { normalizeImageUrl } from '../../core/util/image-url.util';
 import { parseRouteUrl, ParsedRouteLink } from '../../core/util/route-url.util';
 
 @Component({
   selector: 'app-public-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, FormsModule, ChatWidgetComponent],
+  imports: [RouterOutlet, RouterLink, FormsModule, ChatWidgetComponent, CompareBarComponent],
   templateUrl: './public-shell.component.html',
   styleUrl: './public-shell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

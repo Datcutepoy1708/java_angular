@@ -1,0 +1,850 @@
+@use 'sass:color';
+
+$primary: #0284c7;
+$primary-hover: #0369a1;
+$surface: #ffffff;
+$surface-subtle: #f8fafc;
+$on-surface: #0f172a;
+$on-surface-variant: #64748b;
+$border: #e2e8f0;
+$danger: #ef4444;
+$success: #10b981;
+
+.compare-page-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+
+// ── Breadcrumb ─────────────────────────────────────────────────────
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: $on-surface-variant;
+  margin-bottom: 20px;
+
+  .breadcrumb-link {
+    color: $on-surface-variant;
+    text-decoration: none;
+    transition: color 0.15s;
+
+    &:hover {
+      color: $primary;
+    }
+  }
+
+  .breadcrumb-separator {
+    color: #cbd5e1;
+  }
+
+  .breadcrumb-current {
+    color: $on-surface;
+    font-weight: 500;
+  }
+}
+
+// ── Header & Action Bar ───────────────────────────────────────────
+.compare-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid $border;
+
+  .header-titles {
+    .page-title {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: $on-surface-variant;
+      margin: 0;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+// Toggle differences switch
+.toggle-diff-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: $on-surface;
+  cursor: pointer;
+  user-select: none;
+  background: $surface-subtle;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid $border;
+
+  input {
+    display: none;
+
+    &:checked + .toggle-slider {
+      background-color: $primary;
+
+      &::after {
+        transform: translateX(14px);
+      }
+    }
+  }
+
+  .toggle-slider {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    background-color: #cbd5e1;
+    border-radius: 12px;
+    transition: background-color 0.2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid $border;
+  background: $surface;
+  color: $on-surface;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  .action-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    background: $surface-subtle;
+    border-color: #cbd5e1;
+  }
+
+  &.btn-clear {
+    color: $danger;
+    border-color: #fecaca;
+    background: #fef2f2;
+
+    &:hover {
+      background: #fee2e2;
+    }
+  }
+}
+
+// ── Loading & Empty State ─────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: $on-surface-variant;
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+}
+
+.empty-state-card {
+  text-align: center;
+  padding: 60px 24px;
+  background: $surface;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  max-width: 600px;
+  margin: 40px auto;
+
+  .empty-illustration {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #f0fdf4;
+    color: $primary;
+    margin-bottom: 20px;
+
+    .empty-icon {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    color: $on-surface;
+    margin: 0 0 10px;
+  }
+
+  p {
+    font-size: 0.95rem;
+    color: $on-surface-variant;
+    line-height: 1.5;
+    margin: 0 0 24px;
+  }
+
+  .btn-browse-products {
+    display: inline-block;
+    background: $primary;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s;
+
+    &:hover {
+      background: $primary-hover;
+    }
+  }
+}
+
+// ── Comparison Table Wrapper ──────────────────────────────────────
+.compare-table-wrapper {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid $border;
+  border-radius: 12px;
+  background: $surface;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+  table-layout: fixed;
+  min-width: 820px;
+
+  // Cột bên trái: Tiêu đề thuộc tính (Sticky column)
+  .spec-label-col {
+    width: 220px;
+    min-width: 220px;
+    background: $surface-subtle;
+    font-weight: 600;
+    color: $on-surface;
+    font-size: 0.88rem;
+    padding: 14px 18px;
+    border-right: 1px solid $border;
+    border-bottom: 1px solid $border;
+    vertical-align: middle;
+
+    &.sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.03);
+    }
+
+    &.header-corner {
+      background: #f1f5f9;
+      font-size: 0.95rem;
+      vertical-align: top;
+      padding-top: 24px;
+
+      .corner-text {
+        font-weight: 700;
+        color: #475569;
+      }
+    }
+  }
+
+  // Cột sản phẩm
+  .product-col {
+    width: 280px;
+    min-width: 280px;
+    padding: 20px 16px;
+    border-right: 1px solid $border;
+    border-bottom: 2px solid $border;
+    background: $surface;
+    vertical-align: top;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  // Thẻ sản phẩm ở thead
+  .product-header-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .btn-remove-col {
+      position: absolute;
+      top: -8px;
+      right: -4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
+      font-size: 1.1rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      z-index: 2;
+
+      &:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: $danger;
+      }
+    }
+
+    .product-image-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 160px;
+      margin-bottom: 14px;
+      text-decoration: none;
+
+      .header-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transition: transform 0.2s ease;
+
+        &:hover {
+          transform: scale(1.05);
+        }
+      }
+    }
+
+    .product-brand {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: $primary;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .product-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: $on-surface;
+      line-height: 1.35;
+      text-decoration: none;
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.7em;
+
+      &:hover {
+        color: $primary;
+      }
+    }
+
+    .product-price-box {
+      margin-bottom: 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+
+      .price-current {
+        font-size: 1.1rem;
+        font-weight: 750;
+        color: $danger;
+      }
+
+      .price-original {
+        font-size: 0.8rem;
+        color: $on-surface-variant;
+        text-decoration: line-through;
+      }
+
+      .price-discount {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #d97706;
+        background: #fef3c7;
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+    }
+
+    .product-actions-box {
+      margin-top: auto;
+
+      .btn-cart-action {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px 12px;
+        background: $primary;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease;
+
+        .cart-icon {
+          width: 16px;
+          height: 16px;
+        }
+
+        &:hover:not(:disabled) {
+          background: $primary-hover;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  // Thẻ slot trống thêm sản phẩm
+  .empty-slot-col {
+    background: #fafafa;
+  }
+
+  .empty-slot-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    min-height: 280px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 24px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff;
+
+    &:hover {
+      border-color: $primary;
+      background: #f0f9ff;
+
+      .plus-circle {
+        background: $primary;
+        color: #ffffff;
+        transform: scale(1.1);
+      }
+
+      .btn-open-modal {
+        background: $primary;
+        color: #ffffff;
+      }
+    }
+
+    .plus-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      font-size: 1.5rem;
+      font-weight: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+
+    .slot-add-title {
+      font-size: 0.95rem;
+      color: $on-surface;
+      margin-bottom: 4px;
+    }
+
+    .slot-add-desc {
+      font-size: 0.78rem;
+      color: $on-surface-variant;
+      margin-bottom: 16px;
+    }
+
+    .btn-open-modal {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: $on-surface;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+  }
+
+  // Section divider header
+  .section-divider-row {
+    td {
+      background: #f1f5f9;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      color: #334155;
+      border-bottom: 1px solid $border;
+      border-top: 1px solid $border;
+
+      strong {
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+      }
+
+      .filter-note {
+        font-size: 0.75rem;
+        color: $primary;
+        margin-left: 8px;
+        font-weight: normal;
+      }
+    }
+  }
+
+  // Hàng dữ liệu thông số
+  .spec-data-row {
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f8fafc;
+
+      .spec-label-col.sticky-col {
+        background: #f1f5f9;
+      }
+    }
+
+    &.row-different {
+      background: #fcfbf6;
+
+      .label-with-diff .diff-indicator {
+        display: inline-block;
+        color: #f59e0b;
+        font-size: 1.2rem;
+        line-height: 0;
+        vertical-align: middle;
+        margin-left: 4px;
+      }
+    }
+  }
+
+  .spec-val-col {
+    padding: 12px 18px;
+    border-right: 1px solid $border;
+    border-bottom: 1px solid $border;
+    font-size: 0.88rem;
+    color: #334155;
+    vertical-align: middle;
+
+    &:last-child {
+      border-right: none;
+    }
+
+    &.empty-cell {
+      color: #cbd5e1;
+      text-align: center;
+      background: #fafafa;
+    }
+
+    &.val-diff {
+      color: #0f172a;
+    }
+
+    .val-highlight {
+      font-weight: 600;
+      color: $primary;
+    }
+
+    .val-unit {
+      font-size: 0.78rem;
+      color: $on-surface-variant;
+      margin-left: 3px;
+    }
+
+    .text-muted {
+      color: #94a3b8;
+    }
+  }
+
+  .label-with-diff {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .empty-specs-row {
+    td {
+      padding: 30px;
+      text-align: center;
+      color: $on-surface-variant;
+      font-size: 0.9rem;
+      font-style: italic;
+      border-bottom: 1px solid $border;
+    }
+  }
+}
+
+// ── Search & Add Modal ────────────────────────────────────────────
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-dialog {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: $on-surface;
+      margin: 0;
+    }
+
+    .btn-close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px;
+
+      &:hover {
+        color: $danger;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .search-input-wrap {
+    position: relative;
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      color: #94a3b8;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.15s;
+
+      &:focus {
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+      }
+    }
+  }
+
+  .results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 3px;
+    }
+  }
+
+  .searching-state,
+  .no-results {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 30px;
+    color: $on-surface-variant;
+    font-size: 0.88rem;
+
+    .spinner-small {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #e2e8f0;
+      border-top-color: $primary;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+
+      .btn-select-prod {
+        background: $primary;
+        color: #ffffff;
+      }
+    }
+
+    .result-img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #f8fafc;
+      flex-shrink: 0;
+    }
+
+    .result-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+
+      .result-brand {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: $primary;
+        text-transform: uppercase;
+      }
+
+      .result-name {
+        font-size: 0.85rem;
+        color: $on-surface;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .result-price {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: $danger;
+      }
+    }
+
+    .btn-select-prod {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: $on-surface;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

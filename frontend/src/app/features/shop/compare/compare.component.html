@@ -1,0 +1,345 @@
+<div class="compare-page-container">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a routerLink="/" class="breadcrumb-link">Trang chủ</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">So sánh thông số sản phẩm</span>
+  </nav>
+
+  <!-- Page Header & Action Bar -->
+  <header class="compare-header">
+    <div class="header-titles">
+      <h1 class="page-title">So sánh sản phẩm ({{ productsData().length }}/4)</h1>
+      <p class="page-subtitle">
+        Đối chiếu trực tiếp chi tiết thông số kỹ thuật, giá bán và cấu hình phần cứng
+      </p>
+    </div>
+
+    @if (productsData().length > 0) {
+      <div class="header-actions">
+        <!-- Toggle Highlight Differences -->
+        <label class="toggle-diff-label" title="Chỉ hiển thị các dòng thông số có sự khác biệt">
+          <input
+            type="checkbox"
+            [checked]="highlightDifferencesOnly()"
+            (change)="toggleHighlightDifferences()"
+          />
+          <span class="toggle-slider"></span>
+          <span class="toggle-text">Chỉ xem điểm khác biệt</span>
+        </label>
+
+        <!-- Share Link -->
+        <button
+          type="button"
+          class="btn-action btn-share"
+          (click)="copyShareLink()"
+          title="Sao chép liên kết so sánh"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          <span>Chia sẻ</span>
+        </button>
+
+        <!-- Clear All -->
+        <button
+          type="button"
+          class="btn-action btn-clear"
+          (click)="clearAll()"
+          title="Xóa tất cả sản phẩm khỏi bảng so sánh"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <span>Xóa tất cả</span>
+        </button>
+      </div>
+    }
+  </header>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Đang tải thông số kỹ thuật các sản phẩm...</p>
+    </div>
+  } @else if (productsData().length < 2) {
+    <!-- Empty / Insufficient Products State -->
+    <div class="empty-state-card">
+      <div class="empty-illustration">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+          <polyline points="16 3 21 3 21 8"/>
+          <line x1="4" y1="20" x2="21" y2="3"/>
+          <polyline points="21 16 21 21 16 21"/>
+          <line x1="15" y1="15" x2="21" y2="21"/>
+        </svg>
+      </div>
+      <h2>Chưa đủ sản phẩm để so sánh</h2>
+      <p>
+        Vui lòng chọn từ <strong>2 đến 4 sản phẩm</strong> từ danh mục hoặc trang sản phẩm để bắt đầu đối chiếu cấu hình.
+      </p>
+      <div class="empty-actions">
+        <a routerLink="/products" class="btn-browse-products">
+          Khám phá danh sách sản phẩm
+        </a>
+      </div>
+    </div>
+  } @else {
+    <!-- Comparison Matrix Table -->
+    <div class="compare-table-wrapper">
+      <table class="compare-table">
+        <!-- Sticky Product Headers -->
+        <thead>
+          <tr class="product-cards-row">
+            <th class="spec-label-col sticky-col header-corner">
+              <span class="corner-text">Sản phẩm so sánh</span>
+            </th>
+
+            @for (item of productsData(); track item.product.productId) {
+              <th class="product-col">
+                <div class="product-header-card">
+                  <!-- Remove button -->
+                  <button
+                    type="button"
+                    class="btn-remove-col"
+                    (click)="removeProduct(item.product.productId)"
+                    title="Xóa sản phẩm này"
+                    [attr.aria-label]="'Xóa ' + item.product.name"
+                  >
+                    &times;
+                  </button>
+
+                  <!-- Product image -->
+                  <a [routerLink]="['/products', item.product.slug]" class="product-image-box">
+                    <img
+                      [src]="item.imageUrl"
+                      [alt]="item.product.name"
+                      (error)="onImageError($event)"
+                      class="header-img"
+                    />
+                  </a>
+
+                  <!-- Brand & Name -->
+                  <span class="product-brand">{{ item.product.brandName || 'Chính hãng' }}</span>
+                  <a [routerLink]="['/products', item.product.slug]" class="product-name" [title]="item.product.name">
+                    {{ item.product.name }}
+                  </a>
+
+                  <!-- Price -->
+                  <div class="product-price-box">
+                    @if (item.priceInfo.salePrice && item.priceInfo.salePrice < item.priceInfo.price) {
+                      <span class="price-current">{{ formatCurrency(item.priceInfo.salePrice) }}</span>
+                      <span class="price-original">{{ formatCurrency(item.priceInfo.price) }}</span>
+                      <span class="price-discount">-{{ item.priceInfo.discountPercent }}%</span>
+                    } @else {
+                      <span class="price-current">{{ formatCurrency(item.priceInfo.price) }}</span>
+                    }
+                  </div>
+
+                  <!-- Action Button -->
+                  <div class="product-actions-box">
+                    <button
+                      type="button"
+                      class="btn-cart-action"
+                      [disabled]="addingToCartId() === item.product.productId"
+                      (click)="addToCart(item.product)"
+                    >
+                      @if (addingToCartId() === item.product.productId) {
+                        <span>Đang thêm...</span>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="cart-icon">
+                          <circle cx="9" cy="21" r="1"/>
+                          <circle cx="20" cy="21" r="1"/>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                        </svg>
+                        <span>Thêm vào giỏ</span>
+                      }
+                    </button>
+                  </div>
+                </div>
+              </th>
+            }
+
+            <!-- Slot for adding another product (up to 4) -->
+            @if (productsData().length < 4) {
+              <th class="product-col empty-slot-col">
+                <div class="empty-slot-card" (click)="openAddModal()">
+                  <div class="plus-circle">+</div>
+                  <strong class="slot-add-title">Thêm sản phẩm khác</strong>
+                  <span class="slot-add-desc">Chọn thêm để so sánh (tối đa 4 sản phẩm)</span>
+                  <button type="button" class="btn-open-modal">Chọn sản phẩm</button>
+                </div>
+              </th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- SECTION 1: THÔNG TIN CHUNG -->
+          <tr class="section-divider-row">
+            <td [attr.colspan]="productsData().length + (productsData().length < 4 ? 2 : 1)">
+              <strong>Thông tin chung</strong>
+            </td>
+          </tr>
+
+          <!-- Row: Thương hiệu -->
+          <tr class="spec-data-row">
+            <td class="spec-label-col sticky-col">Thương hiệu</td>
+            @for (item of productsData(); track item.product.productId) {
+              <td class="spec-val-col">
+                <span class="val-highlight">{{ item.product.brandName || '—' }}</span>
+              </td>
+            }
+            @if (productsData().length < 4) {
+              <td class="spec-val-col empty-cell">—</td>
+            }
+          </tr>
+
+          <!-- Row: Danh mục -->
+          <tr class="spec-data-row">
+            <td class="spec-label-col sticky-col">Danh mục</td>
+            @for (item of productsData(); track item.product.productId) {
+              <td class="spec-val-col">
+                {{ item.product.categoryName || '—' }}
+              </td>
+            }
+            @if (productsData().length < 4) {
+              <td class="spec-val-col empty-cell">—</td>
+            }
+          </tr>
+
+          <!-- Row: Bảo hành -->
+          <tr class="spec-data-row">
+            <td class="spec-label-col sticky-col">Bảo hành</td>
+            @for (item of productsData(); track item.product.productId) {
+              <td class="spec-val-col">
+                {{ item.product.warrantyMonths ? item.product.warrantyMonths + ' Tháng' : 'Theo tiêu chuẩn nhà sản xuất' }}
+              </td>
+            }
+            @if (productsData().length < 4) {
+              <td class="spec-val-col empty-cell">—</td>
+            }
+          </tr>
+
+          <!-- SECTION 2: THÔNG SỐ KỸ THUẬT CHI TIẾT (EAV) -->
+          <tr class="section-divider-row">
+            <td [attr.colspan]="productsData().length + (productsData().length < 4 ? 2 : 1)">
+              <strong>Thông số kỹ thuật chi tiết</strong>
+              @if (highlightDifferencesOnly()) {
+                <span class="filter-note">(Đang lọc: chỉ các dòng có thông số khác nhau)</span>
+              }
+            </td>
+          </tr>
+
+          @if (visibleSpecRows().length === 0) {
+            <tr class="empty-specs-row">
+              <td [attr.colspan]="productsData().length + (productsData().length < 4 ? 2 : 1)">
+                @if (highlightDifferencesOnly()) {
+                  Tất cả các thông số kỹ thuật của các sản phẩm đang so sánh đều giống nhau!
+                } @else {
+                  Chưa có thông số kỹ thuật cụ thể nào được khai báo cho các sản phẩm này.
+                }
+              </td>
+            </tr>
+          } @else {
+            @for (row of visibleSpecRows(); track row.attributeName) {
+              <tr class="spec-data-row" [class.row-different]="row.isDifferent">
+                <td class="spec-label-col sticky-col">
+                  <div class="label-with-diff">
+                    <span>{{ row.attributeName }}</span>
+                    @if (row.isDifferent) {
+                      <span class="diff-indicator" title="Có điểm khác biệt giữa các sản phẩm">•</span>
+                    }
+                  </div>
+                </td>
+
+                @for (val of row.values; track $index) {
+                  <td class="spec-val-col" [class.val-diff]="row.isDifferent">
+                    @if (val) {
+                      <strong>{{ val }}</strong>
+                      @if (row.unit) {
+                        <span class="val-unit">{{ row.unit }}</span>
+                      }
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                }
+
+                @if (productsData().length < 4) {
+                  <td class="spec-val-col empty-cell">—</td>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Modal: Tìm & Thêm sản phẩm nhanh vào bảng so sánh -->
+  @if (showAddModal()) {
+    <div class="modal-backdrop" (click)="closeAddModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h3>Thêm sản phẩm vào so sánh</h3>
+          <button type="button" class="btn-close-modal" (click)="closeAddModal()">&times;</button>
+        </header>
+
+        <div class="modal-body">
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Nhập tên sản phẩm hoặc mã linh kiện..."
+              [ngModel]="searchKeyword()"
+              (ngModelChange)="onSearchInput($event)"
+              autofocus
+            />
+          </div>
+
+          <div class="results-list">
+            @if (isSearching()) {
+              <div class="searching-state">
+                <div class="spinner-small"></div>
+                <span>Đang tìm kiếm...</span>
+              </div>
+            } @else if (searchResults().length === 0) {
+              <div class="no-results">
+                <span>Không tìm thấy sản phẩm nào phù hợp</span>
+              </div>
+            } @else {
+              @for (prod of searchResults(); track prod.productId) {
+                <div class="search-result-item" (click)="selectProductToAdd(prod)">
+                  <img
+                    [src]="getMainImageUrl(prod)"
+                    [alt]="prod.name"
+                    class="result-img"
+                    (error)="onImageError($event)"
+                  />
+                  <div class="result-info">
+                    <span class="result-brand">{{ prod.brandName || 'Chính hãng' }}</span>
+                    <strong class="result-name">{{ prod.name }}</strong>
+                    <span class="result-price">
+                      {{ formatCurrency(prod.variants && prod.variants.length > 0 ? (prod.variants[0].salePrice || prod.variants[0].price) : 0) }}
+                    </span>
+                  </div>
+                  <button type="button" class="btn-select-prod">+ Thêm</button>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
